@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.1.9" />
+  <meta name="fibery-html-editor-version" content="8.2.0" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -310,6 +310,33 @@
     </div>
   </div>
 
+  <!-- Draft recovery modal -->
+  <div id="draftRecoveryModal" class="hidden fixed inset-0 z-[80] bg-black/25 p-4 sm:p-6">
+    <div class="mx-auto mt-2 sm:mt-8 flex max-h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
+      <div class="border-b border-gray-200 px-4 py-3 sm:px-5 flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <div id="draftRecoveryTitle" class="text-base font-semibold text-gray-900" data-i18n="draftRecoveryTitle">Recover local draft</div>
+          <div id="draftRecoverySubtitle" class="mt-1 text-xs text-gray-500"></div>
+        </div>
+        <button id="closeDraftRecoveryBtn" class="h-8 w-8 shrink-0 rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-900" aria-label="Close">×</button>
+      </div>
+      <div class="border-b border-gray-100 px-4 py-2 sm:px-5">
+        <div id="draftRecoveryDiffSummary" class="flex flex-wrap items-center gap-2 text-xs text-gray-600"></div>
+      </div>
+      <div class="min-h-0 flex-1 overflow-auto p-4 sm:p-5">
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div id="draftCurrentColumn"></div>
+          <div id="draftLocalColumn"></div>
+        </div>
+      </div>
+      <div class="border-t border-gray-200 px-4 py-3 sm:px-5 flex flex-wrap items-center justify-end gap-2">
+        <button id="discardDraftBtn" class="h-9 rounded-lg border border-red-200 bg-white px-3 text-sm font-medium text-red-700 hover:bg-red-50" data-i18n="discardDraft">Discard draft</button>
+        <button id="keepCurrentVersionBtn" class="h-9 rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 hover:bg-gray-50" data-i18n="keepCurrentVersion">Keep current version</button>
+        <button id="restoreDraftBtn" class="h-9 rounded-lg bg-blue-600 px-3 text-sm font-medium text-white hover:bg-blue-700" data-i18n="restoreDraft">Restore draft</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Search modal -->
   <div id="searchModal" class="hidden fixed inset-0 z-50 bg-black/25 p-6">
     <div class="mx-auto mt-10 flex max-h-[70vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
@@ -406,7 +433,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '8.1.9';
+  const APP_VERSION = '8.2.0';
   window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
   document.documentElement.dataset.appVersion = APP_VERSION;
 
@@ -445,6 +472,57 @@
     }
   };
 
+  Object.assign(I18N.en, {
+    draftRecoveryTitle: 'Recover local draft',
+    draftRecoverySubtitleSaved: 'A local draft was found for this page. Compare before restoring.',
+    draftRecoverySubtitleUnsaved: 'A local draft from an unsaved page was found.',
+    draftCurrentVersion: 'Current loaded version',
+    draftLocalVersion: 'Local draft',
+    draftFieldTitle: 'Title',
+    draftFieldDescription: 'Description',
+    draftFieldHtml: 'HTML / code',
+    draftChars: 'Chars',
+    draftUpdatedAt: 'Updated',
+    draftSame: 'Same',
+    draftDifferent: 'Different',
+    restoreDraft: 'Restore draft',
+    keepCurrentVersion: 'Keep current version',
+    discardDraft: 'Discard draft',
+    draftRestored: 'Local draft restored',
+    draftDiscarded: 'Local draft discarded',
+    draftKeptCurrent: 'Keeping current version',
+    draftDiffNone: 'No differences',
+    draftDiffTitle: 'Title changed',
+    draftDiffDescription: 'Description changed',
+    draftDiffHtml: 'HTML changed',
+    draftUnsavedLabel: 'Unsaved page'
+  });
+  Object.assign(I18N['pt-BR'], {
+    draftRecoveryTitle: 'Recuperar rascunho local',
+    draftRecoverySubtitleSaved: 'Foi encontrado um rascunho local para esta pagina. Compare antes de restaurar.',
+    draftRecoverySubtitleUnsaved: 'Foi encontrado um rascunho local de uma pagina nao salva.',
+    draftCurrentVersion: 'Versao atual carregada',
+    draftLocalVersion: 'Rascunho local',
+    draftFieldTitle: 'Titulo',
+    draftFieldDescription: 'Descricao',
+    draftFieldHtml: 'HTML / codigo',
+    draftChars: 'Caracteres',
+    draftUpdatedAt: 'Atualizado em',
+    draftSame: 'Igual',
+    draftDifferent: 'Diferente',
+    restoreDraft: 'Restaurar rascunho',
+    keepCurrentVersion: 'Manter versao atual',
+    discardDraft: 'Descartar rascunho',
+    draftRestored: 'Rascunho local restaurado',
+    draftDiscarded: 'Rascunho local descartado',
+    draftKeptCurrent: 'Versao atual mantida',
+    draftDiffNone: 'Sem diferencas',
+    draftDiffTitle: 'Titulo alterado',
+    draftDiffDescription: 'Descricao alterada',
+    draftDiffHtml: 'HTML alterado',
+    draftUnsavedLabel: 'Pagina nao salva'
+  });
+
   const $ = (id) => document.getElementById(id);
   const els = {
     sidebar: $('sidebar'), brandBtn: $('brandBtn'), toggleSidebarBtn: $('toggleSidebarBtn'), sidebarCloseIcon: $('sidebarCloseIcon'), sidebarOpenIcon: $('sidebarOpenIcon'), sidebarScroll: $('sidebarScroll'), sidebarProjectsSection: $('sidebarProjectsSection'), sidebarProjectsList: $('sidebarProjectsList'), newProjectBtn: $('newProjectBtn'), sidebarPagesList: $('sidebarPagesList'), refreshSidebarBtn: $('refreshSidebarBtn'), sidebarLoadMoreWrap: $('sidebarLoadMoreWrap'), sidebarLoadMoreBtn: $('sidebarLoadMoreBtn'), searchPagesBtn: $('searchPagesBtn'), sidebarSettingsBtn: $('sidebarSettingsBtn'),
@@ -458,7 +536,8 @@
     searchModal: $('searchModal'), closeSearchBtn: $('closeSearchBtn'), globalSearchInput: $('globalSearchInput'), globalSearchResults: $('globalSearchResults'),
     pageContextMenu: $('pageContextMenu'), moveProjectMenu: $('moveProjectMenu'), projectContextMenu: $('projectContextMenu'), editorPanelMenu: $('editorPanelMenu'), previewPanelMenu: $('previewPanelMenu'), createProjectModal: $('createProjectModal'), createProjectNameInput: $('createProjectNameInput'), closeCreateProjectBtn: $('closeCreateProjectBtn'), cancelCreateProjectBtn: $('cancelCreateProjectBtn'), confirmCreateProjectBtn: $('confirmCreateProjectBtn'),
     historyModal: $('historyModal'), closeHistoryBtn: $('closeHistoryBtn'), historyList: $('historyList'), logPanel: $('logPanel'), logBox: $('logBox'), clearLogBtn: $('clearLogBtn'),
-    confirmModal: $('confirmModal'), confirmBox: $('confirmBox'), confirmTitle: $('confirmTitle'), confirmMessage: $('confirmMessage'), confirmCancelBtn: $('confirmCancelBtn'), confirmOkBtn: $('confirmOkBtn'), deletePreviewWrap: $('deletePreviewWrap'), deletePreviewFrame: $('deletePreviewFrame'), confirmOpenPreviewBtn: $('confirmOpenPreviewBtn')
+    confirmModal: $('confirmModal'), confirmBox: $('confirmBox'), confirmTitle: $('confirmTitle'), confirmMessage: $('confirmMessage'), confirmCancelBtn: $('confirmCancelBtn'), confirmOkBtn: $('confirmOkBtn'), deletePreviewWrap: $('deletePreviewWrap'), deletePreviewFrame: $('deletePreviewFrame'), confirmOpenPreviewBtn: $('confirmOpenPreviewBtn'),
+    draftRecoveryModal: $('draftRecoveryModal'), draftRecoveryTitle: $('draftRecoveryTitle'), draftRecoverySubtitle: $('draftRecoverySubtitle'), draftRecoveryDiffSummary: $('draftRecoveryDiffSummary'), draftCurrentColumn: $('draftCurrentColumn'), draftLocalColumn: $('draftLocalColumn'), closeDraftRecoveryBtn: $('closeDraftRecoveryBtn'), restoreDraftBtn: $('restoreDraftBtn'), keepCurrentVersionBtn: $('keepCurrentVersionBtn'), discardDraftBtn: $('discardDraftBtn')
   };
 
   const LS = {
@@ -475,11 +554,12 @@
   }
 
   const state = {
-    isAdmin: false, lang: 'en', appPageId: detectCurrentAppPageId(), current: { id: '', title: '', description: '', html: '' }, blank: true, dirty: false, db: null, saving: false,
+    isAdmin: false, lang: 'en', appPageId: detectCurrentAppPageId(), current: { id: '', title: '', description: '', html: '' }, currentBaseline: { id: '', title: '', description: '', html: '' }, blank: true, dirty: false, db: null, saving: false,
     code: { editor: null, suppress: false, fallback: false }, confirmResolver: null,
     sidebar: { open: true, pages: [], loading: false, refreshTimer: null, hasMore: false, limit: 20, visibleLimit: 20, pageCache: {} },
     projects: { rows: [], items: [], pageToProject: {}, itemsByProject: {} },
-    search: { debounce: null, query: '', pages: [] }, welcomeSearch: { debounce: null, query: '', pages: [] }, panelMode: 'both', previewFocus: false, pageMeta: {}, context: { pageId: '', pageTitle: '', projectId: '', createProjectTargetPageId: '' }
+    search: { debounce: null, query: '', pages: [] }, welcomeSearch: { debounce: null, query: '', pages: [] }, panelMode: 'both', previewFocus: false, pageMeta: {}, context: { pageId: '', pageTitle: '', projectId: '', createProjectTargetPageId: '' },
+    drafts: { byKey: {}, autosaveTimer: null, debounceMs: 900, unsavedId: 'local-unsaved-main', snoozedKeys: new Set(), activeDraftKey: '', promptToken: 0 }
   };
 
   function preferredLang() { const saved = localStorage.getItem(LS.lang) || 'auto'; if (saved !== 'auto') return saved; return (navigator.language || '').toLowerCase().startsWith('pt') ? 'pt-BR' : 'en'; }
@@ -511,7 +591,7 @@
     return record;
   }
   async function savePageMeta(id, data = {}) { const record = touchPageMeta(id, data); if (record && state.db) await savePageMetaRecord(record); return record; }
-  async function deletePageMeta(id) { if (!id) return; const map = getMetaMap(); delete map[id]; setMetaMap(map); if (state.db) await txDelete('pageMeta', id); const linked = (state.projects.items || []).filter(item => item.pageId === id); for (const item of linked) { if (state.db) await txDelete('projectItems', item.key); } state.projects.items = (state.projects.items || []).filter(item => item.pageId !== id); rebuildProjectMaps(); }
+  async function deletePageMeta(id) { if (!id) return; const map = getMetaMap(); delete map[id]; setMetaMap(map); if (state.db) await txDelete('pageMeta', id); await deleteDraftByKey(draftKeyForPage(id)); const linked = (state.projects.items || []).filter(item => item.pageId === id); for (const item of linked) { if (state.db) await txDelete('projectItems', item.key); } state.projects.items = (state.projects.items || []).filter(item => item.pageId !== id); rebuildProjectMaps(); }
   function pageTime(page) { const meta = getMetaMap()[page.id] || {}; const raw = page.updatedAt || page.modifiedAt || page.modificationDate || page.createdAt || page.creationDate || meta.lastSavedAt || meta.lastOpenedAt || 0; const time = typeof raw === 'number' ? raw : Date.parse(raw); return Number.isFinite(time) ? time : 0; }
   function groupLabel(time) { if (!time) return t('allPages'); const now = new Date(); const d = new Date(time); const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(); const startYesterday = startToday - 86400000; if (time >= startToday) return t('today'); if (time >= startYesterday) return t('yesterday'); const diff = startToday - new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); if (diff <= 7 * 86400000) return t('last7'); if (diff <= 30 * 86400000) return t('last30'); return t('older'); }
   function groupedPages(pages) { const rows = [...pages].sort((a,b) => pageTime(b) - pageTime(a)); const groups = new Map(); for (const page of rows) { const label = groupLabel(pageTime(page)); if (!groups.has(label)) groups.set(label, []); groups.get(label).push(page); } return Array.from(groups.entries()); }
@@ -537,7 +617,249 @@
     renderSidebarPages();
   }
   function log(message) { const time = new Date().toLocaleTimeString(state.lang === 'pt-BR' ? 'pt-BR' : 'en-US'); const line = document.createElement('div'); line.textContent = `[${time}] ${message}`; els.logBox.prepend(line); }
-  function markDirty(value = true) { state.dirty = value; els.dirtyBadge.classList.toggle('hidden', !value); }
+  function currentSnapshotFromState() {
+    return {
+      title: String(state.current.title || ''),
+      description: String(state.current.description || ''),
+      html: String(state.current.html || '')
+    };
+  }
+  function currentBaselineSnapshot() {
+    return {
+      title: String(state.currentBaseline.title || ''),
+      description: String(state.currentBaseline.description || ''),
+      html: String(state.currentBaseline.html || '')
+    };
+  }
+  function setCurrentBaseline() {
+    state.currentBaseline = {
+      id: state.current.id || '',
+      title: String(state.current.title || ''),
+      description: String(state.current.description || ''),
+      html: String(state.current.html || '')
+    };
+  }
+  function draftKeyForPage(pageId = '') { return pageId ? `page:${pageId}` : `unsaved:${state.drafts.unsavedId}`; }
+  function draftSnapshotFromRecord(record) {
+    return {
+      title: String(record?.title || ''),
+      description: String(record?.description || ''),
+      html: String(record?.html || '')
+    };
+  }
+  function sameSnapshot(a, b) {
+    return String(a?.title || '') === String(b?.title || '')
+      && String(a?.description || '') === String(b?.description || '')
+      && String(a?.html || '') === String(b?.html || '');
+  }
+  function hasAnyDraftContent(snapshot) {
+    return !!String(snapshot.title || '').trim() || !!String(snapshot.description || '').trim() || !!String(snapshot.html || '').trim();
+  }
+  function isDefaultUnsavedSnapshot(snapshot) {
+    const title = String(snapshot.title || '').trim();
+    const description = String(snapshot.description || '').trim();
+    const html = String(snapshot.html || '').trim();
+    const defaultTitle = title === '' || title === 'Untitled Page';
+    return defaultTitle && !description && !html;
+  }
+  function shouldPersistDraftSnapshot(snapshot, pageId = '') {
+    if (!snapshot) return false;
+    if (pageId) {
+      const baseline = currentBaselineSnapshot();
+      if (sameSnapshot(snapshot, baseline)) return false;
+      return hasAnyDraftContent(snapshot);
+    }
+    return !isDefaultUnsavedSnapshot(snapshot);
+  }
+  function clearDraftAutosaveTimer() {
+    if (!state.drafts.autosaveTimer) return;
+    window.clearTimeout(state.drafts.autosaveTimer);
+    state.drafts.autosaveTimer = null;
+  }
+  async function deleteDraftByKey(key) {
+    if (!key) return;
+    delete state.drafts.byKey[key];
+    state.drafts.snoozedKeys.delete(key);
+    if (state.db) {
+      try { await txDelete('drafts', key); } catch (_) {}
+    }
+  }
+  async function saveCurrentDraftNow() {
+    if (!state.db || state.blank) return null;
+    updateCurrentFromInputs();
+    const pageId = state.current.id || '';
+    const key = draftKeyForPage(pageId);
+    const snapshot = currentSnapshotFromState();
+    if (!shouldPersistDraftSnapshot(snapshot, pageId)) {
+      await deleteDraftByKey(key);
+      return null;
+    }
+    const meta = pageId ? (getMetaMap()[pageId] || {}) : {};
+    const record = {
+      id: key,
+      key,
+      pageId,
+      unsavedId: pageId ? '' : state.drafts.unsavedId,
+      title: snapshot.title,
+      description: snapshot.description,
+      html: snapshot.html,
+      updatedAt: Date.now(),
+      baseSavedAt: Number(meta.lastSavedAt || 0)
+    };
+    await txPut('drafts', record);
+    state.drafts.byKey[key] = record;
+    state.drafts.snoozedKeys.delete(key);
+    return record;
+  }
+  function scheduleDraftAutosave() {
+    if (!state.db || state.blank || !state.isAdmin) return;
+    clearDraftAutosaveTimer();
+    state.drafts.autosaveTimer = window.setTimeout(() => {
+      state.drafts.autosaveTimer = null;
+      saveCurrentDraftNow().catch(err => log(err.message || String(err)));
+    }, state.drafts.debounceMs);
+  }
+  async function flushDraftAutosaveNow() {
+    if (!state.drafts.autosaveTimer) return;
+    clearDraftAutosaveTimer();
+    await saveCurrentDraftNow();
+  }
+  function draftUpdatedAtLabel(time) {
+    if (!time) return '';
+    const date = new Date(time);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleString(state.lang === 'pt-BR' ? 'pt-BR' : 'en-US');
+  }
+  function draftDiffMap(currentSnapshot, draftSnapshot) {
+    return {
+      title: String(currentSnapshot?.title || '') !== String(draftSnapshot?.title || ''),
+      description: String(currentSnapshot?.description || '') !== String(draftSnapshot?.description || ''),
+      html: String(currentSnapshot?.html || '') !== String(draftSnapshot?.html || '')
+    };
+  }
+  function draftFieldBadge(isDifferent) {
+    if (isDifferent) return `<span class="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">${escapeHtml(t('draftDifferent'))}</span>`;
+    return `<span class="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-semibold text-green-700">${escapeHtml(t('draftSame'))}</span>`;
+  }
+  function draftColumnHtml(label, snapshot, diff, options = {}) {
+    const updatedAtText = options.updatedAt ? `<div class="text-[11px] text-gray-500">${escapeHtml(t('draftUpdatedAt'))}: ${escapeHtml(draftUpdatedAtLabel(options.updatedAt))}</div>` : '';
+    const titleValue = String(snapshot?.title || '');
+    const descriptionValue = String(snapshot?.description || '');
+    const htmlValue = String(snapshot?.html || '');
+    return `
+      <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+        <div class="border-b border-gray-200 bg-gray-50 px-3 py-2">
+          <div class="text-sm font-semibold text-gray-800">${escapeHtml(label)}</div>
+          ${updatedAtText}
+        </div>
+        <div class="space-y-3 p-3">
+          <div>
+            <div class="mb-1 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-gray-500"><span>${escapeHtml(t('draftFieldTitle'))}</span>${draftFieldBadge(!!diff.title)}</div>
+            <div class="rounded-lg border border-gray-200 bg-gray-50 px-2 py-2 text-sm text-gray-800 whitespace-pre-wrap break-words">${escapeHtml(titleValue || '—')}</div>
+          </div>
+          <div>
+            <div class="mb-1 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-gray-500"><span>${escapeHtml(t('draftFieldDescription'))}</span>${draftFieldBadge(!!diff.description)}</div>
+            <div class="rounded-lg border border-gray-200 bg-gray-50 px-2 py-2 text-sm text-gray-700 whitespace-pre-wrap break-words min-h-[56px]">${escapeHtml(descriptionValue || '—')}</div>
+          </div>
+          <div>
+            <div class="mb-1 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-gray-500"><span>${escapeHtml(t('draftFieldHtml'))}</span><span class="text-[11px] text-gray-500">${escapeHtml(t('draftChars'))}: ${htmlValue.length}</span></div>
+            <pre class="max-h-64 overflow-auto rounded-lg border border-gray-200 bg-gray-50 p-2 text-[12px] leading-5 text-gray-800 whitespace-pre-wrap break-all">${escapeHtml(htmlValue || '')}</pre>
+          </div>
+        </div>
+      </div>`;
+  }
+  function renderDraftDiffSummary(diff) {
+    const items = [];
+    if (diff.title) items.push(t('draftDiffTitle'));
+    if (diff.description) items.push(t('draftDiffDescription'));
+    if (diff.html) items.push(t('draftDiffHtml'));
+    const labels = items.length ? items : [t('draftDiffNone')];
+    els.draftRecoveryDiffSummary.innerHTML = labels.map(label => `<span class="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2 py-1 text-[11px] font-semibold text-gray-600">${escapeHtml(label)}</span>`).join('');
+  }
+  function closeDraftRecoveryModal() {
+    els.draftRecoveryModal.classList.add('hidden');
+    state.drafts.activeDraftKey = '';
+  }
+  function openDraftRecoveryModal({ key, pageId, currentSnapshot, draftRecord }) {
+    if (!key || !draftRecord) return;
+    const draftSnapshot = draftSnapshotFromRecord(draftRecord);
+    const diff = draftDiffMap(currentSnapshot, draftSnapshot);
+    const subtitle = pageId ? t('draftRecoverySubtitleSaved') : t('draftRecoverySubtitleUnsaved');
+    els.draftRecoverySubtitle.textContent = subtitle;
+    renderDraftDiffSummary(diff);
+    els.draftCurrentColumn.innerHTML = draftColumnHtml(t('draftCurrentVersion'), currentSnapshot, diff);
+    els.draftLocalColumn.innerHTML = draftColumnHtml(t('draftLocalVersion'), draftSnapshot, diff, { updatedAt: Number(draftRecord.updatedAt || 0) });
+    state.drafts.activeDraftKey = key;
+    els.draftRecoveryModal.classList.remove('hidden');
+  }
+  async function keepCurrentVersionFromDraft() {
+    const key = state.drafts.activeDraftKey;
+    if (key) state.drafts.snoozedKeys.add(key);
+    closeDraftRecoveryModal();
+    setStatus(t('draftKeptCurrent'));
+  }
+  async function discardDraftFromModal() {
+    const key = state.drafts.activeDraftKey;
+    await deleteDraftByKey(key);
+    closeDraftRecoveryModal();
+    setStatus(t('draftDiscarded'));
+  }
+  async function restoreDraftFromModal() {
+    const key = state.drafts.activeDraftKey;
+    const record = key ? state.drafts.byKey[key] : null;
+    if (!record) { closeDraftRecoveryModal(); return; }
+    const currentPageId = state.current.id || '';
+    const draftPageId = record.pageId || '';
+    if (draftPageId !== currentPageId) { closeDraftRecoveryModal(); return; }
+    const snapshot = draftSnapshotFromRecord(record);
+    state.current.title = snapshot.title;
+    state.current.description = snapshot.description;
+    state.current.html = snapshot.html;
+    renderCurrent();
+    markDirty(true);
+    refreshPreview();
+    closeDraftRecoveryModal();
+    setStatus(t('draftRestored'));
+  }
+  async function maybePromptDraftRecoveryForCurrentPage(promptToken = state.drafts.promptToken) {
+    if (!state.db || state.blank) return;
+    if (promptToken !== state.drafts.promptToken) return;
+    const key = draftKeyForPage(state.current.id || '');
+    if (!key || state.drafts.snoozedKeys.has(key)) return;
+    const record = state.drafts.byKey[key];
+    if (!record) return;
+    const draftSnapshot = draftSnapshotFromRecord(record);
+    if (!shouldPersistDraftSnapshot(draftSnapshot, record.pageId || '')) { await deleteDraftByKey(key); return; }
+    const currentSnapshot = currentSnapshotFromState();
+    if (sameSnapshot(currentSnapshot, draftSnapshot)) { await deleteDraftByKey(key); return; }
+    openDraftRecoveryModal({ key, pageId: state.current.id || '', currentSnapshot, draftRecord: record });
+  }
+  async function maybePromptUnsavedDraftRecovery(promptToken = state.drafts.promptToken) {
+    if (!state.db || !state.blank) return;
+    if (promptToken !== state.drafts.promptToken) return;
+    const key = draftKeyForPage('');
+    if (state.drafts.snoozedKeys.has(key)) return;
+    const record = state.drafts.byKey[key];
+    if (!record) return;
+    const draftSnapshot = draftSnapshotFromRecord(record);
+    if (!shouldPersistDraftSnapshot(draftSnapshot, '')) { await deleteDraftByKey(key); return; }
+    const blankSnapshot = { title: '', description: '', html: '' };
+    if (sameSnapshot(blankSnapshot, draftSnapshot)) { await deleteDraftByKey(key); return; }
+    openDraftRecoveryModal({ key, pageId: '', currentSnapshot: blankSnapshot, draftRecord: record });
+  }
+  async function loadDraftsCache() {
+    if (!state.db) return;
+    try {
+      const rows = (await txGetAll('drafts')).filter(row => row?.id);
+      const map = {};
+      for (const row of rows) map[row.id] = row;
+      state.drafts.byKey = map;
+    } catch (err) {
+      log(err.message || String(err));
+      state.drafts.byKey = {};
+    }
+  }
+  function markDirty(value = true) { state.dirty = value; els.dirtyBadge.classList.toggle('hidden', !value); if (value) scheduleDraftAutosave(); }
   function updateCharCount() { els.charCount.textContent = String(getCodeValue().length) + ' chars'; }
   function updateCurrentFromInputs() { state.current.title = els.titleInput.value; state.current.description = els.descriptionInput.value; state.current.html = getCodeValue(); }
 
@@ -565,6 +887,7 @@
   function showBlankPage() {
     state.blank = true;
     state.current = { id: '', title: '', description: '', html: '' };
+    setCurrentBaseline();
     markDirty(false);
     setCodeValue('');
     els.pageHeader.classList.add('hidden');
@@ -614,21 +937,25 @@
   function refreshPreview() { if (!state.current.id) { els.previewFrame.removeAttribute('src'); els.previewFrame.srcdoc = '<div style="font-family:system-ui;padding:24px;color:#6b7280;">' + t('noPage') + '</div>'; els.previewStatus.textContent = '—'; return; } els.previewStatus.textContent = state.current.title || state.current.id; const url = viewUrl(state.current.id); els.previewFrame.removeAttribute('srcdoc'); if (els.previewFrame.src === url) { try { els.previewFrame.contentWindow.location.reload(); return; } catch (_) {} } els.previewFrame.src = url; }
 
   async function loadPage(id) {
+    await flushDraftAutosaveNow();
+    const promptToken = ++state.drafts.promptToken;
     setStatus(t('loading'));
     const page = await API.loadPage(id);
     state.current = { id: page.id || id, title: page.title || '', description: page.description || '', html: page.html || '' };
+    setCurrentBaseline();
     await savePageMeta(state.current.id, { title: state.current.title, description: state.current.description, lastOpenedAt: Date.now() });
     renderCurrent();
     localStorage.setItem(LS.lastPageId, state.current.id);
     refreshPreview();
     setStatus(t('pageLoaded'));
     log(`${t('pageLoaded')}: ${state.current.title || state.current.id}`);
+    void maybePromptDraftRecoveryForCurrentPage(promptToken);
   }
 
   async function confirmAction({ title, message, okText = 'OK', showPreview = false, previewId = '', openPreviewId = '' } = {}) { els.confirmTitle.textContent = title || ''; els.confirmMessage.textContent = message || ''; els.confirmOkBtn.textContent = okText; const previewTargetId = previewId || state.current.id; els.confirmOpenPreviewBtn.dataset.previewId = openPreviewId || previewTargetId || ''; els.deletePreviewWrap.classList.toggle('hidden', !showPreview); if (showPreview && previewTargetId) els.deletePreviewFrame.src = viewUrl(previewTargetId); else { els.deletePreviewFrame.removeAttribute('src'); els.confirmOpenPreviewBtn.dataset.previewId = ''; } els.confirmModal.classList.remove('hidden'); return new Promise(resolve => { state.confirmResolver = resolve; }); }
   function closeConfirm(result) { els.confirmModal.classList.add('hidden'); els.deletePreviewFrame.removeAttribute('src'); els.confirmOpenPreviewBtn.dataset.previewId = ''; const resolver = state.confirmResolver; state.confirmResolver = null; if (resolver) resolver(!!result); }
 
-  async function newPage() { const ok = await confirmAction({ title: t('createPageTitle'), message: t('createPageMessage'), okText: t('create') }); if (!ok) return; state.current = { id: '', title: 'Untitled Page', description: '', html: '' }; renderCurrent(); refreshPreview(); markDirty(true); setStatus(t('pageCreated')); els.titleInput.focus(); els.titleInput.select(); }
+  async function newPage() { const ok = await confirmAction({ title: t('createPageTitle'), message: t('createPageMessage'), okText: t('create') }); if (!ok) return; await flushDraftAutosaveNow(); state.current = { id: '', title: 'Untitled Page', description: '', html: '' }; setCurrentBaseline(); renderCurrent(); refreshPreview(); markDirty(true); setStatus(t('pageCreated')); els.titleInput.focus(); els.titleInput.select(); }
   async function deleteCurrentPage() { if (!state.current.id) return; const ok = await confirmAction({ title: t('deleteTitle'), message: t('deleteMessage'), okText: t('deleteConfirm'), showPreview: false }); if (!ok) return; try { const oldId = state.current.id; await API.deletePage(oldId); if (localStorage.getItem(LS.lastPageId) === oldId) localStorage.removeItem(LS.lastPageId); await deletePageMeta(oldId); showBlankPage(); await loadSidebarPages({ force: true, reset: true }); setStatus(t('deleted')); log(t('deleted')); } catch (err) { alert(err.message || String(err)); log(err.message || String(err)); } }
   async function deletePageFromList(id, title) { if (!id || !state.isAdmin) return; const ok = await confirmAction({ title: t('deleteTitle'), message: `${t('deleteMessage')}
 
@@ -636,6 +963,8 @@ ${title || id}`, okText: t('deleteConfirm'), showPreview: true, previewId: id, o
 
   async function savePage(action = 'save') {
     if (state.saving) return;
+    const beforeSavePageId = state.current.id || '';
+    await flushDraftAutosaveNow();
     updateCurrentFromInputs();
     if (!state.current.title.trim()) { alert(t('validationTitle')); els.titleInput.focus(); return; }
     state.saving = true;
@@ -647,7 +976,12 @@ ${title || id}`, okText: t('deleteConfirm'), showPreview: true, previewId: id, o
       localStorage.setItem(LS.lastPageId, state.current.id);
       const now = Date.now();
       await savePageMeta(state.current.id, { title: state.current.title, description: state.current.description, lastOpenedAt: now, lastSavedAt: now });
+      const oldDraftKey = draftKeyForPage(beforeSavePageId);
+      const savedDraftKey = draftKeyForPage(state.current.id || '');
+      await deleteDraftByKey(oldDraftKey);
+      if (savedDraftKey !== oldDraftKey) await deleteDraftByKey(savedDraftKey);
       await saveHistory(action);
+      setCurrentBaseline();
       renderCurrent();
       refreshPreview();
       if (state.sidebar.open) await loadSidebarPages({ force: true, reset: true });
@@ -1166,7 +1500,7 @@ ${projectName || ''}`, okText: t('deleteProject'), showPreview: false });
   }
   function openHistoryModal() { if (!state.current.id) return; els.historyModal.classList.remove('hidden'); renderHistory(); }
   function closeHistoryModal() { els.historyModal.classList.add('hidden'); }
-  function openDb() { return new Promise((resolve, reject) => { const req = indexedDB.open('FiberyHtmlEditorPro', 3); req.onupgradeneeded = () => { const db = req.result; if (!db.objectStoreNames.contains('versions')) { const store = db.createObjectStore('versions', { keyPath: 'key' }); store.createIndex('pageId', 'pageId', { unique: false }); store.createIndex('createdAt', 'createdAt', { unique: false }); } if (!db.objectStoreNames.contains('pageMeta')) { const meta = db.createObjectStore('pageMeta', { keyPath: 'id' }); meta.createIndex('lastSavedAt', 'lastSavedAt', { unique: false }); meta.createIndex('lastOpenedAt', 'lastOpenedAt', { unique: false }); } if (!db.objectStoreNames.contains('projects')) { const projects = db.createObjectStore('projects', { keyPath: 'id' }); projects.createIndex('sortOrder', 'sortOrder', { unique: false }); } if (!db.objectStoreNames.contains('projectItems')) { const items = db.createObjectStore('projectItems', { keyPath: 'key' }); items.createIndex('projectId', 'projectId', { unique: false }); items.createIndex('pageId', 'pageId', { unique: false }); } }; req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error); }); }
+  function openDb() { return new Promise((resolve, reject) => { const req = indexedDB.open('FiberyHtmlEditorPro', 4); req.onupgradeneeded = () => { const db = req.result; if (!db.objectStoreNames.contains('versions')) { const store = db.createObjectStore('versions', { keyPath: 'key' }); store.createIndex('pageId', 'pageId', { unique: false }); store.createIndex('createdAt', 'createdAt', { unique: false }); } if (!db.objectStoreNames.contains('pageMeta')) { const meta = db.createObjectStore('pageMeta', { keyPath: 'id' }); meta.createIndex('lastSavedAt', 'lastSavedAt', { unique: false }); meta.createIndex('lastOpenedAt', 'lastOpenedAt', { unique: false }); } if (!db.objectStoreNames.contains('projects')) { const projects = db.createObjectStore('projects', { keyPath: 'id' }); projects.createIndex('sortOrder', 'sortOrder', { unique: false }); } if (!db.objectStoreNames.contains('projectItems')) { const items = db.createObjectStore('projectItems', { keyPath: 'key' }); items.createIndex('projectId', 'projectId', { unique: false }); items.createIndex('pageId', 'pageId', { unique: false }); } if (!db.objectStoreNames.contains('drafts')) { const drafts = db.createObjectStore('drafts', { keyPath: 'id' }); drafts.createIndex('pageId', 'pageId', { unique: false }); drafts.createIndex('unsavedId', 'unsavedId', { unique: false }); drafts.createIndex('updatedAt', 'updatedAt', { unique: false }); } }; req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error); }); }
   function txPut(storeName, value) { return new Promise((resolve, reject) => { const tx = state.db.transaction(storeName, 'readwrite'); tx.objectStore(storeName).put(value); tx.oncomplete = resolve; tx.onerror = () => reject(tx.error); }); }
   function txDelete(storeName, key) { return new Promise((resolve, reject) => { const tx = state.db.transaction(storeName, 'readwrite'); tx.objectStore(storeName).delete(key); tx.oncomplete = resolve; tx.onerror = () => reject(tx.error); }); }
   function txGetAll(storeName) { return new Promise((resolve, reject) => { const tx = state.db.transaction(storeName, 'readonly'); const req = tx.objectStore(storeName).getAll(); req.onsuccess = () => resolve(req.result || []); req.onerror = () => reject(req.error); }); }
@@ -1224,11 +1558,12 @@ ${projectName || ''}`, okText: t('deleteProject'), showPreview: false });
     els.previewFocusExitBtn.addEventListener('click', exitPreviewFocus);
     els.clearLogBtn.addEventListener('click', () => { els.logBox.innerHTML = ''; });
     els.toggleSidebarBtn.addEventListener('click', () => setSidebarOpen(!state.sidebar.open));
-    els.brandBtn.addEventListener('click', () => {
+    els.brandBtn.addEventListener('click', async () => {
       if (!state.sidebar.open) {
         setSidebarOpen(true);
         return;
       }
+      try { await flushDraftAutosaveNow(); } catch (err) { log(err.message || String(err)); }
       showBlankPage();
     });
     els.refreshSidebarBtn.addEventListener('click', () => loadSidebarPages({ force: true, reset: false }));
@@ -1322,6 +1657,11 @@ ${projectName || ''}`, okText: t('deleteProject'), showPreview: false });
     els.cancelCreateProjectBtn.addEventListener('click', closeCreateProjectModal);
     els.closeCreateProjectBtn.addEventListener('click', closeCreateProjectModal);
     els.createProjectModal.addEventListener('click', (e) => { if (e.target === els.createProjectModal) closeCreateProjectModal(); });
+    els.restoreDraftBtn.addEventListener('click', () => restoreDraftFromModal());
+    els.keepCurrentVersionBtn.addEventListener('click', () => keepCurrentVersionFromDraft());
+    els.discardDraftBtn.addEventListener('click', () => discardDraftFromModal());
+    els.closeDraftRecoveryBtn.addEventListener('click', () => keepCurrentVersionFromDraft());
+    els.draftRecoveryModal.addEventListener('click', (e) => { if (e.target === els.draftRecoveryModal) keepCurrentVersionFromDraft(); });
     document.addEventListener('click', (e) => { if (!els.moreMenu.contains(e.target) && !els.moreBtn.contains(e.target)) { els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); } if (!els.welcomeSearchResults.contains(e.target) && !els.welcomeSearchInput.contains(e.target)) closeWelcomeSearch();  closeContextMenus(); });
     els.closeHistoryBtn.addEventListener('click', closeHistoryModal);
     els.historyModal.addEventListener('click', (e) => { if (e.target === els.historyModal) closeHistoryModal(); });
@@ -1329,7 +1669,7 @@ ${projectName || ''}`, okText: t('deleteProject'), showPreview: false });
     els.confirmCancelBtn.addEventListener('click', () => closeConfirm(false));
     els.confirmOkBtn.addEventListener('click', () => closeConfirm(true));
     els.confirmModal.addEventListener('click', (e) => { if (e.target === els.confirmModal) closeConfirm(false); });
-    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (state.previewFocus) exitPreviewFocus(); els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); closeSearchModal(); closeSettings(); closeWelcomeSearch(); closeContextMenus(); closeCreateProjectModal(); } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); if (state.isAdmin && !state.blank) savePage('save'); } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearchModal(); } });
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (!els.draftRecoveryModal.classList.contains('hidden')) { keepCurrentVersionFromDraft(); return; } if (state.previewFocus) exitPreviewFocus(); els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); closeSearchModal(); closeSettings(); closeWelcomeSearch(); closeContextMenus(); closeCreateProjectModal(); } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); if (state.isAdmin && !state.blank) savePage('save'); } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearchModal(); } });
     document.addEventListener('visibilitychange', () => { if (!document.hidden && state.sidebar.open) loadSidebarPages({ force: true, reset: false }); });
     window.addEventListener('beforeunload', stopSidebarAutoRefresh);
   }
@@ -1347,13 +1687,15 @@ ${projectName || ''}`, okText: t('deleteProject'), showPreview: false });
     state.db = await openDb();
     await loadPageMetaCache();
     await loadProjectsCache();
+    await loadDraftsCache();
     try { setAdminMode(await API.checkIsAdmin()); } catch (_) { setAdminMode(false); }
     setSidebarOpen((localStorage.getItem(LS.sidebarOpen) ?? '1') === '1', false);
     const lastId = localStorage.getItem(LS.lastPageId);
     if (els.openLastToggle.checked && lastId) {
-      try { await loadPage(lastId); } catch (err) { log(err.message || String(err)); showBlankPage(); }
+      try { await loadPage(lastId); } catch (err) { log(err.message || String(err)); showBlankPage(); void maybePromptUnsavedDraftRecovery(state.drafts.promptToken); }
     } else {
       showBlankPage();
+      void maybePromptUnsavedDraftRecovery(state.drafts.promptToken);
     }
   }
 
