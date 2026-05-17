@@ -1,0 +1,1326 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fibery HTML Editor</title>
+  <meta name="fibery-html-editor-version" content="8.1.7" />
+  <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
+  <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
+  <link rel="stylesheet" href="tailwind.css" />
+  <style>
+    html, body { height: 100%; margin: 0; overflow: hidden; }
+    textarea { tab-size: 2; }
+    .clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .split-dragging iframe { pointer-events: none !important; }
+    .sidebar-transition { transition: width .16s ease; }
+    .sidebar-collapsed #toggleSidebarBtn { display: none; }
+    .sidebar-collapsed #brandLogo { display: inline-flex; }
+    .sidebar-collapsed #brandOpenIcon { display: none; }
+    .sidebar-collapsed #brandBtn:hover #brandLogo { display: none; }
+    .sidebar-collapsed #brandBtn:hover #brandOpenIcon { display: inline-flex; }
+    .sidebar-collapsed #sidebarScroll { visibility: hidden; pointer-events: none; }
+    .sidebar-collapsed #refreshSidebarBtn { display: none; }
+    .sidebar-active-indicator { position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 999px; background: rgb(37 99 235); }
+
+    .context-menu-item { display: flex; width: 100%; align-items: center; gap: .5rem; padding: .5rem .75rem; text-align: left; font-size: .875rem; color: rgb(55 65 81); }
+    .context-menu-item:hover { background: rgb(249 250 251); }
+    .context-menu-danger { color: rgb(185 28 28); }
+    .context-menu-danger:hover { background: rgb(254 242 242); }
+    .sidebar-more-btn { opacity: 0; transition: opacity .12s ease; }
+    .group:hover .sidebar-more-btn, .sidebar-more-btn.menu-open { opacity: 1; }
+    .inline-rename-input { height: 1.5rem; width: 100%; border-radius: .375rem; border: 1px solid rgb(147 197 253); background: #fff; padding: 0 .375rem; font-size: .875rem; outline: none; box-shadow: 0 0 0 2px rgb(191 219 254 / .6); }
+    .archived-badge { display:inline-flex; align-items:center; border-radius:999px; background:rgb(243 244 246); color:rgb(107 114 128); padding:0 .375rem; font-size:.625rem; font-weight:600; }
+    .sidebar-page-row { min-height: 50px; align-items: center; }
+    .sidebar-page-open { min-height: 50px; display: flex; flex-direction: column; justify-content: center; }
+    .sidebar-page-mainline { min-height: 20px; display: flex; align-items: center; }
+    .sidebar-page-description { height: 16px; line-height: 16px; }
+    .sidebar-page-menu-btn { margin-top: 0 !important; align-self: center; }
+    .panel-menu-btn { display:flex; height:1.5rem; width:1.5rem; flex-shrink:0; align-items:center; justify-content:center; border-radius:.375rem; border:1px solid rgb(229 231 235); background:#fff; color:rgb(107 114 128); }
+    .panel-menu-btn:hover { background:rgb(249 250 251); color:rgb(17 24 39); }
+
+
+    /* Sidebar icon optical alignment.
+       Expanded and collapsed states use the same visual axis.
+       Tweak only these values if a browser renders the icons slightly off. */
+    #brandBtn { padding-left: 6px !important; padding-right: 8px !important; }
+    #newPageBtn,
+    #searchPagesBtn,
+    #sidebarSettingsBtn { padding-left: 10px !important; padding-right: 8px !important; }
+
+    .sidebar-collapsed #newPageBtn,
+    .sidebar-collapsed #searchPagesBtn,
+    .sidebar-collapsed #sidebarSettingsBtn {
+      width: 36px !important;
+      height: 36px !important;
+      min-width: 36px !important;
+      min-height: 36px !important;
+      padding: 0 !important;
+      justify-content: center !important;
+      align-items: center !important;
+      margin-left: auto !important;
+      margin-right: auto !important;
+    }
+    .sidebar-collapsed #brandBtn {
+      width: 40px !important;
+      height: 40px !important;
+      min-width: 40px !important;
+      min-height: 40px !important;
+      padding: 0 !important;
+      justify-content: center !important;
+      align-items: center !important;
+      margin-left: auto !important;
+      margin-right: auto !important;
+    }
+    .sidebar-collapsed nav { border-bottom-color: transparent !important; }
+    .sidebar-collapsed #sidebarSettingsBtn span:first-child,
+    .sidebar-collapsed #newPageBtn span:first-child,
+    .sidebar-collapsed #searchPagesBtn span:first-child {
+      width: 20px !important;
+      height: 20px !important;
+      margin: 0 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+    .preview-focus #sidebar,
+    .preview-focus #pageHeader,
+    .preview-focus #editorPane,
+    .preview-focus #splitter {
+      display: none !important;
+    }
+    .preview-focus main { width: 100vw !important; height: 100vh !important; }
+    .preview-focus #splitArea { height: 100vh !important; grid-template-columns: minmax(0, 1fr) !important; }
+    .preview-focus #previewPane { display: flex !important; width: 100% !important; height: 100vh !important; }
+    .preview-focus #previewPane > div:first-child { display: none !important; }
+    #previewFocusExitZone { display: none; }
+    .preview-focus #previewFocusExitZone { display: flex; }
+    .preview-focus #previewFocusExitBtn { opacity: 1; transform: translateY(0); transition: background-color .12s ease, color .12s ease, border-color .12s ease; }
+    #previewFocusExitBtn .preview-focus-close-label { display: none; }
+    #previewFocusExitBtn:hover .preview-focus-showing-label { display: none; }
+    #previewFocusExitBtn:hover .preview-focus-close-label { display: inline; }
+
+    .panel-editor-only #previewPane, .panel-editor-only #splitter { display: none !important; }
+    .panel-editor-only #splitArea { grid-template-columns: minmax(0, 1fr) !important; }
+    .panel-preview-only #editorPane, .panel-preview-only #splitter { display: none !important; }
+    .panel-preview-only #splitArea { grid-template-columns: minmax(0, 1fr) !important; }
+    .mini-tooltip { animation: miniTooltip .16s ease-out; }
+    @keyframes miniTooltip { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body class="h-screen overflow-hidden bg-gray-50 text-gray-900 antialiased">
+  <div id="app" class="h-screen overflow-hidden flex bg-gray-50">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar-transition h-full shrink-0 border-r border-gray-200 bg-white flex flex-col overflow-hidden" style="width:288px;">
+      <div class="h-12 shrink-0 px-2 flex items-center justify-between border-b border-gray-100">
+        <button id="brandBtn" class="group h-10 min-w-0 flex items-center gap-2 rounded-lg px-2 py-0 text-left hover:bg-gray-100" title="Fibery HTML Editor">
+          <span id="brandLogo" class="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white ring-1 ring-gray-200">
+            <img src="/favicon.ico" alt="Fibery" class="h-5 w-5" />
+          </span>
+          <span id="brandOpenIcon" class="hidden h-7 w-7 shrink-0 items-center justify-center rounded-lg text-gray-600">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M9 5v14"/><path d="M6.5 8.5h.01M6.5 12h.01M6.5 15.5h.01" stroke-linecap="round"/></svg>
+          </span>
+          <span class="sidebar-label truncate text-sm font-semibold text-gray-900">Fibery HTML Editor</span>
+        </button>
+        <button id="toggleSidebarBtn" class="h-9 w-9 shrink-0 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 flex items-center justify-center" title="Toggle sidebar">
+          <svg id="sidebarCloseIcon" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
+          <svg id="sidebarOpenIcon" class="hidden h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5 15.75 12l-7.5 7.5"/></svg>
+        </button>
+      </div>
+
+      <nav class="shrink-0 p-2 space-y-1 border-b border-gray-100">
+        <button id="newPageBtn" class="group flex h-9 w-full items-center gap-2 rounded-lg px-2 text-sm text-gray-800 hover:bg-gray-100 disabled:opacity-40" data-i18n-title="newPage" title="New Page">
+          <span class="flex h-5 w-5 shrink-0 items-center justify-center text-gray-600">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+          </span>
+          <span class="sidebar-label truncate" data-i18n="newPage">New Page</span>
+        </button>
+        <button id="searchPagesBtn" class="group flex h-9 w-full items-center gap-2 rounded-lg px-2 text-sm text-gray-800 hover:bg-gray-100" data-i18n-title="searchPages" title="Search pages">
+          <span class="flex h-5 w-5 shrink-0 items-center justify-center text-gray-600">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
+          </span>
+          <span class="sidebar-label truncate" data-i18n="searchPagesShort">Search pages</span>
+        </button>
+      </nav>
+
+      <div id="sidebarScroll" class="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-2 py-2">
+        <div id="sidebarProjectsSection" class="sidebar-label mb-4">
+          <div class="mb-2 flex items-center justify-between px-2">
+            <h2 class="text-xs font-semibold uppercase tracking-wide text-gray-500" data-i18n="projects">Projects</h2>
+            <button id="newProjectBtn" class="h-7 w-7 rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-700 flex items-center justify-center" data-i18n-title="newProject" title="New project">
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+            </button>
+          </div>
+          <div id="sidebarProjectsList" class="space-y-1"></div>
+        </div>
+
+        <div class="sidebar-label mb-2 flex items-center justify-between px-2">
+          <h2 class="text-xs font-semibold uppercase tracking-wide text-gray-500" data-i18n="recentPages">Recent pages</h2>
+          <button id="refreshSidebarBtn" class="h-7 w-7 rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-700 flex items-center justify-center" title="Refresh list">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M21.015 4.356v4.992m0 0h-4.992m4.992 0-3.181-3.183a8.25 8.25 0 0 0-13.803 3.7"/></svg>
+          </button>
+        </div>
+        <div id="sidebarPagesList" class="space-y-1"></div>
+        <div id="sidebarLoadMoreWrap" class="sidebar-label mt-2 hidden px-2"><button id="sidebarLoadMoreBtn" class="h-8 w-full rounded-lg border border-gray-200 bg-white text-xs font-medium text-gray-600 hover:bg-gray-50" data-i18n="loadMore">Load more</button></div>
+      </div>
+
+      <div class="shrink-0 border-t border-gray-100 p-2">
+        <button id="sidebarSettingsBtn" class="flex h-9 w-full items-center gap-2 rounded-lg px-2 text-sm text-gray-700 hover:bg-gray-100">
+          <span class="flex h-5 w-5 shrink-0 items-center justify-center text-gray-500">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.184 1.104c.07.423.354.779.75.944l.11.046c.394.168.844.12 1.199-.121l.927-.626a1.125 1.125 0 0 1 1.45.12l1.832 1.833c.389.389.44.996.12 1.45l-.626.927c-.24.355-.289.805-.121 1.199l.046.11c.165.396.521.68.944.75l1.104.184c.542.09.94.56.94 1.11v2.593c0 .55-.398 1.02-.94 1.11l-1.104.184c-.423.07-.779.354-.944.75l-.046.11c-.168.394-.12.844.121 1.199l.626.927c.32.454.269 1.061-.12 1.45l-1.833 1.832a1.125 1.125 0 0 1-1.45.12l-.927-.626a1.35 1.35 0 0 0-1.199-.121l-.11.046c-.396.165-.68.521-.75.944l-.184 1.104c-.09.542-.56.94-1.11.94h-2.593c-.55 0-1.02-.398-1.11-.94l-.184-1.104a1.35 1.35 0 0 0-.75-.944l-.11-.046a1.35 1.35 0 0 0-1.199.121l-.927.626a1.125 1.125 0 0 1-1.45-.12l-1.832-1.833a1.125 1.125 0 0 1-.12-1.45l.626-.927c.24-.355.289-.805.121-1.199l-.046-.11a1.35 1.35 0 0 0-.944-.75l-1.104-.184A1.125 1.125 0 0 1 1.5 15.797v-2.593c0-.55.398-1.02.94-1.11l1.104-.184c.423-.07.779-.354.944-.75l.046-.11c.168-.394.12-.844-.121-1.199l-.626-.927a1.125 1.125 0 0 1 .12-1.45l1.833-1.832a1.125 1.125 0 0 1 1.45-.12l.927.626c.355.24.805.289 1.199.121l.11-.046c.396-.165.68-.521.75-.944l.184-1.104Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>
+          </span>
+          <span class="sidebar-label truncate" data-i18n="settings">Settings</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="min-w-0 flex-1 h-full overflow-hidden flex flex-col">
+      <header id="pageHeader" class="hidden h-14 shrink-0 border-b border-gray-200 bg-white px-3 flex items-center gap-3 shadow-sm">
+        <div class="min-w-0 flex-1 grid grid-cols-[minmax(220px,360px)_minmax(0,1fr)] gap-2 items-center">
+          <input id="titleInput" class="h-8 min-w-0 rounded border border-gray-200 bg-gray-50 px-2 text-sm font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500" placeholder="Untitled Page" />
+          <input id="descriptionInput" class="h-8 min-w-0 rounded border border-gray-200 bg-gray-50 px-2 text-xs text-gray-600 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500" placeholder="Description" />
+        </div>
+        <span id="dirtyBadge" class="hidden shrink-0 rounded-full bg-amber-100 px-2 py-1 text-[11px] font-semibold text-amber-700" data-i18n="unsaved">Unsaved</span>
+        <span id="statusText" class="hidden md:inline-block max-w-40 truncate text-xs text-gray-500">Ready</span>
+        <button id="saveBtn" class="h-8 px-3 rounded bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed" data-i18n="save">Save</button>
+        <button id="updateAppBtn" class="hidden h-8 rounded bg-yellow-400 px-3 text-sm font-semibold text-yellow-950 shadow-sm hover:bg-yellow-500" data-i18n="updateApp">Update App</button>
+        <div id="quickViewControls" class="hidden md:flex shrink-0 overflow-hidden rounded-lg border border-gray-300 bg-white">
+          <button id="quickBothBtn" class="flex h-8 w-8 items-center justify-center text-gray-600 hover:bg-gray-50" data-i18n-title="showBoth" title="Show both">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M12 5v14"/></svg>
+          </button>
+          <button id="quickEditorBtn" class="flex h-8 w-8 items-center justify-center border-l border-gray-200 text-gray-600 hover:bg-gray-50" data-i18n-title="onlyEditor" title="Only editor">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m8 9-3 3 3 3m8-6 3 3-3 3M13 6l-2 12"/></svg>
+          </button>
+          <button id="quickPreviewBtn" class="flex h-8 w-8 items-center justify-center border-l border-gray-200 text-gray-600 hover:bg-gray-50" data-i18n-title="onlyPreview" title="Only preview">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>
+          </button>
+        </div>
+        <div class="relative shrink-0">
+          <button id="moreBtn" class="h-8 w-8 rounded border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 flex items-center justify-center" title="More">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8.25a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM12 13.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM13.5 17.25a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z"/></svg>
+          </button>
+          <div id="moreMenu" class="hidden absolute right-0 top-10 z-50 w-56 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-xl">
+            <button id="historyBtn" class="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-40" data-i18n="history">History</button>
+            <button id="refreshBtn" class="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-gray-700 hover:bg-gray-50" data-i18n="refreshPreview">Refresh preview</button>
+            <button id="openViewMenuBtn" class="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-40" data-i18n="openView">Open preview</button>
+            <div class="my-1 border-t border-gray-100"></div>
+            <button id="deleteBtn" class="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-red-700 hover:bg-red-50 disabled:opacity-30 disabled:cursor-not-allowed" data-i18n="deletePage">Delete</button>
+          </div>
+        </div>
+      </header>
+
+      <section id="welcomeView" class="hidden min-h-0 flex-1 overflow-hidden bg-gray-50">
+        <div class="flex h-full items-center justify-center px-6">
+          <div class="w-full max-w-2xl text-center">
+            <div class="mb-4 flex justify-center">
+              <span class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200">
+                <img src="/favicon.ico" alt="Fibery" class="h-8 w-8" />
+              </span>
+            </div>
+            <h1 class="text-2xl font-semibold tracking-tight text-gray-900" data-i18n="welcomeTitle">Welcome</h1>
+            <p class="mt-2 text-sm text-gray-500" data-i18n="welcomeSubtitle">What are we creating today?</p>
+            <div class="relative mx-auto mt-10 flex max-w-xl items-center gap-2">
+              <button id="welcomeNewPageBtn" class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm hover:bg-blue-700 disabled:opacity-40" data-i18n-title="newPage" title="New Page">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+              </button>
+              <div class="relative min-w-0 flex-1">
+                <input id="welcomeSearchInput" class="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20" data-i18n-placeholder="welcomeSearch" placeholder="Search pages..." />
+                <div id="welcomeSearchResults" class="hidden absolute left-0 right-0 top-12 z-40 max-h-80 overflow-auto rounded-xl border border-gray-200 bg-white p-2 text-left shadow-2xl"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="splitArea" class="hidden min-h-0 flex-1 grid overflow-hidden" style="grid-template-columns:minmax(320px, 50%) 6px minmax(320px, 1fr);">
+        <section id="editorPane" class="min-w-0 min-h-0 flex flex-col border-r border-gray-200 bg-white">
+          <div class="h-8 shrink-0 border-b border-gray-200 bg-gray-50 px-3 flex items-center justify-between">
+            <span class="text-xs font-semibold text-gray-600" data-i18n="editor">Editor</span>
+            <div class="flex items-center gap-2">
+              <span id="charCount" class="text-[11px] text-gray-400">0</span>
+              <button id="copyHtmlBtn" class="panel-menu-btn" data-i18n-title="copyHtml" title="Copy HTML">
+                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16h8M8 12h8m-6 8h8a2 2 0 0 0 2-2V8.828a2 2 0 0 0-.586-1.414l-3.828-3.828A2 2 0 0 0 14.172 3H10a2 2 0 0 0-2 2v3"/><path stroke-linecap="round" stroke-linejoin="round" d="M4 8v11a2 2 0 0 0 2 2h9"/></svg>
+              </button>
+              <button id="editorPanelMenuBtn" class="panel-menu-btn" data-i18n-title="editorActions" title="Editor actions">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8.25a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM12 13.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM13.5 17.25a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z"/></svg>
+              </button>
+            </div>
+          </div>
+          <div id="codeEditor" class="min-h-0 flex-1 w-full overflow-hidden"></div>
+          <textarea id="codeEditorFallback" spellcheck="false" class="hidden min-h-0 flex-1 w-full resize-none border-0 bg-white p-3 font-mono text-[13px] leading-5 text-gray-900 outline-none focus:ring-0" placeholder="<!-- Select or create a page to start editing -->"></textarea>
+        </section>
+
+        <div id="splitter" class="bg-gray-200 hover:bg-blue-400 cursor-col-resize transition-colors" title="Drag to resize. Double-click to reset."></div>
+
+        <section id="previewPane" class="min-w-0 min-h-0 flex flex-col bg-gray-100">
+          <div class="h-8 shrink-0 border-b border-gray-200 bg-white px-3 flex items-center justify-between gap-2">
+            <span class="text-xs font-semibold text-gray-600" data-i18n="preview">Preview</span>
+            <div class="flex min-w-0 items-center gap-2">
+              <span id="previewStatus" class="truncate text-[11px] text-gray-400">—</span>
+              <button id="previewPanelMenuBtn" class="panel-menu-btn" data-i18n-title="previewActions" title="Preview actions">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8.25a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM12 13.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM13.5 17.25a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z"/></svg>
+              </button>
+              <button id="previewFocusBtn" class="panel-menu-btn" data-i18n-title="previewFocus" title="Preview focus mode">
+                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3m8 0h3a2 2 0 0 0 2-2v-3"/></svg>
+              </button>
+            </div>
+          </div>
+          <iframe id="previewFrame" class="min-h-0 flex-1 w-full bg-white" title="Preview"></iframe>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <div id="dragOverlay" class="hidden fixed inset-0 z-[9999] cursor-col-resize select-none"></div>
+  <div id="previewFocusExitZone" class="fixed left-0 right-0 top-0 z-[10000] h-14 items-start justify-center pointer-events-none pt-2">
+    <button id="previewFocusExitBtn" class="pointer-events-auto flex h-9 items-center justify-center rounded-full border border-gray-200 bg-white/90 px-4 text-xs font-semibold text-gray-700 shadow-xl backdrop-blur transition-colors hover:border-red-500 hover:bg-red-600 hover:text-white" data-i18n-title="exitPreviewFocus" title="Exit preview focus">
+      <span class="preview-focus-showing-label" data-i18n="showingPreview">Showing preview</span>
+      <span class="preview-focus-close-label" data-i18n="closePreview">Close preview</span>
+    </button>
+  </div>
+
+
+  <!-- Context menus -->
+  <div id="pageContextMenu" class="hidden fixed z-[90] min-w-56 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-2xl"></div>
+  <div id="moveProjectMenu" class="hidden fixed z-[95] min-w-64 max-h-80 overflow-auto rounded-xl border border-gray-200 bg-white py-1 shadow-2xl"></div>
+  <div id="projectContextMenu" class="hidden fixed z-[90] min-w-48 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-2xl"></div>
+  <div id="editorPanelMenu" class="hidden fixed z-[90] min-w-52 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-2xl"></div>
+  <div id="previewPanelMenu" class="hidden fixed z-[90] min-w-52 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-2xl"></div>
+
+  <!-- Create project modal -->
+  <div id="createProjectModal" class="hidden fixed inset-0 z-[70] bg-black/25 p-6">
+    <div class="mx-auto mt-16 w-full max-w-lg overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
+      <div class="border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+        <div class="text-base font-semibold text-gray-900" data-i18n="createProjectTitle">Create project</div>
+        <button id="closeCreateProjectBtn" class="h-8 w-8 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 flex items-center justify-center">×</button>
+      </div>
+      <div class="p-4 space-y-4">
+        <label class="block text-sm text-gray-700">
+          <span data-i18n="projectNameLabel">Project name</span>
+          <input id="createProjectNameInput" class="mt-2 h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30" placeholder="My project" />
+        </label>
+        <div class="rounded-xl bg-gray-50 p-3 text-xs leading-5 text-gray-600" data-i18n="projectLocalNote">Projects are saved only in this browser.</div>
+      </div>
+      <div class="border-t border-gray-200 px-4 py-3 flex items-center justify-end gap-2">
+        <button id="cancelCreateProjectBtn" class="h-8 rounded border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 hover:bg-gray-50" data-i18n="cancel">Cancel</button>
+        <button id="confirmCreateProjectBtn" class="h-8 rounded bg-blue-600 px-3 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40" data-i18n="createProjectButton" disabled>Create project</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search modal -->
+  <div id="searchModal" class="hidden fixed inset-0 z-50 bg-black/25 p-6">
+    <div class="mx-auto mt-10 flex max-h-[70vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
+      <div class="h-16 shrink-0 border-b border-gray-200 px-3 flex items-center gap-3">
+        <svg class="h-5 w-5 shrink-0 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
+        <input id="globalSearchInput" class="min-w-0 flex-1 border-0 bg-transparent text-base outline-none focus:ring-0" placeholder="Search pages..." />
+        <button id="closeSearchBtn" class="h-8 w-8 rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900 flex items-center justify-center">×</button>
+      </div>
+      <div id="globalSearchResults" class="min-h-0 flex-1 overflow-auto p-2"></div>
+    </div>
+  </div>
+
+  <!-- Settings modal -->
+  <div id="settingsModal" class="hidden fixed inset-0 z-50 bg-black/25 p-6">
+    <div class="mx-auto mt-10 w-full max-w-md overflow-hidden rounded-xl bg-white shadow-2xl">
+      <div class="border-b border-gray-200 p-3 flex items-center justify-between">
+        <div class="text-sm font-bold text-gray-900" data-i18n="settings">Settings</div>
+        <button id="closeSettingsBtn" class="h-8 w-8 rounded border border-gray-300 bg-white text-gray-600 hover:bg-gray-50">×</button>
+      </div>
+      <div class="p-4 space-y-4">
+        <label class="block text-sm text-gray-700">
+          <span>Language</span>
+          <select id="langSelect" class="mt-1 h-8 w-full rounded border border-gray-300 bg-white px-2 text-sm">
+            <option value="auto">Auto</option>
+            <option value="en">EN</option>
+            <option value="pt-BR">PT-BR</option>
+          </select>
+        </label>
+        <label class="flex items-center justify-between gap-3 text-sm text-gray-700">
+          <span data-i18n="openLast">Open last page on startup</span>
+          <input id="openLastToggle" type="checkbox" class="h-4 w-4 accent-blue-600" />
+        </label>
+        <label class="block text-sm text-gray-700">
+          <span data-i18n="versionLimit">Local version limit</span>
+          <select id="versionLimitSelect" class="mt-1 h-8 w-full rounded border border-gray-300 bg-white px-2 text-sm">
+            <option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option><option value="0" data-i18n="unlimited">Unlimited</option>
+          </select>
+        </label>
+        <button id="logToggleBtn" class="flex h-9 w-full items-center justify-between rounded border border-gray-200 bg-white px-3 text-left text-sm text-gray-700 hover:bg-gray-50">
+          <span id="logMenuText">Show log</span>
+          <span class="text-xs text-gray-400">Log</span>
+        </button>
+        <div class="rounded bg-amber-50 p-2 text-xs leading-5 text-amber-800" data-i18n="historyLocalNote">Version history is saved only in this browser.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- History modal -->
+  <div id="historyModal" class="hidden fixed inset-0 z-50 bg-black/25 p-6">
+    <div class="mx-auto flex h-full max-w-4xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+      <div class="shrink-0 border-b border-gray-200 p-3 flex items-center justify-between">
+        <div>
+          <div class="text-sm font-bold text-gray-900" data-i18n="history">History</div>
+          <div class="text-xs text-gray-500" data-i18n="historyLocalNote">Version history is saved only in this browser.</div>
+        </div>
+        <button id="closeHistoryBtn" class="h-8 w-8 rounded border border-gray-300 bg-white text-gray-600 hover:bg-gray-50">×</button>
+      </div>
+      <div id="historyList" class="min-h-0 flex-1 overflow-auto divide-y divide-gray-100"></div>
+    </div>
+  </div>
+
+  <!-- Confirm modal -->
+  <div id="confirmModal" class="hidden fixed inset-0 z-[60] bg-black/25 p-6">
+    <div id="confirmBox" class="mx-auto mt-10 max-w-xl overflow-hidden rounded-xl bg-white shadow-2xl">
+      <div class="border-b border-gray-200 p-4">
+        <div id="confirmTitle" class="text-sm font-bold text-gray-900"></div>
+        <div id="confirmMessage" class="mt-1 text-sm text-gray-600 whitespace-pre-line"></div>
+      </div>
+      <div id="deletePreviewWrap" class="hidden border-b border-gray-200 bg-gray-50 p-3">
+        <div class="mb-2 flex items-center justify-between">
+          <span class="text-xs font-semibold text-gray-500" data-i18n="preview">Preview</span>
+          <button id="confirmOpenPreviewBtn" class="h-7 rounded border border-gray-300 bg-white px-2 text-xs text-gray-700 hover:bg-gray-50" data-i18n="openView">Preview</button>
+        </div>
+        <iframe id="deletePreviewFrame" class="h-48 w-full rounded border border-gray-200 bg-white"></iframe>
+      </div>
+      <div class="flex items-center justify-end gap-2 p-3">
+        <button id="confirmOkBtn" class="h-8 rounded border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 hover:bg-gray-50">OK</button>
+        <button id="confirmCancelBtn" class="h-8 rounded bg-blue-600 px-3 text-sm font-medium text-white hover:bg-blue-700" data-i18n="cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Log panel -->
+  <div id="logPanel" class="hidden fixed bottom-3 right-3 z-40 w-[520px] max-w-[calc(100vw-24px)] rounded-lg border border-gray-200 bg-white shadow-xl">
+    <div class="border-b border-gray-200 px-3 py-2 flex items-center justify-between">
+      <div class="text-xs font-bold uppercase tracking-wide text-gray-500">Log</div>
+      <button id="clearLogBtn" class="text-xs text-gray-500 hover:text-gray-900">Clear</button>
+    </div>
+    <div id="logBox" class="max-h-56 overflow-auto p-3 font-mono text-[11px] leading-5 text-gray-600"></div>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
+<script>
+(() => {
+  'use strict';
+
+  const APP_VERSION = '8.1.7';
+  window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
+  document.documentElement.dataset.appVersion = APP_VERSION;
+
+  const API = {
+    async checkIsAdmin() { const r = await fetch('/api/ai-answer/pages/is-admin'); if (!r.ok) return false; const data = await r.json(); return !!data.isAdmin; },
+    async loadPages({ skip = 0, limit = 21, search = '' } = {}) { const params = new URLSearchParams(); params.set('skip', String(skip)); params.set('limit', String(limit)); if (search) params.set('search', search); const r = await fetch('/api/ai-answer/pages/?' + params.toString()); if (!r.ok) throw new Error('Failed to load pages'); return r.json(); },
+    async loadPage(id) { const r = await fetch('/api/ai-answer/pages/' + encodeURIComponent(id)); if (!r.ok) throw new Error('Failed to load page'); return r.json(); },
+    async savePage(page) { const isUpdate = !!page.id; const r = await fetch(isUpdate ? '/api/ai-answer/pages/' + encodeURIComponent(page.id) : '/api/ai-answer/pages/', { method: isUpdate ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(page) }); if (!r.ok) { let msg = 'Failed to save page'; try { msg += ': ' + JSON.stringify(await r.json()); } catch (_) {} throw new Error(msg); } return r.json(); },
+    async deletePage(id) { const r = await fetch('/api/ai-answer/pages/' + encodeURIComponent(id), { method: 'DELETE' }); if (!r.ok) throw new Error('Failed to delete page'); return { success: true }; }
+  };
+
+  const I18N = {
+    en: {
+      save: 'Save', newPage: 'New Page', history: 'History', settings: 'Settings', deletePage: 'Delete', openLast: 'Open last page on startup',
+      versionLimit: 'Local version limit', unlimited: 'Unlimited', historyLocalNote: 'Version history is saved only in this browser.',
+      editor: 'Editor', preview: 'Preview', openView: 'Open preview', title: 'Title', description: 'Description', view: 'Preview', unsaved: 'Unsaved', saved: 'Saved', saving: 'Saving...',
+      noPage: 'No page selected', pageLoaded: 'Page loaded', pageCreated: 'New page draft', selectOrCreate: 'Select or create a page', restore: 'Restore', confirmRestore: 'Restore this version and save it to Fibery?', noHistory: 'No local history for this page.',
+      searchPages: 'Search pages...', searchPagesShort: 'Search pages', recentPages: 'Recent', validationTitle: 'Page title is required.', readOnly: 'Read-only: admin permission not detected.',
+      createPageTitle: 'Create new page draft?', createPageMessage: 'A blank page will be opened locally. It will only be created in Fibery when you press Save.', create: 'Create', cancel: 'Cancel',
+      deleteTitle: 'Delete this page?', deleteMessage: 'This action cannot be undone. Confirm only if this is really the page you want to delete.', deleteConfirm: 'Delete', deleted: 'Page deleted',
+      today: 'Today', yesterday: 'Yesterday', last7: 'Previous 7 days', last30: 'Previous 30 days', older: 'Older', allPages: 'All pages', noPages: 'No pages found', showLog: 'Show log', hideLog: 'Hide log',
+      welcomeTitle: 'Welcome', welcomeSubtitle: 'What are we creating today?', welcomeSearch: 'Search pages...', loadMore: 'Load more', loading: 'Loading...', showBoth: 'Show both', onlyEditor: 'Only editor', onlyPreview: 'Only preview',
+      copyHtml: 'Copy HTML', copyPreviewLink: 'Copy preview link', copiedCode: 'Code copied', copiedPreviewLink: 'Preview link copied', editorActions: 'Editor actions', previewActions: 'Preview actions', pasteReplace: 'Paste and replace', importHtml: 'Import HTML file', htmlImported: 'HTML imported', importHtmlError: 'Could not import HTML', selectAllCode: 'Select all code', codeSelected: 'Code selected', pastedReplaced: 'Code replaced', pasteReplacePrompt: 'Paste the code that will replace the current editor content:', refreshPreview: 'Refresh preview', previewFocus: 'Preview focus mode', exitPreviewFocus: 'Exit preview focus', showingPreview: 'Showing preview', closePreview: 'Close preview', copyFailed: 'Could not copy', updateApp: 'Update App', appPageMarker: 'Editor app page', projects: 'Projects', newProject: 'New project', untitledProject: 'Untitled project', deleteProject: 'Delete project', deleteProjectTitle: 'Delete this project?', deleteProjectMessage: 'This removes only the local project organization. It does not delete any Fibery page.', noProjects: 'No projects yet', pageAlreadyInProject: 'This page is already in this project.', removedFromProject: 'Page removed from project', rename: 'Rename', copyPageLink: 'Copy page link', copiedPageLink: 'Page link copied', pin: 'Pin', unpin: 'Unpin', archive: 'Archive', unarchive: 'Unarchive', moveToProject: 'Move to project', openPreview: 'Open preview', removeFromProjectNamed: 'Remove from {project}', renameProject: 'Rename project', createProjectTitle: 'Create project', projectNameLabel: 'Project name', projectLocalNote: 'Projects are saved only in this browser.', createProjectButton: 'Create project', projectCreated: 'Project created', pageMovedToProject: 'Page moved to project', pageRenamed: 'Page renamed', projectRenamed: 'Project renamed', pinned: 'Pinned', unpinned: 'Unpinned', archived: 'Archived', unarchived: 'Unarchived', renameEmptyIgnored: 'Name cannot be empty.'
+    },
+    'pt-BR': {
+      save: 'Salvar', newPage: 'Nova página', history: 'Histórico', settings: 'Configurações', deletePage: 'Apagar', openLast: 'Abrir última página ao iniciar',
+      versionLimit: 'Limite de versões locais', unlimited: 'Sem limite', historyLocalNote: 'O histórico fica salvo apenas neste navegador.',
+      editor: 'Editor', preview: 'Prévia', openView: 'Abrir prévia', title: 'Título', description: 'Descrição', view: 'Prévia', unsaved: 'Não salvo', saved: 'Salvo', saving: 'Salvando...',
+      noPage: 'Nenhuma página selecionada', pageLoaded: 'Página carregada', pageCreated: 'Rascunho criado', selectOrCreate: 'Selecione ou crie uma página', restore: 'Restaurar', confirmRestore: 'Restaurar esta versão e salvar no Fibery?', noHistory: 'Sem histórico local para esta página.',
+      searchPages: 'Buscar páginas...', searchPagesShort: 'Buscar páginas', recentPages: 'Recentes', validationTitle: 'O título da página é obrigatório.', readOnly: 'Somente leitura: permissão de admin não detectada.',
+      createPageTitle: 'Criar nova página?', createPageMessage: 'Uma página vazia será aberta localmente. Ela só será criada no Fibery quando você clicar em Salvar.', create: 'Criar', cancel: 'Cancelar',
+      deleteTitle: 'Excluir esta página?', deleteMessage: 'Essa ação não pode ser desfeita. Confirme somente se esta for realmente a página que você quer excluir.', deleteConfirm: 'Apagar', deleted: 'Página excluída',
+      today: 'Hoje', yesterday: 'Ontem', last7: '7 dias anteriores', last30: '30 dias anteriores', older: 'Mais antigas', allPages: 'Todas as páginas', noPages: 'Nenhuma página encontrada', showLog: 'Mostrar log', hideLog: 'Ocultar log',
+      welcomeTitle: 'Bem-vindo', welcomeSubtitle: 'O que vamos criar hoje?', welcomeSearch: 'Buscar páginas...', loadMore: 'Carregar mais', loading: 'Carregando...', showBoth: 'Mostrar editor e prévia', onlyEditor: 'Mostrar só editor', onlyPreview: 'Mostrar só prévia',
+      copyHtml: 'Copiar HTML', copyPreviewLink: 'Copiar link da prévia', copiedCode: 'Código copiado', copiedPreviewLink: 'Link da prévia copiado', editorActions: 'Ações do editor', previewActions: 'Ações da prévia', pasteReplace: 'Colar e substituir', importHtml: 'Importar de HTML', htmlImported: 'HTML importado', importHtmlError: 'Não foi possível importar o HTML', selectAllCode: 'Selecionar todo o código', codeSelected: 'Código selecionado', pastedReplaced: 'Código substituído', pasteReplacePrompt: 'Cole o código que vai substituir o conteúdo atual do editor:', refreshPreview: 'Atualizar prévia', previewFocus: 'Modo foco da prévia', exitPreviewFocus: 'Sair do modo foco', showingPreview: 'Mostrando prévia', closePreview: 'Fechar prévia', copyFailed: 'Não foi possível copiar', updateApp: 'Atualizar App', appPageMarker: 'Página do app editor', projects: 'Projetos', newProject: 'Novo projeto', untitledProject: 'Projeto sem nome', deleteProject: 'Apagar projeto', deleteProjectTitle: 'Apagar este projeto?', deleteProjectMessage: 'Isso remove apenas a organização local do projeto. Não apaga nenhuma página do Fibery.', noProjects: 'Nenhum projeto ainda', pageAlreadyInProject: 'Esta página já está neste projeto.', removedFromProject: 'Página removida do projeto', rename: 'Renomear', copyPageLink: 'Copiar link da página', copiedPageLink: 'Link da página copiado', pin: 'Fixar', unpin: 'Desafixar', archive: 'Arquivar', unarchive: 'Desarquivar', moveToProject: 'Mover para projeto', openPreview: 'Abrir prévia', removeFromProjectNamed: 'Remover de {project}', renameProject: 'Renomear projeto', createProjectTitle: 'Criar projeto', projectNameLabel: 'Nome do projeto', projectLocalNote: 'Projetos ficam salvos apenas neste navegador.', createProjectButton: 'Criar projeto', projectCreated: 'Projeto criado', pageMovedToProject: 'Página movida para projeto', pageRenamed: 'Página renomeada', projectRenamed: 'Projeto renomeado', pinned: 'Página fixada', unpinned: 'Página desafixada', archived: 'Página arquivada', unarchived: 'Página desarquivada', renameEmptyIgnored: 'O nome não pode ficar vazio.'
+    }
+  };
+
+  const $ = (id) => document.getElementById(id);
+  const els = {
+    sidebar: $('sidebar'), brandBtn: $('brandBtn'), toggleSidebarBtn: $('toggleSidebarBtn'), sidebarCloseIcon: $('sidebarCloseIcon'), sidebarOpenIcon: $('sidebarOpenIcon'), sidebarScroll: $('sidebarScroll'), sidebarProjectsSection: $('sidebarProjectsSection'), sidebarProjectsList: $('sidebarProjectsList'), newProjectBtn: $('newProjectBtn'), sidebarPagesList: $('sidebarPagesList'), refreshSidebarBtn: $('refreshSidebarBtn'), sidebarLoadMoreWrap: $('sidebarLoadMoreWrap'), sidebarLoadMoreBtn: $('sidebarLoadMoreBtn'), searchPagesBtn: $('searchPagesBtn'), sidebarSettingsBtn: $('sidebarSettingsBtn'),
+    pageHeader: $('pageHeader'), welcomeView: $('welcomeView'), welcomeNewPageBtn: $('welcomeNewPageBtn'), welcomeSearchInput: $('welcomeSearchInput'), welcomeSearchResults: $('welcomeSearchResults'),
+    saveBtn: $('saveBtn'), updateAppBtn: $('updateAppBtn'), refreshBtn: $('refreshBtn'), openViewMenuBtn: $('openViewMenuBtn'), newPageBtn: $('newPageBtn'), historyBtn: $('historyBtn'), deleteBtn: $('deleteBtn'), moreBtn: $('moreBtn'), moreMenu: $('moreMenu'),
+    quickBothBtn: $('quickBothBtn'), quickEditorBtn: $('quickEditorBtn'), quickPreviewBtn: $('quickPreviewBtn'),
+    titleInput: $('titleInput'), descriptionInput: $('descriptionInput'), dirtyBadge: $('dirtyBadge'), statusText: $('statusText'),
+    logToggleBtn: $('logToggleBtn'), logMenuText: $('logMenuText'), settingsModal: $('settingsModal'), closeSettingsBtn: $('closeSettingsBtn'), langSelect: $('langSelect'),
+    openLastToggle: $('openLastToggle'), versionLimitSelect: $('versionLimitSelect'), codeEditor: $('codeEditor'), codeEditorFallback: $('codeEditorFallback'), charCount: $('charCount'), copyHtmlBtn: $('copyHtmlBtn'), editorPanelMenuBtn: $('editorPanelMenuBtn'),
+    previewFrame: $('previewFrame'), previewStatus: $('previewStatus'), previewPanelMenuBtn: $('previewPanelMenuBtn'), previewFocusBtn: $('previewFocusBtn'), previewFocusExitBtn: $('previewFocusExitBtn'), splitter: $('splitter'), splitArea: $('splitArea'), editorPane: $('editorPane'), previewPane: $('previewPane'), dragOverlay: $('dragOverlay'),
+    searchModal: $('searchModal'), closeSearchBtn: $('closeSearchBtn'), globalSearchInput: $('globalSearchInput'), globalSearchResults: $('globalSearchResults'),
+    pageContextMenu: $('pageContextMenu'), moveProjectMenu: $('moveProjectMenu'), projectContextMenu: $('projectContextMenu'), editorPanelMenu: $('editorPanelMenu'), previewPanelMenu: $('previewPanelMenu'), createProjectModal: $('createProjectModal'), createProjectNameInput: $('createProjectNameInput'), closeCreateProjectBtn: $('closeCreateProjectBtn'), cancelCreateProjectBtn: $('cancelCreateProjectBtn'), confirmCreateProjectBtn: $('confirmCreateProjectBtn'),
+    historyModal: $('historyModal'), closeHistoryBtn: $('closeHistoryBtn'), historyList: $('historyList'), logPanel: $('logPanel'), logBox: $('logBox'), clearLogBtn: $('clearLogBtn'),
+    confirmModal: $('confirmModal'), confirmBox: $('confirmBox'), confirmTitle: $('confirmTitle'), confirmMessage: $('confirmMessage'), confirmCancelBtn: $('confirmCancelBtn'), confirmOkBtn: $('confirmOkBtn'), deletePreviewWrap: $('deletePreviewWrap'), deletePreviewFrame: $('deletePreviewFrame'), confirmOpenPreviewBtn: $('confirmOpenPreviewBtn')
+  };
+
+  const LS = {
+    lang: 'fibery-pro-editor.lang', openLast: 'fibery-pro-editor.openLast', lastPageId: 'fibery-pro-editor.lastPageId', versionLimit: 'fibery-pro-editor.versionLimit', split: 'fibery-pro-editor.split',
+    sidebarOpen: 'fibery-pro-editor.sidebarOpen', pageMeta: 'fibery-pro-editor.pageMeta', panelMode: 'fibery-pro-editor.panelMode'
+  };
+
+  function detectCurrentAppPageId() {
+    const viewMatch = window.location.pathname.match(/\/api\/ai-answer\/pages\/([^/]+)\/view\/?$/);
+    if (viewMatch) return decodeURIComponent(viewMatch[1]);
+    const editorMatch = window.location.pathname.match(/\/api\/ai-answer\/pages\/editor\.html\/?$/);
+    if (editorMatch) return new URLSearchParams(window.location.search).get('id') || '';
+    return '';
+  }
+
+  const state = {
+    isAdmin: false, lang: 'en', appPageId: detectCurrentAppPageId(), current: { id: '', title: '', description: '', html: '' }, blank: true, dirty: false, db: null, saving: false,
+    code: { editor: null, suppress: false, fallback: false }, confirmResolver: null,
+    sidebar: { open: true, pages: [], loading: false, refreshTimer: null, hasMore: false, limit: 20, visibleLimit: 20, pageCache: {} },
+    projects: { rows: [], items: [], pageToProject: {}, itemsByProject: {} },
+    search: { debounce: null, query: '', pages: [] }, welcomeSearch: { debounce: null, query: '', pages: [] }, panelMode: 'both', previewFocus: false, pageMeta: {}, context: { pageId: '', pageTitle: '', projectId: '', createProjectTargetPageId: '' }
+  };
+
+  function preferredLang() { const saved = localStorage.getItem(LS.lang) || 'auto'; if (saved !== 'auto') return saved; return (navigator.language || '').toLowerCase().startsWith('pt') ? 'pt-BR' : 'en'; }
+  function t(key) { return (I18N[state.lang] && I18N[state.lang][key]) || I18N.en[key] || key; }
+  function escapeHtml(v) { return String(v ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
+  function getCodeValue() { return state.code.editor ? state.code.editor.getValue() : els.codeEditorFallback.value; }
+  function setStatus(text) { els.statusText.textContent = text; }
+
+  function getMetaMap() { return state.pageMeta || {}; }
+  function setMetaMap(map) { state.pageMeta = map || {}; try { localStorage.setItem(LS.pageMeta, JSON.stringify(state.pageMeta)); } catch (_) {} }
+  async function savePageMetaRecord(record) { if (!state.db || !record?.id) return; await txPut('pageMeta', record); }
+  function touchPageMeta(id, data = {}) {
+    if (!id) return null;
+    const map = getMetaMap();
+    const previous = map[id] || {};
+    const record = {
+      ...previous,
+      ...data,
+      id,
+      title: data.title ?? previous.title ?? '',
+      description: data.description ?? previous.description ?? '',
+      lastOpenedAt: data.lastOpenedAt !== undefined ? data.lastOpenedAt : (previous.lastOpenedAt || 0),
+      lastSavedAt: data.lastSavedAt !== undefined ? data.lastSavedAt : (previous.lastSavedAt || 0),
+      updatedLocalAt: Date.now()
+    };
+    map[id] = record;
+    setMetaMap(map);
+    if (state.db) savePageMetaRecord(record).catch(err => log(err.message || String(err)));
+    return record;
+  }
+  async function savePageMeta(id, data = {}) { const record = touchPageMeta(id, data); if (record && state.db) await savePageMetaRecord(record); return record; }
+  async function deletePageMeta(id) { if (!id) return; const map = getMetaMap(); delete map[id]; setMetaMap(map); if (state.db) await txDelete('pageMeta', id); const linked = (state.projects.items || []).filter(item => item.pageId === id); for (const item of linked) { if (state.db) await txDelete('projectItems', item.key); } state.projects.items = (state.projects.items || []).filter(item => item.pageId !== id); rebuildProjectMaps(); }
+  function pageTime(page) { const meta = getMetaMap()[page.id] || {}; const raw = page.updatedAt || page.modifiedAt || page.modificationDate || page.createdAt || page.creationDate || meta.lastSavedAt || meta.lastOpenedAt || 0; const time = typeof raw === 'number' ? raw : Date.parse(raw); return Number.isFinite(time) ? time : 0; }
+  function groupLabel(time) { if (!time) return t('allPages'); const now = new Date(); const d = new Date(time); const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(); const startYesterday = startToday - 86400000; if (time >= startToday) return t('today'); if (time >= startYesterday) return t('yesterday'); const diff = startToday - new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); if (diff <= 7 * 86400000) return t('last7'); if (diff <= 30 * 86400000) return t('last30'); return t('older'); }
+  function groupedPages(pages) { const rows = [...pages].sort((a,b) => pageTime(b) - pageTime(a)); const groups = new Map(); for (const page of rows) { const label = groupLabel(pageTime(page)); if (!groups.has(label)) groups.set(label, []); groups.get(label).push(page); } return Array.from(groups.entries()); }
+
+  function setCodeValue(value) { const next = value || ''; state.code.suppress = true; if (state.code.editor) { const model = state.code.editor.getModel(); if (model && model.getValue() !== next) model.setValue(next); } els.codeEditorFallback.value = next; state.code.suppress = false; updateCharCount(); }
+  function setCodeReadOnly(readOnly) { if (state.code.editor) state.code.editor.updateOptions({ readOnly: !!readOnly }); els.codeEditorFallback.readOnly = !!readOnly; }
+  function setupCodeEditor() { return new Promise((resolve) => { const fallback = () => { state.code.fallback = true; els.codeEditor.classList.add('hidden'); els.codeEditorFallback.classList.remove('hidden'); els.codeEditorFallback.addEventListener('input', () => { updateCurrentFromInputs(); updateCharCount(); markDirty(true); }); log('Monaco not available. Using textarea fallback.'); resolve(false); }; if (!window.require) return fallback(); try { window.require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' } }); window.require(['vs/editor/editor.main'], () => { try { state.code.editor = monaco.editor.create(els.codeEditor, { value: '', language: 'html', theme: 'vs', automaticLayout: true, minimap: { enabled: true }, fontSize: 13, lineHeight: 20, tabSize: 2, wordWrap: 'on', scrollBeyondLastLine: false, renderWhitespace: 'selection', bracketPairColorization: { enabled: true } }); state.code.editor.onDidChangeModelContent(() => { if (state.code.suppress) return; updateCurrentFromInputs(); updateCharCount(); markDirty(true); }); resolve(true); } catch (_) { fallback(); } }, fallback); } catch (_) { fallback(); } }); }
+
+  function applyI18n() {
+    state.lang = preferredLang();
+    document.documentElement.lang = state.lang === 'pt-BR' ? 'pt-BR' : 'en';
+    document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+    document.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = t(el.dataset.i18nTitle); });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.placeholder = t(el.dataset.i18nPlaceholder); });
+    els.globalSearchInput.placeholder = t('searchPages');
+    els.welcomeSearchInput.placeholder = t('welcomeSearch');
+    els.titleInput.placeholder = t('title');
+    els.descriptionInput.placeholder = t('description');
+    els.codeEditorFallback.placeholder = '<!-- ' + t('selectOrCreate') + ' -->';
+    els.logMenuText.textContent = els.logPanel.classList.contains('hidden') ? t('showLog') : t('hideLog');
+    if (!state.dirty && !state.current.id) setStatus(t('noPage'));
+    renderSidebarProjects();
+    renderSidebarPages();
+  }
+  function log(message) { const time = new Date().toLocaleTimeString(state.lang === 'pt-BR' ? 'pt-BR' : 'en-US'); const line = document.createElement('div'); line.textContent = `[${time}] ${message}`; els.logBox.prepend(line); }
+  function markDirty(value = true) { state.dirty = value; els.dirtyBadge.classList.toggle('hidden', !value); }
+  function updateCharCount() { els.charCount.textContent = String(getCodeValue().length) + ' chars'; }
+  function updateCurrentFromInputs() { state.current.title = els.titleInput.value; state.current.description = els.descriptionInput.value; state.current.html = getCodeValue(); }
+
+  function showToastNear(target, message) {
+    const rect = target.getBoundingClientRect();
+    const tip = document.createElement('div');
+    tip.className = 'mini-tooltip fixed z-[10000] rounded-md bg-gray-900 px-2 py-1 text-xs font-medium text-white shadow-lg pointer-events-none';
+    tip.textContent = message;
+    document.body.appendChild(tip);
+    const top = Math.max(8, rect.top - 34);
+    const left = Math.min(window.innerWidth - tip.offsetWidth - 8, Math.max(8, rect.left + rect.width / 2 - tip.offsetWidth / 2));
+    tip.style.top = top + 'px';
+    tip.style.left = left + 'px';
+    window.setTimeout(() => tip.remove(), 1300);
+  }
+  async function copyText(text, target, okMessage) {
+    try {
+      await navigator.clipboard.writeText(text || '');
+      showToastNear(target, okMessage);
+    } catch (_) {
+      showToastNear(target, t('copyFailed'));
+    }
+  }
+
+  function showBlankPage() {
+    state.blank = true;
+    state.current = { id: '', title: '', description: '', html: '' };
+    markDirty(false);
+    setCodeValue('');
+    els.pageHeader.classList.add('hidden');
+    els.splitArea.classList.add('hidden');
+    els.welcomeView.classList.remove('hidden');
+    els.historyBtn.disabled = true;
+    els.deleteBtn.disabled = true;
+    if (els.updateAppBtn) els.updateAppBtn.classList.add('hidden');
+    els.previewFrame.removeAttribute('src');
+    els.previewFrame.srcdoc = '';
+    setStatus(t('noPage'));
+    updateSidebarActiveState();
+    renderSidebarProjects();
+  }
+  function showWorkspace() {
+    state.blank = false;
+    els.welcomeView.classList.add('hidden');
+    els.pageHeader.classList.remove('hidden');
+    els.splitArea.classList.remove('hidden');
+    window.setTimeout(() => { try { state.code.editor?.layout(); } catch (_) {} }, 0);
+  }
+  function setPanelMode(mode, persist = true) {
+    state.panelMode = ['both', 'editor', 'preview'].includes(mode) ? mode : 'both';
+    document.body.classList.toggle('panel-editor-only', state.panelMode === 'editor');
+    document.body.classList.toggle('panel-preview-only', state.panelMode === 'preview');
+    [els.quickBothBtn, els.quickEditorBtn, els.quickPreviewBtn].forEach(btn => btn && btn.classList.remove('bg-blue-50','text-blue-700'));
+    const activeBtn = state.panelMode === 'editor' ? els.quickEditorBtn : state.panelMode === 'preview' ? els.quickPreviewBtn : els.quickBothBtn;
+    if (activeBtn) activeBtn.classList.add('bg-blue-50','text-blue-700');
+    if (persist) localStorage.setItem(LS.panelMode, state.panelMode);
+    window.setTimeout(() => { try { state.code.editor?.layout(); } catch (_) {} }, 0);
+  }
+
+  function renderCurrent() {
+    showWorkspace();
+    els.titleInput.value = state.current.title || '';
+    els.descriptionInput.value = state.current.description || '';
+    setCodeValue(state.current.html || '');
+    updateCharCount();
+    markDirty(false);
+    els.historyBtn.disabled = !state.current.id;
+    if (els.openViewMenuBtn) els.openViewMenuBtn.disabled = !state.current.id;
+    els.deleteBtn.disabled = !state.current.id || !state.isAdmin;
+    if (els.updateAppBtn) els.updateAppBtn.classList.toggle('hidden', !(state.appPageId && state.current.id === state.appPageId && !state.blank));
+    updateSidebarActiveState();
+  }
+  function viewUrl(id) { if (!id) return 'about:blank'; return new URL('/api/ai-answer/pages/' + encodeURIComponent(id) + '/view', window.location.origin).href; }
+  function refreshPreview() { if (!state.current.id) { els.previewFrame.removeAttribute('src'); els.previewFrame.srcdoc = '<div style="font-family:system-ui;padding:24px;color:#6b7280;">' + t('noPage') + '</div>'; els.previewStatus.textContent = '—'; return; } els.previewStatus.textContent = state.current.title || state.current.id; const url = viewUrl(state.current.id); els.previewFrame.removeAttribute('srcdoc'); if (els.previewFrame.src === url) { try { els.previewFrame.contentWindow.location.reload(); return; } catch (_) {} } els.previewFrame.src = url; }
+
+  async function loadPage(id) {
+    setStatus(t('loading'));
+    const page = await API.loadPage(id);
+    state.current = { id: page.id || id, title: page.title || '', description: page.description || '', html: page.html || '' };
+    await savePageMeta(state.current.id, { title: state.current.title, description: state.current.description, lastOpenedAt: Date.now() });
+    renderCurrent();
+    localStorage.setItem(LS.lastPageId, state.current.id);
+    refreshPreview();
+    setStatus(t('pageLoaded'));
+    log(`${t('pageLoaded')}: ${state.current.title || state.current.id}`);
+  }
+
+  async function confirmAction({ title, message, okText = 'OK', showPreview = false, previewId = '', openPreviewId = '' } = {}) { els.confirmTitle.textContent = title || ''; els.confirmMessage.textContent = message || ''; els.confirmOkBtn.textContent = okText; const previewTargetId = previewId || state.current.id; els.confirmOpenPreviewBtn.dataset.previewId = openPreviewId || previewTargetId || ''; els.deletePreviewWrap.classList.toggle('hidden', !showPreview); if (showPreview && previewTargetId) els.deletePreviewFrame.src = viewUrl(previewTargetId); else { els.deletePreviewFrame.removeAttribute('src'); els.confirmOpenPreviewBtn.dataset.previewId = ''; } els.confirmModal.classList.remove('hidden'); return new Promise(resolve => { state.confirmResolver = resolve; }); }
+  function closeConfirm(result) { els.confirmModal.classList.add('hidden'); els.deletePreviewFrame.removeAttribute('src'); els.confirmOpenPreviewBtn.dataset.previewId = ''; const resolver = state.confirmResolver; state.confirmResolver = null; if (resolver) resolver(!!result); }
+
+  async function newPage() { const ok = await confirmAction({ title: t('createPageTitle'), message: t('createPageMessage'), okText: t('create') }); if (!ok) return; state.current = { id: '', title: 'Untitled Page', description: '', html: '' }; renderCurrent(); refreshPreview(); markDirty(true); setStatus(t('pageCreated')); els.titleInput.focus(); els.titleInput.select(); }
+  async function deleteCurrentPage() { if (!state.current.id) return; const ok = await confirmAction({ title: t('deleteTitle'), message: t('deleteMessage'), okText: t('deleteConfirm'), showPreview: false }); if (!ok) return; try { const oldId = state.current.id; await API.deletePage(oldId); if (localStorage.getItem(LS.lastPageId) === oldId) localStorage.removeItem(LS.lastPageId); await deletePageMeta(oldId); showBlankPage(); await loadSidebarPages({ force: true, reset: true }); setStatus(t('deleted')); log(t('deleted')); } catch (err) { alert(err.message || String(err)); log(err.message || String(err)); } }
+  async function deletePageFromList(id, title) { if (!id || !state.isAdmin) return; const ok = await confirmAction({ title: t('deleteTitle'), message: `${t('deleteMessage')}
+
+${title || id}`, okText: t('deleteConfirm'), showPreview: true, previewId: id, openPreviewId: id }); if (!ok) return; try { await API.deletePage(id); if (localStorage.getItem(LS.lastPageId) === id) localStorage.removeItem(LS.lastPageId); await deletePageMeta(id); if (state.current.id === id) showBlankPage(); await loadSidebarPages({ force: true, reset: true }); if (!els.searchModal.classList.contains('hidden')) await loadSearchResults(); if (!els.welcomeSearchResults.classList.contains('hidden')) await loadWelcomeSearchResults(); setStatus(t('deleted')); log(`${t('deleted')}: ${title || id}`); } catch (err) { alert(err.message || String(err)); log(err.message || String(err)); } }
+
+  async function savePage(action = 'save') {
+    if (state.saving) return;
+    updateCurrentFromInputs();
+    if (!state.current.title.trim()) { alert(t('validationTitle')); els.titleInput.focus(); return; }
+    state.saving = true;
+    els.saveBtn.disabled = true;
+    setStatus(t('saving'));
+    try {
+      const saved = await API.savePage(state.current);
+      state.current = { id: saved.id || saved.data?.id || state.current.id, title: saved.title || saved.data?.title || state.current.title, description: saved.description || saved.data?.description || state.current.description, html: saved.html || saved.data?.html || state.current.html };
+      localStorage.setItem(LS.lastPageId, state.current.id);
+      const now = Date.now();
+      await savePageMeta(state.current.id, { title: state.current.title, description: state.current.description, lastOpenedAt: now, lastSavedAt: now });
+      await saveHistory(action);
+      renderCurrent();
+      refreshPreview();
+      if (state.sidebar.open) await loadSidebarPages({ force: true, reset: true });
+      setStatus(t('saved'));
+      log(`${t('saved')}: ${state.current.title || state.current.id}`);
+    } catch (err) {
+      setStatus('Error');
+      log(err.message || String(err));
+      alert(err.message || String(err));
+    } finally {
+      state.saving = false;
+      els.saveBtn.disabled = !state.isAdmin;
+    }
+  }
+
+  function normalizePageRows(rows) { return (rows || []).map(p => ({ id: p.id, title: p.title || 'Untitled', description: p.description || '', ...p })); }
+  function pageListSignature(pages) { return pages.map(p => [p.id, p.title || '', p.description || ''].join('::')).join('|'); }
+  function savedLocalPages() {
+    return Object.values(getMetaMap())
+      .filter(meta => meta?.id && Number(meta.lastSavedAt || 0) > 0 && !meta.archivedAt)
+      .sort((a, b) => {
+        const pinDiff = Number(b.pinnedAt || 0) - Number(a.pinnedAt || 0);
+        if (pinDiff) return pinDiff;
+        return Number(b.lastSavedAt || 0) - Number(a.lastSavedAt || 0);
+      })
+      .map(meta => ({ id: meta.id, title: meta.title || 'Untitled', description: meta.description || '', __localSaved: true }));
+  }
+  async function loadSidebarPages(options = {}) {
+    const opts = typeof options === 'boolean' ? { force: options, reset: true } : (options || {});
+    const force = !!opts.force;
+    const append = !!opts.append;
+    const reset = !!opts.reset;
+    if (!state.sidebar.open && !force) return;
+    if (state.sidebar.loading) return;
+    state.sidebar.loading = true;
+    const previous = state.sidebar.pages;
+    if (reset) state.sidebar.visibleLimit = state.sidebar.limit;
+    if (append) state.sidebar.visibleLimit += state.sidebar.limit;
+    if (!previous.length && !append) {
+      els.sidebarPagesList.innerHTML = `<div class="sidebar-label p-4 text-center text-sm text-gray-400">${escapeHtml(t('loading'))}</div>`;
+      els.sidebarLoadMoreWrap.classList.add('hidden');
+    }
+    try {
+      const apiLimit = state.sidebar.visibleLimit + 1;
+      const rows = await API.loadPages({ skip: 0, limit: apiLimit, search: '' });
+      const apiRows = normalizePageRows(rows);
+      for (const page of apiRows) if (page?.id) state.sidebar.pageCache[page.id] = page;
+      for (const page of savedLocalPages()) if (page?.id && !state.sidebar.pageCache[page.id]) state.sidebar.pageCache[page.id] = page;
+      const projectIds = projectPageIds();
+      const saved = savedLocalPages().filter(p => !projectIds.has(p.id));
+      const savedIds = new Set(saved.map(x => x.id));
+      const combinedAll = saved.concat(apiRows.filter(p => p.id && !savedIds.has(p.id) && !projectIds.has(p.id) && !getMetaMap()[p.id]?.archivedAt));
+      const nextPages = combinedAll.slice(0, state.sidebar.visibleLimit);
+      state.sidebar.hasMore = combinedAll.length > state.sidebar.visibleLimit || rows.length > state.sidebar.visibleLimit;
+      if (pageListSignature(previous) !== pageListSignature(nextPages) || previous.length !== nextPages.length) {
+        state.sidebar.pages = nextPages;
+        renderSidebarPages();
+      } else {
+        state.sidebar.pages = nextPages;
+        updateSidebarActiveState();
+        updateSidebarLoadMore();
+      }
+    } catch (err) {
+      els.sidebarPagesList.innerHTML = `<div class="sidebar-label p-4 text-center text-sm text-red-500">${escapeHtml(err.message || err)}</div>`;
+      els.sidebarLoadMoreWrap.classList.add('hidden');
+    } finally {
+      state.sidebar.loading = false;
+    }
+  }
+  function codeIconSvg(className = 'h-3.5 w-3.5') { return `<svg class="${className}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m8 9-3 3 3 3m8-6 3 3-3 3M13 6l-2 12"/></svg>`; }
+  function appPageBadge(pageId) {
+    if (!state.appPageId || pageId !== state.appPageId) return '';
+    return `<span class="ml-1 inline-flex h-5 w-5 shrink-0 self-center items-center justify-center rounded-md bg-yellow-100 text-yellow-800 ring-1 ring-yellow-200" title="${escapeHtml(t('appPageMarker'))}">${codeIconSvg()}</span>`;
+  }
+  function projectPageIds() { return new Set((state.projects.items || []).map(item => item.pageId).filter(Boolean)); }
+  function rebuildProjectMaps() {
+    const pageToProject = {};
+    const itemsByProject = {};
+    for (const item of state.projects.items || []) {
+      if (!item?.projectId || !item?.pageId) continue;
+      pageToProject[item.pageId] = item.projectId;
+      if (!itemsByProject[item.projectId]) itemsByProject[item.projectId] = [];
+      itemsByProject[item.projectId].push(item);
+    }
+    for (const items of Object.values(itemsByProject)) items.sort((a, b) => { const ma = getMetaMap()[a.pageId] || {}; const mb = getMetaMap()[b.pageId] || {}; const pinDiff = Number(mb.pinnedAt || 0) - Number(ma.pinnedAt || 0); if (pinDiff) return pinDiff; return Number(a.sortOrder || 0) - Number(b.sortOrder || 0); });
+    state.projects.pageToProject = pageToProject;
+    state.projects.itemsByProject = itemsByProject;
+  }
+  function getPageSnapshot(pageId) {
+    const cached = state.sidebar.pageCache?.[pageId];
+    const meta = getMetaMap()[pageId];
+    return { id: pageId, title: cached?.title || meta?.title || 'Untitled', description: cached?.description || meta?.description || '' };
+  }
+  function moreIconSvg(className = 'h-4 w-4') { return `<svg class="${className}" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8.25a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM12 13.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM13.5 17.25a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z"/></svg>`; }
+  function archivedBadge(pageId) { return getMetaMap()[pageId]?.archivedAt ? `<span class="archived-badge ml-1">${escapeHtml(t('archive'))}</span>` : ''; }
+  function pageMenuButton(pageId, title, projectId = '') { return `<button class="page-menu sidebar-more-btn sidebar-page-menu-btn mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-gray-400 hover:bg-gray-200 hover:text-gray-700" data-page-id="${escapeHtml(pageId)}" data-page-title="${escapeHtml(title || 'Untitled')}" data-project-id="${escapeHtml(projectId || '')}" title="More">${moreIconSvg()}</button>`; }
+  function projectMenuButton(projectId, projectName) { return `<button class="project-menu sidebar-more-btn flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-gray-400 hover:bg-gray-200 hover:text-gray-700" data-project-id="${escapeHtml(projectId)}" data-project-name="${escapeHtml(projectName || t('untitledProject'))}" title="More">${moreIconSvg()}</button>`; }
+  function projectPageItemHtml(item) {
+    const page = getPageSnapshot(item.pageId);
+    if (getMetaMap()[page.id]?.archivedAt) return '';
+    const active = page.id === state.current.id && !state.blank;
+    const description = String(page.description || '').trim();
+    const descriptionHtml = description ? `<div class="page-description sidebar-page-description truncate text-[11px] ${active ? 'text-blue-600/70' : 'text-gray-500'}">${escapeHtml(description)}</div>` : '';
+    return `<div class="group group/projectitem sidebar-page-row flex gap-1 rounded-lg ${active ? 'bg-blue-50 ring-1 ring-blue-100' : 'hover:bg-gray-100'}" data-page-row-id="${escapeHtml(page.id)}">
+      <button class="page-open sidebar-page-open relative min-w-0 flex-1 rounded-lg py-1 pl-3 pr-1 text-left ${active ? 'text-blue-800' : 'text-gray-800'}" data-id="${escapeHtml(page.id)}">${active ? '<span class="sidebar-active-indicator"></span>' : ''}<div class="sidebar-page-mainline min-w-0 gap-1"><div class="page-title min-w-0 flex-1 truncate text-sm font-medium" data-page-title-id="${escapeHtml(page.id)}">${escapeHtml(page.title || 'Untitled')}</div>${appPageBadge(page.id)}${archivedBadge(page.id)}</div>${descriptionHtml}</button>
+      ${pageMenuButton(page.id, page.title, item.projectId)}
+    </div>`;
+  }
+  function renderSidebarProjects() {
+    if (!state.sidebar.open || !els.sidebarProjectsList) return;
+    const projects = [...(state.projects.rows || [])].sort((a, b) => Number(b.sortOrder || 0) - Number(a.sortOrder || 0));
+    if (!projects.length) {
+      els.sidebarProjectsList.innerHTML = `<div class="px-2 py-2 text-xs text-gray-400">${escapeHtml(t('noProjects'))}</div>`;
+      return;
+    }
+    els.sidebarProjectsList.innerHTML = projects.map(project => {
+      const items = state.projects.itemsByProject[project.id] || [];
+      const collapsed = !!project.collapsed;
+      const chevron = collapsed ? 'M8.25 4.5 15.75 12l-7.5 7.5' : 'm19.5 8.25-7.5 7.5-7.5-7.5';
+      const pagesHtml = collapsed ? '' : `<div class="mt-1 space-y-1 pl-2">${items.length ? items.map(projectPageItemHtml).join('') : `<div class="px-3 py-2 text-xs text-gray-400">${escapeHtml(t('noPages'))}</div>`}</div>`;
+      return `<div class="project-block rounded-lg">
+        <div class="group group/project flex items-center gap-1 rounded-lg px-1 py-1 hover:bg-gray-100">
+          <button class="project-toggle flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-gray-500 hover:bg-gray-200" data-project-id="${escapeHtml(project.id)}" title="${escapeHtml(project.name || t('untitledProject'))}">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="${chevron}"/></svg>
+          </button>
+          <div class="min-w-0 flex-1 truncate text-sm font-semibold text-gray-700" data-project-title-id="${escapeHtml(project.id)}" title="${escapeHtml(project.name || t('untitledProject'))}">${escapeHtml(project.name || t('untitledProject'))}</div>
+          ${projectMenuButton(project.id, project.name || t('untitledProject'))}
+        </div>
+        ${pagesHtml}
+      </div>`;
+    }).join('');
+  }
+  function openCreateProjectModal(targetPageId = '') {
+    state.context.createProjectTargetPageId = targetPageId || '';
+    els.createProjectNameInput.value = '';
+    els.confirmCreateProjectBtn.disabled = true;
+    els.createProjectModal.classList.remove('hidden');
+    setTimeout(() => els.createProjectNameInput.focus(), 0);
+    closeContextMenus();
+  }
+  function closeCreateProjectModal() {
+    els.createProjectModal.classList.add('hidden');
+    state.context.createProjectTargetPageId = '';
+  }
+  async function createProject(nameOverride = '') {
+    const name = String(nameOverride || els.createProjectNameInput.value || '').trim();
+    if (!name) return null;
+    const now = Date.now();
+    const project = { id: 'project-' + now + '-' + Math.random().toString(36).slice(2, 8), name, createdAt: now, updatedAt: now, sortOrder: now, collapsed: false };
+    state.projects.rows.unshift(project);
+    await txPut('projects', project);
+    rebuildProjectMaps();
+    renderSidebarProjects();
+    setStatus(t('projectCreated'));
+    const targetPageId = state.context.createProjectTargetPageId;
+    closeCreateProjectModal();
+    if (targetPageId) await movePageToProject(targetPageId, project.id);
+    return project;
+  }
+  async function toggleProject(projectId) {
+    const project = (state.projects.rows || []).find(p => p.id === projectId);
+    if (!project) return;
+    project.collapsed = !project.collapsed;
+    project.updatedAt = Date.now();
+    await txPut('projects', project);
+    renderSidebarProjects();
+  }
+  async function removePageFromProject(projectId, pageId) {
+    const key = projectId + ':' + pageId;
+    state.projects.items = state.projects.items.filter(item => item.key !== key);
+    await txDelete('projectItems', key);
+    rebuildProjectMaps();
+    renderSidebarProjects();
+    await loadSidebarPages({ force: true, reset: false });
+    setStatus(t('removedFromProject'));
+  }
+  async function movePageToProject(pageId, projectId) {
+    if (!pageId || !projectId) return;
+    const existingProjectId = state.projects.pageToProject[pageId];
+    if (existingProjectId === projectId) { setStatus(t('pageAlreadyInProject')); return; }
+    if (existingProjectId) {
+      const oldKey = existingProjectId + ':' + pageId;
+      state.projects.items = state.projects.items.filter(item => item.key !== oldKey);
+      await txDelete('projectItems', oldKey);
+    }
+    const now = Date.now();
+    const item = { key: projectId + ':' + pageId, projectId, pageId, addedAt: now, sortOrder: now };
+    state.projects.items.push(item);
+    await txPut('projectItems', item);
+    rebuildProjectMaps();
+    renderSidebarProjects();
+    await loadSidebarPages({ force: true, reset: false });
+    setStatus(t('pageMovedToProject'));
+  }
+  async function renameProject(projectId, nextName) {
+    const name = String(nextName || '').trim();
+    if (!name) { setStatus(t('renameEmptyIgnored')); return; }
+    const project = (state.projects.rows || []).find(p => p.id === projectId);
+    if (!project) return;
+    project.name = name;
+    project.updatedAt = Date.now();
+    await txPut('projects', project);
+    renderSidebarProjects();
+    setStatus(t('projectRenamed'));
+  }
+  async function renamePage(pageId, nextTitle) {
+    const title = String(nextTitle || '').trim();
+    if (!title) { setStatus(t('renameEmptyIgnored')); return; }
+    let page;
+    if (state.current.id === pageId && !state.blank) {
+      updateCurrentFromInputs();
+      page = { ...state.current, title };
+    } else {
+      page = await API.loadPage(pageId);
+      page.title = title;
+    }
+    const saved = await API.savePage(page);
+    const newTitle = saved.title || saved.data?.title || title;
+    const desc = saved.description || saved.data?.description || page.description || '';
+    if (state.current.id === pageId && !state.blank) {
+      state.current.title = newTitle;
+      state.current.description = desc;
+      els.titleInput.value = newTitle;
+      els.descriptionInput.value = desc;
+      markDirty(false);
+    }
+    await savePageMeta(pageId, { title: newTitle, description: desc });
+    state.sidebar.pageCache[pageId] = { ...(state.sidebar.pageCache[pageId] || {}), id: pageId, title: newTitle, description: desc };
+    renderSidebarProjects();
+    await loadSidebarPages({ force: true, reset: false });
+    if (!els.searchModal.classList.contains('hidden')) await loadSearchResults();
+    if (!els.welcomeSearchResults.classList.contains('hidden')) await loadWelcomeSearchResults();
+    setStatus(t('pageRenamed'));
+  }
+  async function togglePinPage(pageId) {
+    const meta = getMetaMap()[pageId] || { id: pageId };
+    await savePageMeta(pageId, { pinnedAt: meta.pinnedAt ? 0 : Date.now() });
+    await loadSidebarPages({ force: true, reset: false });
+    renderSidebarProjects();
+    setStatus(meta.pinnedAt ? t('unpinned') : t('pinned'));
+  }
+  async function toggleArchivePage(pageId) {
+    const meta = getMetaMap()[pageId] || { id: pageId };
+    await savePageMeta(pageId, { archivedAt: meta.archivedAt ? 0 : Date.now() });
+    await loadSidebarPages({ force: true, reset: false });
+    renderSidebarProjects();
+    if (!els.searchModal.classList.contains('hidden')) await loadSearchResults();
+    if (!els.welcomeSearchResults.classList.contains('hidden')) await loadWelcomeSearchResults();
+    setStatus(meta.archivedAt ? t('unarchived') : t('archived'));
+  }
+
+  async function deleteProject(projectId, projectName) {
+    const ok = await confirmAction({ title: t('deleteProjectTitle'), message: `${t('deleteProjectMessage')}
+
+${projectName || ''}`, okText: t('deleteProject'), showPreview: false });
+    if (!ok) return;
+    const itemsToDelete = (state.projects.items || []).filter(item => item.projectId === projectId);
+    state.projects.rows = state.projects.rows.filter(project => project.id !== projectId);
+    state.projects.items = state.projects.items.filter(item => item.projectId !== projectId);
+    await txDelete('projects', projectId);
+    for (const item of itemsToDelete) await txDelete('projectItems', item.key);
+    rebuildProjectMaps();
+    renderSidebarProjects();
+    await loadSidebarPages({ force: true, reset: false });
+  }
+  function pageItemHtml(page, compact = false) {
+    const active = page.id === state.current.id && !state.blank;
+    const description = String(page.description || '').trim();
+    const descriptionHtml = (!compact && description) ? `<div class="page-description sidebar-page-description truncate text-[11px] ${active ? 'text-blue-600/70' : 'text-gray-500'}">${escapeHtml(description)}</div>` : '';
+    return `<div class="group sidebar-page-row flex gap-1 rounded-lg ${active ? 'bg-blue-50 ring-1 ring-blue-100' : 'hover:bg-gray-100'}" data-page-row-id="${escapeHtml(page.id)}"><button class="page-open sidebar-page-open relative min-w-0 flex-1 rounded-lg py-1 pl-3 pr-1 text-left transition-colors ${active ? 'text-blue-800' : 'text-gray-800'}" data-id="${escapeHtml(page.id)}">${active ? '<span class="sidebar-active-indicator"></span>' : ''}<div class="sidebar-page-mainline min-w-0 gap-1"><div class="page-title min-w-0 flex-1 truncate text-sm font-medium" data-page-title-id="${escapeHtml(page.id)}">${escapeHtml(page.title || 'Untitled')}</div>${appPageBadge(page.id)}${archivedBadge(page.id)}</div>${descriptionHtml}</button>${pageMenuButton(page.id, page.title)}</div>`;
+  }
+  function renderSidebarPages() {
+    if (!state.sidebar.open) return;
+    renderSidebarProjects();
+    if (!state.sidebar.pages.length) {
+      els.sidebarPagesList.innerHTML = `<div class="sidebar-label p-4 text-center text-sm text-gray-400">${escapeHtml(t('noPages'))}</div>`;
+      updateSidebarLoadMore();
+      return;
+    }
+    els.sidebarPagesList.innerHTML = state.sidebar.pages.map(page => pageItemHtml(page)).join('');
+    updateSidebarLoadMore();
+  }
+  function updateSidebarActiveState() {
+    if (!state.sidebar.open) return;
+    document.querySelectorAll('#sidebarPagesList [data-page-row-id], #sidebarProjectsList [data-page-row-id]').forEach(row => {
+      const btn = row.querySelector('.page-open');
+      if (!btn) return;
+      const active = btn.dataset.id === state.current.id && !state.blank;
+
+      row.className = `group sidebar-page-row flex gap-1 rounded-lg ${active ? 'bg-blue-50 ring-1 ring-blue-100' : 'hover:bg-gray-100'}`;
+      btn.className = `page-open sidebar-page-open relative min-w-0 flex-1 rounded-lg py-1 pl-3 pr-1 text-left transition-colors ${active ? 'text-blue-800' : 'text-gray-800'}`;
+
+      const indicator = btn.querySelector('.sidebar-active-indicator');
+      if (active && !indicator) btn.insertAdjacentHTML('afterbegin', '<span class="sidebar-active-indicator"></span>');
+      if (!active && indicator) indicator.remove();
+
+      const desc = btn.querySelector('.page-description');
+      if (desc) desc.className = `page-description sidebar-page-description truncate text-[11px] ${active ? 'text-blue-600/70' : 'text-gray-500'}`;
+    });
+  }
+  function updateSidebarLoadMore() {
+    if (!els.sidebarLoadMoreWrap) return;
+    els.sidebarLoadMoreWrap.classList.toggle('hidden', !state.sidebar.open || !state.sidebar.hasMore);
+  }
+
+  function startSidebarAutoRefresh() { stopSidebarAutoRefresh(); if (!state.sidebar.open) return; state.sidebar.refreshTimer = window.setInterval(() => { if (state.sidebar.open && !document.hidden) loadSidebarPages({ force: true, reset: false }); }, 60000); }
+  function stopSidebarAutoRefresh() { if (state.sidebar.refreshTimer) { window.clearInterval(state.sidebar.refreshTimer); state.sidebar.refreshTimer = null; } }
+  function setSidebarOpen(open, persist = true) {
+    state.sidebar.open = !!open;
+    if (els.sidebarScroll) els.sidebarScroll.classList.remove('hidden');
+    els.sidebar.style.width = state.sidebar.open ? '288px' : '56px';
+    els.sidebar.classList.toggle('sidebar-collapsed', !state.sidebar.open);
+    document.querySelectorAll('.sidebar-label').forEach(el => el.classList.toggle('hidden', !state.sidebar.open));
+    els.sidebarCloseIcon.classList.toggle('hidden', !state.sidebar.open);
+    els.sidebarOpenIcon.classList.toggle('hidden', state.sidebar.open);
+    if (persist) localStorage.setItem(LS.sidebarOpen, state.sidebar.open ? '1' : '0');
+    if (state.sidebar.open) { loadSidebarPages({ force: true, reset: !state.sidebar.pages.length }); startSidebarAutoRefresh(); } else { stopSidebarAutoRefresh(); }
+  }
+
+  function openSearchModal() { els.searchModal.classList.remove('hidden'); els.globalSearchInput.value = ''; state.search.query = ''; setTimeout(() => els.globalSearchInput.focus(), 0); loadSearchResults(); }
+  function closeSearchModal() { els.searchModal.classList.add('hidden'); }
+  async function loadSearchResults() { els.globalSearchResults.innerHTML = `<div class="p-8 text-center text-sm text-gray-400">${escapeHtml(t('loading'))}</div>`; try { const rows = normalizePageRows(await API.loadPages({ skip: 0, limit: state.search.query ? 20 : 8, search: state.search.query })); state.search.pages = rows; renderSearchResults(rows); } catch (err) { els.globalSearchResults.innerHTML = `<div class="p-8 text-center text-sm text-red-500">${escapeHtml(err.message || err)}</div>`; } }
+  function searchRowHtml(page, compact = false) {
+    const projectId = state.projects.pageToProject[page.id] || '';
+    return `<div class="search-row group flex items-center gap-2 rounded-xl px-3 py-2 hover:bg-gray-100" data-page-row-id="${escapeHtml(page.id)}"><button class="page-open min-w-0 flex-1 text-left" data-id="${escapeHtml(page.id)}"><div class="flex min-w-0 items-center gap-1"><div class="truncate text-sm font-medium text-gray-900" data-page-title-id="${escapeHtml(page.id)}">${escapeHtml(page.title || 'Untitled')}</div>${appPageBadge(page.id)}${archivedBadge(page.id)}</div><div class="${compact ? 'truncate' : 'clamp-2'} text-xs leading-4 text-gray-500">${escapeHtml(page.description || '')}</div></button><a class="shrink-0 rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 hover:bg-gray-50" target="_blank" href="${viewUrl(page.id)}">${escapeHtml(t('view'))}</a><button class="page-menu shrink-0 flex h-7 w-7 items-center justify-center rounded border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-900" data-id="${escapeHtml(page.id)}" data-page-id="${escapeHtml(page.id)}" data-page-title="${escapeHtml(page.title || 'Untitled')}" data-project-id="${escapeHtml(projectId)}" title="More">${moreIconSvg('h-4 w-4')}</button></div>`;
+  }
+  function renderSearchResults(rows) { if (!rows.length) { els.globalSearchResults.innerHTML = `<div class="p-8 text-center text-sm text-gray-400">${escapeHtml(t('noPages'))}</div>`; return; } let html = ''; if (!state.search.query) html += `<div class="px-4 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500">${escapeHtml(t('recentPages'))}</div>`; for (const [label, pages] of groupedPages(rows)) { if (state.search.query) html += `<div class="px-4 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">${escapeHtml(label)}</div>`; for (const page of pages) html += searchRowHtml(page); } els.globalSearchResults.innerHTML = html; }
+
+  function openWelcomeSearch() { els.welcomeSearchResults.classList.remove('hidden'); if (!els.welcomeSearchResults.innerHTML.trim()) loadWelcomeSearchResults(); }
+  function closeWelcomeSearch() { els.welcomeSearchResults.classList.add('hidden'); }
+  async function loadWelcomeSearchResults() { els.welcomeSearchResults.innerHTML = `<div class="p-4 text-center text-sm text-gray-400">${escapeHtml(t('loading'))}</div>`; try { const rows = normalizePageRows(await API.loadPages({ skip: 0, limit: state.welcomeSearch.query ? 20 : 8, search: state.welcomeSearch.query })); state.welcomeSearch.pages = rows; renderWelcomeSearchResults(rows); } catch (err) { els.welcomeSearchResults.innerHTML = `<div class="p-4 text-center text-sm text-red-500">${escapeHtml(err.message || err)}</div>`; } }
+  function renderWelcomeSearchResults(rows) { if (!rows.length) { els.welcomeSearchResults.innerHTML = `<div class="p-4 text-center text-sm text-gray-400">${escapeHtml(t('noPages'))}</div>`; return; } let html = ''; if (!state.welcomeSearch.query) html += `<div class="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500">${escapeHtml(t('recentPages'))}</div>`; for (const [label, pages] of groupedPages(rows)) { if (state.welcomeSearch.query) html += `<div class="px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">${escapeHtml(label)}</div>`; for (const page of pages) html += searchRowHtml(page, true); } els.welcomeSearchResults.innerHTML = html; }
+
+
+  function positionFloatingMenu(menu, x, y) {
+    menu.classList.remove('hidden');
+    const rect = menu.getBoundingClientRect();
+    const left = Math.min(Math.max(8, x), window.innerWidth - rect.width - 8);
+    const top = Math.min(Math.max(8, y), window.innerHeight - rect.height - 8);
+    menu.style.left = left + 'px';
+    menu.style.top = top + 'px';
+  }
+  function closeContextMenus() {
+    els.pageContextMenu.classList.add('hidden');
+    els.moveProjectMenu.classList.add('hidden');
+    els.projectContextMenu.classList.add('hidden');
+    els.editorPanelMenu.classList.add('hidden');
+    els.previewPanelMenu.classList.add('hidden');
+    document.querySelectorAll('.sidebar-more-btn.menu-open').forEach(btn => btn.classList.remove('menu-open'));
+  }
+  function projectName(projectId) { return (state.projects.rows || []).find(p => p.id === projectId)?.name || t('untitledProject'); }
+  function openEditorPanelMenu(event) {
+    event.preventDefault(); event.stopPropagation(); closeContextMenus();
+    els.editorPanelMenu.innerHTML = `
+      <button class="context-menu-item" data-panel-action="paste-replace">${escapeHtml(t('pasteReplace'))}</button>
+      <button class="context-menu-item" data-panel-action="import-html">${escapeHtml(t('importHtml'))}</button>
+      <button class="context-menu-item" data-panel-action="select-all-code">${escapeHtml(t('selectAllCode'))}</button>`;
+    const rect = event.currentTarget.getBoundingClientRect();
+    positionFloatingMenu(els.editorPanelMenu, rect.right - 208, rect.bottom + 6);
+  }
+  function openPreviewPanelMenu(event) {
+    event.preventDefault(); event.stopPropagation(); closeContextMenus();
+    els.previewPanelMenu.innerHTML = `
+      <button class="context-menu-item" data-panel-action="copy-preview-link">${escapeHtml(t('copyPreviewLink'))}</button>
+      <button class="context-menu-item" data-panel-action="open-preview">${escapeHtml(t('openPreview'))}</button>
+      <button class="context-menu-item" data-panel-action="refresh-preview">${escapeHtml(t('refreshPreview'))}</button>`;
+    const rect = event.currentTarget.getBoundingClientRect();
+    positionFloatingMenu(els.previewPanelMenu, rect.right - 208, rect.bottom + 6);
+  }
+  function selectAllCode(target) {
+    if (state.code.editor) {
+      const model = state.code.editor.getModel();
+      state.code.editor.focus();
+      if (model && window.monaco) {
+        const lastLine = model.getLineCount();
+        const lastColumn = model.getLineMaxColumn(lastLine);
+        state.code.editor.setSelection(new monaco.Range(1, 1, lastLine, lastColumn));
+      }
+    } else {
+      els.codeEditorFallback.focus();
+      els.codeEditorFallback.select();
+    }
+    showToastNear(target, t('codeSelected'));
+  }
+  async function pasteReplaceCode(target) {
+    let text = '';
+    try {
+      text = await navigator.clipboard.readText();
+    } catch (_) {
+      const fallback = window.prompt(t('pasteReplacePrompt'), '');
+      if (fallback === null) return;
+      text = fallback;
+    }
+    setCodeValue(text || '');
+    updateCurrentFromInputs();
+    markDirty(true);
+    showToastNear(target, t('pastedReplaced'));
+  }
+  function importHtmlFile(target) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.html,.htm,text/html';
+    input.style.display = 'none';
+    input.addEventListener('change', () => {
+      const file = input.files && input.files[0];
+      input.remove();
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        setCodeValue(String(reader.result || ''));
+        updateCurrentFromInputs();
+        markDirty(true);
+        showToastNear(target || els.editorPanelMenuBtn, t('htmlImported'));
+        log(`${t('htmlImported')}: ${file.name}`);
+      };
+      reader.onerror = () => {
+        showToastNear(target || els.editorPanelMenuBtn, t('importHtmlError'));
+        log(`${t('importHtmlError')}: ${file.name}`);
+      };
+      reader.readAsText(file);
+    });
+    document.body.appendChild(input);
+    input.click();
+  }
+  function openPageContextMenu(event, pageId, pageTitle = '', projectId = '') {
+    event.preventDefault(); event.stopPropagation(); closeContextMenus();
+    state.context.pageId = pageId; state.context.pageTitle = pageTitle || 'Untitled'; state.context.projectId = projectId || state.projects.pageToProject[pageId] || '';
+    event.currentTarget?.classList?.add('menu-open');
+    const meta = getMetaMap()[pageId] || {};
+    const removeText = state.context.projectId ? t('removeFromProjectNamed').replace('{project}', projectName(state.context.projectId)) : '';
+    els.pageContextMenu.innerHTML = `
+      <button class="context-menu-item" data-action="rename-page">${escapeHtml(t('rename'))}</button>
+      <button class="context-menu-item" data-action="open-preview">${escapeHtml(t('openPreview'))}</button>
+      <button class="context-menu-item" data-action="copy-page-link">${escapeHtml(t('copyPageLink'))}</button>
+      <button class="context-menu-item" data-action="pin-page">${escapeHtml(meta.pinnedAt ? t('unpin') : t('pin'))}</button>
+      <button class="context-menu-item" data-action="archive-page">${escapeHtml(meta.archivedAt ? t('unarchive') : t('archive'))}</button>
+      <button class="context-menu-item justify-between" data-action="move-to-project"><span>${escapeHtml(t('moveToProject'))}</span><span class="text-gray-400">›</span></button>
+      ${state.context.projectId ? `<button class="context-menu-item" data-action="remove-from-project">${escapeHtml(removeText)}</button>` : ''}
+      <div class="my-1 border-t border-gray-100"></div>
+      <button class="context-menu-item context-menu-danger" data-action="delete-page">${escapeHtml(t('deletePage'))}</button>`;
+    positionFloatingMenu(els.pageContextMenu, event.clientX, event.clientY);
+  }
+  function openMoveProjectMenu(anchor) {
+    const pageId = state.context.pageId;
+    const projects = [...(state.projects.rows || [])].sort((a,b) => Number(b.sortOrder || 0) - Number(a.sortOrder || 0));
+    els.moveProjectMenu.innerHTML = `<button class="context-menu-item" data-project-action="new-project">${escapeHtml(t('newProject'))}</button>${projects.length ? '<div class="my-1 border-t border-gray-100"></div>' : ''}` + projects.map(project => `<button class="context-menu-item" data-project-action="move" data-project-id="${escapeHtml(project.id)}"><span class="truncate">${escapeHtml(project.name || t('untitledProject'))}</span></button>`).join('');
+    const rect = anchor.getBoundingClientRect();
+    positionFloatingMenu(els.moveProjectMenu, rect.right + 4, rect.top);
+    state.context.pageId = pageId;
+  }
+  function openProjectContextMenu(event, projectId, projectTitle = '') {
+    event.preventDefault(); event.stopPropagation(); closeContextMenus();
+    state.context.projectId = projectId;
+    event.currentTarget?.classList?.add('menu-open');
+    els.projectContextMenu.innerHTML = `<button class="context-menu-item" data-action="rename-project">${escapeHtml(t('renameProject'))}</button><button class="context-menu-item context-menu-danger" data-action="delete-project">${escapeHtml(t('deleteProject'))}</button>`;
+    positionFloatingMenu(els.projectContextMenu, event.clientX, event.clientY);
+  }
+  function startInlineRenameTitle(pageId) {
+    closeContextMenus();
+    const target = document.querySelector(`[data-page-title-id="${CSS.escape(pageId)}"]`);
+    if (!target) return;
+    const oldValue = target.textContent.trim();
+    target.innerHTML = `<input class="inline-rename-input" value="${escapeHtml(oldValue)}" />`;
+    const input = target.querySelector('input');
+    let done = false;
+    const commit = async () => { if (done) return; done = true; const value = input.value.trim(); if (!value || value === oldValue) { target.textContent = oldValue; return; } try { await renamePage(pageId, value); } catch (err) { alert(err.message || String(err)); target.textContent = oldValue; } };
+    const cancel = () => { done = true; target.textContent = oldValue; };
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); input.blur(); } if (e.key === 'Escape') { e.preventDefault(); cancel(); } });
+    input.addEventListener('blur', commit);
+    input.focus(); input.select();
+  }
+  function startInlineRenameProject(projectId) {
+    closeContextMenus();
+    const target = document.querySelector(`[data-project-title-id="${CSS.escape(projectId)}"]`);
+    if (!target) return;
+    const oldValue = target.textContent.trim();
+    target.innerHTML = `<input class="inline-rename-input" value="${escapeHtml(oldValue)}" />`;
+    const input = target.querySelector('input');
+    let done = false;
+    const commit = async () => { if (done) return; done = true; const value = input.value.trim(); if (!value || value === oldValue) { target.textContent = oldValue; return; } try { await renameProject(projectId, value); } catch (err) { alert(err.message || String(err)); target.textContent = oldValue; } };
+    const cancel = () => { done = true; target.textContent = oldValue; };
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); input.blur(); } if (e.key === 'Escape') { e.preventDefault(); cancel(); } });
+    input.addEventListener('blur', commit);
+    input.focus(); input.select();
+  }
+  function openHistoryModal() { if (!state.current.id) return; els.historyModal.classList.remove('hidden'); renderHistory(); }
+  function closeHistoryModal() { els.historyModal.classList.add('hidden'); }
+  function openDb() { return new Promise((resolve, reject) => { const req = indexedDB.open('FiberyHtmlEditorPro', 3); req.onupgradeneeded = () => { const db = req.result; if (!db.objectStoreNames.contains('versions')) { const store = db.createObjectStore('versions', { keyPath: 'key' }); store.createIndex('pageId', 'pageId', { unique: false }); store.createIndex('createdAt', 'createdAt', { unique: false }); } if (!db.objectStoreNames.contains('pageMeta')) { const meta = db.createObjectStore('pageMeta', { keyPath: 'id' }); meta.createIndex('lastSavedAt', 'lastSavedAt', { unique: false }); meta.createIndex('lastOpenedAt', 'lastOpenedAt', { unique: false }); } if (!db.objectStoreNames.contains('projects')) { const projects = db.createObjectStore('projects', { keyPath: 'id' }); projects.createIndex('sortOrder', 'sortOrder', { unique: false }); } if (!db.objectStoreNames.contains('projectItems')) { const items = db.createObjectStore('projectItems', { keyPath: 'key' }); items.createIndex('projectId', 'projectId', { unique: false }); items.createIndex('pageId', 'pageId', { unique: false }); } }; req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error); }); }
+  function txPut(storeName, value) { return new Promise((resolve, reject) => { const tx = state.db.transaction(storeName, 'readwrite'); tx.objectStore(storeName).put(value); tx.oncomplete = resolve; tx.onerror = () => reject(tx.error); }); }
+  function txDelete(storeName, key) { return new Promise((resolve, reject) => { const tx = state.db.transaction(storeName, 'readwrite'); tx.objectStore(storeName).delete(key); tx.oncomplete = resolve; tx.onerror = () => reject(tx.error); }); }
+  function txGetAll(storeName) { return new Promise((resolve, reject) => { const tx = state.db.transaction(storeName, 'readonly'); const req = tx.objectStore(storeName).getAll(); req.onsuccess = () => resolve(req.result || []); req.onerror = () => reject(req.error); }); }
+  async function loadPageMetaCache() { if (!state.db) return; const map = {}; try { for (const row of await txGetAll('pageMeta')) { if (row?.id) map[row.id] = row; } } catch (_) {} try { const local = JSON.parse(localStorage.getItem(LS.pageMeta) || '{}') || {}; for (const [id, meta] of Object.entries(local)) { if (!map[id] && meta && typeof meta === 'object') { const record = { id, ...meta, id: meta.id || id }; map[id] = record; await txPut('pageMeta', record); } } } catch (_) {} setMetaMap(map); }
+  async function loadProjectsCache() {
+    if (!state.db) return;
+    try {
+      state.projects.rows = (await txGetAll('projects')).filter(project => project?.id);
+      state.projects.items = (await txGetAll('projectItems')).filter(item => item?.projectId && item?.pageId);
+      rebuildProjectMaps();
+    } catch (err) { log(err.message || String(err)); }
+  }
+  async function saveHistory(action = 'save') { if (!state.current.id || !state.db) return; const record = { key: state.current.id + ':' + Date.now(), pageId: state.current.id, title: state.current.title, description: state.current.description, html: state.current.html, action, createdAt: Date.now() }; await txPut('versions', record); await enforceHistoryLimit(state.current.id); }
+  function getHistory(pageId) { return new Promise((resolve, reject) => { const tx = state.db.transaction('versions', 'readonly'); const idx = tx.objectStore('versions').index('pageId'); const req = idx.getAll(pageId); req.onsuccess = () => resolve((req.result || []).sort((a, b) => b.createdAt - a.createdAt)); req.onerror = () => reject(req.error); }); }
+  function deleteVersion(key) { return new Promise((resolve, reject) => { const tx = state.db.transaction('versions', 'readwrite'); tx.objectStore('versions').delete(key); tx.oncomplete = resolve; tx.onerror = () => reject(tx.error); }); }
+  async function enforceHistoryLimit(pageId) { const limit = Number(localStorage.getItem(LS.versionLimit) || '50'); if (!limit) return; const rows = await getHistory(pageId); const excess = rows.slice(limit); for (const row of excess) await deleteVersion(row.key); }
+  async function renderHistory() { const rows = await getHistory(state.current.id); if (!rows.length) { els.historyList.innerHTML = `<div class="p-6 text-sm text-gray-500">${escapeHtml(t('noHistory'))}</div>`; return; } els.historyList.innerHTML = ''; for (const row of rows) { const d = new Date(row.createdAt).toLocaleString(state.lang === 'pt-BR' ? 'pt-BR' : 'en-US'); const el = document.createElement('div'); el.className = 'p-3 flex items-center gap-3 hover:bg-gray-50'; el.innerHTML = `<div class="min-w-0 flex-1"><div class="text-sm font-medium text-gray-900">${escapeHtml(d)} — ${escapeHtml(row.action || 'save')}</div><div class="truncate text-xs text-gray-500">${escapeHtml(row.title || '')}</div></div><button class="restore-version h-8 px-3 rounded border border-gray-300 bg-white text-sm text-gray-700 hover:bg-gray-50" data-key="${escapeHtml(row.key)}">${escapeHtml(t('restore'))}</button>`; els.historyList.appendChild(el); } }
+  async function restoreVersion(key) { const rows = await getHistory(state.current.id); const row = rows.find(x => x.key === key); if (!row) return; if (!confirm(t('confirmRestore'))) return; state.current.title = row.title || state.current.title; state.current.description = row.description || ''; state.current.html = row.html || ''; renderCurrent(); markDirty(true); await savePage('restore'); closeHistoryModal(); }
+
+  function enterPreviewFocus() { if (!state.current.id) return; state.previewFocus = true; document.body.classList.add('preview-focus'); }
+  function exitPreviewFocus() { state.previewFocus = false; document.body.classList.remove('preview-focus'); window.setTimeout(() => { try { state.code.editor?.layout(); } catch (_) {} }, 0); }
+
+  function setAdminMode(isAdmin) { state.isAdmin = isAdmin; els.saveBtn.disabled = !isAdmin; els.newPageBtn.disabled = !isAdmin; if (els.welcomeNewPageBtn) els.welcomeNewPageBtn.disabled = !isAdmin; els.deleteBtn.disabled = !isAdmin || !state.current.id; if (!isAdmin) { setCodeReadOnly(true); els.titleInput.readOnly = true; els.descriptionInput.readOnly = true; setStatus(t('readOnly')); } }
+  function setupResize() { const saved = localStorage.getItem(LS.split); if (saved) setSplit(Number(saved)); let dragging = false; const move = (clientX) => { const rect = els.splitArea.getBoundingClientRect(); const pct = ((clientX - rect.left) / rect.width) * 100; setSplit(pct); }; const onPointerMove = (e) => { if (dragging) { e.preventDefault(); move(e.clientX); } }; const stop = () => { if (!dragging) return; dragging = false; document.body.classList.remove('select-none', 'split-dragging'); els.dragOverlay.classList.add('hidden'); els.previewFrame.classList.remove('pointer-events-none'); }; els.splitter.addEventListener('pointerdown', (e) => { dragging = true; e.preventDefault(); document.body.classList.add('select-none', 'split-dragging'); els.dragOverlay.classList.remove('hidden'); els.previewFrame.classList.add('pointer-events-none'); try { els.splitter.setPointerCapture(e.pointerId); } catch (_) {} move(e.clientX); }); window.addEventListener('pointermove', onPointerMove); window.addEventListener('pointerup', stop); window.addEventListener('pointercancel', stop); els.dragOverlay.addEventListener('pointermove', onPointerMove); els.dragOverlay.addEventListener('pointerup', stop); els.splitter.addEventListener('dblclick', () => setSplit(50)); }
+  function setSplit(pct) { const clamped = Math.max(25, Math.min(75, pct || 50)); els.splitArea.style.gridTemplateColumns = `minmax(320px, ${clamped}%) 6px minmax(320px, 1fr)`; localStorage.setItem(LS.split, String(clamped)); }
+
+  function openSettings() { els.settingsModal.classList.remove('hidden'); els.moreMenu.classList.add('hidden'); }
+  function closeSettings() { els.settingsModal.classList.add('hidden'); }
+  function toggleLog() {
+    els.logPanel.classList.toggle('hidden');
+    if (els.logMenuText) els.logMenuText.textContent = els.logPanel.classList.contains('hidden') ? t('showLog') : t('hideLog');
+  }
+
+  function bindEvents() {
+    els.titleInput.addEventListener('input', () => { updateCurrentFromInputs(); markDirty(true); });
+    els.descriptionInput.addEventListener('input', () => { updateCurrentFromInputs(); markDirty(true); });
+    els.saveBtn.addEventListener('click', () => savePage('save'));
+    els.refreshBtn.addEventListener('click', () => { els.moreMenu.classList.add('hidden'); refreshPreview(); });
+    els.newPageBtn.addEventListener('click', newPage);
+    els.welcomeNewPageBtn.addEventListener('click', newPage);
+    els.searchPagesBtn.addEventListener('click', openSearchModal);
+    els.historyBtn.addEventListener('click', () => { els.moreMenu.classList.add('hidden'); openHistoryModal(); });
+    els.deleteBtn.addEventListener('click', () => { els.moreMenu.classList.add('hidden'); deleteCurrentPage(); });
+    els.openViewMenuBtn.addEventListener('click', () => { els.moreMenu.classList.add('hidden'); if (state.current.id) window.open(viewUrl(state.current.id), '_blank'); });
+    els.moreBtn.addEventListener('click', (e) => { e.stopPropagation(); els.moreMenu.classList.toggle('hidden'); });
+    els.sidebarSettingsBtn.addEventListener('click', openSettings);
+    els.quickBothBtn.addEventListener('click', () => setPanelMode('both'));
+    els.quickEditorBtn.addEventListener('click', () => setPanelMode('editor'));
+    els.quickPreviewBtn.addEventListener('click', () => setPanelMode('preview'));
+    els.logToggleBtn.addEventListener('click', toggleLog);
+    els.copyHtmlBtn.addEventListener('click', (e) => copyText(getCodeValue(), e.currentTarget, t('copiedCode')));
+    els.editorPanelMenuBtn.addEventListener('click', openEditorPanelMenu);
+    els.previewPanelMenuBtn.addEventListener('click', openPreviewPanelMenu);
+    els.previewFocusBtn.addEventListener('click', enterPreviewFocus);
+    els.previewFocusExitBtn.addEventListener('click', exitPreviewFocus);
+    els.clearLogBtn.addEventListener('click', () => { els.logBox.innerHTML = ''; });
+    els.toggleSidebarBtn.addEventListener('click', () => setSidebarOpen(!state.sidebar.open));
+    els.brandBtn.addEventListener('click', () => {
+      if (!state.sidebar.open) {
+        setSidebarOpen(true);
+        return;
+      }
+      showBlankPage();
+    });
+    els.refreshSidebarBtn.addEventListener('click', () => loadSidebarPages({ force: true, reset: false }));
+    els.sidebarLoadMoreBtn.addEventListener('click', () => loadSidebarPages({ force: true, append: true }));
+    els.newProjectBtn.addEventListener('click', () => openCreateProjectModal(''));
+    els.sidebarProjectsList.addEventListener('click', async (e) => {
+      const pageMenu = e.target.closest('.page-menu');
+      if (pageMenu) { openPageContextMenu(e, pageMenu.dataset.pageId, pageMenu.dataset.pageTitle || '', pageMenu.dataset.projectId || ''); return; }
+      const projectMenu = e.target.closest('.project-menu');
+      if (projectMenu) { openProjectContextMenu(e, projectMenu.dataset.projectId, projectMenu.dataset.projectName || ''); return; }
+      const toggle = e.target.closest('.project-toggle');
+      if (toggle) { e.preventDefault(); e.stopPropagation(); await toggleProject(toggle.dataset.projectId); return; }
+      const btn = e.target.closest('.page-open');
+      if (!btn) return;
+      await loadPage(btn.dataset.id);
+    });
+    els.sidebarPagesList.addEventListener('click', async (e) => { const menu = e.target.closest('.page-menu'); if (menu) { openPageContextMenu(e, menu.dataset.pageId, menu.dataset.pageTitle || '', menu.dataset.projectId || ''); return; } const btn = e.target.closest('.page-open'); if (!btn) return; await loadPage(btn.dataset.id); });
+    els.globalSearchInput.addEventListener('input', () => { clearTimeout(state.search.debounce); state.search.query = els.globalSearchInput.value.trim(); state.search.debounce = setTimeout(loadSearchResults, 280); });
+    els.globalSearchResults.addEventListener('click', async (e) => { const menu = e.target.closest('.page-menu'); if (menu) { openPageContextMenu(e, menu.dataset.pageId, menu.dataset.pageTitle || '', menu.dataset.projectId || ''); return; } const btn = e.target.closest('.page-open'); if (!btn) return; closeSearchModal(); await loadPage(btn.dataset.id); });
+    els.closeSearchBtn.addEventListener('click', closeSearchModal);
+    els.searchModal.addEventListener('click', (e) => { if (e.target === els.searchModal) closeSearchModal(); });
+    els.welcomeSearchInput.addEventListener('focus', openWelcomeSearch);
+    els.welcomeSearchInput.addEventListener('input', () => { clearTimeout(state.welcomeSearch.debounce); state.welcomeSearch.query = els.welcomeSearchInput.value.trim(); state.welcomeSearch.debounce = setTimeout(loadWelcomeSearchResults, 260); openWelcomeSearch(); });
+    els.welcomeSearchResults.addEventListener('click', async (e) => { const menu = e.target.closest('.page-menu'); if (menu) { openPageContextMenu(e, menu.dataset.pageId, menu.dataset.pageTitle || '', menu.dataset.projectId || ''); return; } const btn = e.target.closest('.page-open'); if (!btn) return; closeWelcomeSearch(); await loadPage(btn.dataset.id); });
+    els.confirmOpenPreviewBtn.addEventListener('click', () => { const id = els.confirmOpenPreviewBtn.dataset.previewId || state.current.id; if (id) window.open(viewUrl(id), '_blank'); });
+    els.closeSettingsBtn.addEventListener('click', closeSettings);
+    els.settingsModal.addEventListener('click', (e) => { if (e.target === els.settingsModal) closeSettings(); });
+    els.langSelect.addEventListener('change', () => { localStorage.setItem(LS.lang, els.langSelect.value); applyI18n(); if (state.blank) showBlankPage(); else renderCurrent(); });
+    els.openLastToggle.addEventListener('change', () => localStorage.setItem(LS.openLast, els.openLastToggle.checked ? '1' : '0'));
+    els.versionLimitSelect.addEventListener('change', () => localStorage.setItem(LS.versionLimit, els.versionLimitSelect.value));
+    els.pageContextMenu.addEventListener('click', async (e) => {
+      const actionBtn = e.target.closest('[data-action]');
+      if (!actionBtn) return;
+      const action = actionBtn.dataset.action;
+      const pageId = state.context.pageId;
+      if (action === 'move-to-project') { openMoveProjectMenu(actionBtn); return; }
+      closeContextMenus();
+      if (action === 'rename-page') startInlineRenameTitle(pageId);
+      if (action === 'open-preview' && pageId) window.open(viewUrl(pageId), '_blank');
+      if (action === 'copy-page-link' && pageId) copyText(viewUrl(pageId), actionBtn, t('copiedPageLink'));
+      if (action === 'pin-page') await togglePinPage(pageId);
+      if (action === 'archive-page') await toggleArchivePage(pageId);
+      if (action === 'remove-from-project' && state.context.projectId) await removePageFromProject(state.context.projectId, pageId);
+      if (action === 'delete-page') await deletePageFromList(pageId, state.context.pageTitle || '');
+    });
+    els.moveProjectMenu.addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-project-action]');
+      if (!btn) return;
+      const action = btn.dataset.projectAction;
+      const pageId = state.context.pageId;
+      closeContextMenus();
+      if (action === 'new-project') openCreateProjectModal(pageId);
+      if (action === 'move') await movePageToProject(pageId, btn.dataset.projectId);
+    });
+    els.projectContextMenu.addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      const action = btn.dataset.action;
+      const projectId = state.context.projectId;
+      closeContextMenus();
+      if (action === 'rename-project') startInlineRenameProject(projectId);
+      if (action === 'delete-project') await deleteProject(projectId, projectName(projectId));
+    });
+    els.editorPanelMenu.addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-panel-action]');
+      if (!btn) return;
+      const action = btn.dataset.panelAction;
+      closeContextMenus();
+      if (action === 'paste-replace') await pasteReplaceCode(btn);
+      if (action === 'import-html') importHtmlFile(els.editorPanelMenuBtn || btn);
+      if (action === 'select-all-code') selectAllCode(btn);
+    });
+    els.previewPanelMenu.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-panel-action]');
+      if (!btn) return;
+      const action = btn.dataset.panelAction;
+      closeContextMenus();
+      if (action === 'copy-preview-link') copyText(state.current.id ? viewUrl(state.current.id) : '', btn, t('copiedPreviewLink'));
+      if (action === 'open-preview' && state.current.id) window.open(viewUrl(state.current.id), '_blank');
+      if (action === 'refresh-preview') refreshPreview();
+    });
+    els.createProjectNameInput.addEventListener('input', () => { els.confirmCreateProjectBtn.disabled = !els.createProjectNameInput.value.trim(); });
+    els.createProjectNameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && els.createProjectNameInput.value.trim()) createProject(); if (e.key === 'Escape') closeCreateProjectModal(); });
+    els.confirmCreateProjectBtn.addEventListener('click', () => createProject());
+    els.cancelCreateProjectBtn.addEventListener('click', closeCreateProjectModal);
+    els.closeCreateProjectBtn.addEventListener('click', closeCreateProjectModal);
+    els.createProjectModal.addEventListener('click', (e) => { if (e.target === els.createProjectModal) closeCreateProjectModal(); });
+    document.addEventListener('click', (e) => { if (!els.moreMenu.contains(e.target) && !els.moreBtn.contains(e.target)) els.moreMenu.classList.add('hidden'); if (!els.welcomeSearchResults.contains(e.target) && !els.welcomeSearchInput.contains(e.target)) closeWelcomeSearch();  closeContextMenus(); });
+    els.closeHistoryBtn.addEventListener('click', closeHistoryModal);
+    els.historyModal.addEventListener('click', (e) => { if (e.target === els.historyModal) closeHistoryModal(); });
+    els.historyList.addEventListener('click', async (e) => { const btn = e.target.closest('.restore-version'); if (!btn) return; await restoreVersion(btn.dataset.key); });
+    els.confirmCancelBtn.addEventListener('click', () => closeConfirm(false));
+    els.confirmOkBtn.addEventListener('click', () => closeConfirm(true));
+    els.confirmModal.addEventListener('click', (e) => { if (e.target === els.confirmModal) closeConfirm(false); });
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (state.previewFocus) exitPreviewFocus(); els.moreMenu.classList.add('hidden'); closeSearchModal(); closeSettings(); closeWelcomeSearch(); closeContextMenus(); closeCreateProjectModal(); } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); if (state.isAdmin && !state.blank) savePage('save'); } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearchModal(); } });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && state.sidebar.open) loadSidebarPages({ force: true, reset: false }); });
+    window.addEventListener('beforeunload', stopSidebarAutoRefresh);
+  }
+
+  async function init() {
+    els.langSelect.value = localStorage.getItem(LS.lang) || 'auto';
+    els.openLastToggle.checked = (localStorage.getItem(LS.openLast) ?? '1') === '1';
+    els.versionLimitSelect.value = localStorage.getItem(LS.versionLimit) || '50';
+    state.panelMode = localStorage.getItem(LS.panelMode) || 'both';
+    applyI18n();
+    await setupCodeEditor();
+    bindEvents();
+    setupResize();
+    setPanelMode(state.panelMode, false);
+    state.db = await openDb();
+    await loadPageMetaCache();
+    await loadProjectsCache();
+    try { setAdminMode(await API.checkIsAdmin()); } catch (_) { setAdminMode(false); }
+    setSidebarOpen((localStorage.getItem(LS.sidebarOpen) ?? '1') === '1', false);
+    const lastId = localStorage.getItem(LS.lastPageId);
+    if (els.openLastToggle.checked && lastId) {
+      try { await loadPage(lastId); } catch (err) { log(err.message || String(err)); showBlankPage(); }
+    } else {
+      showBlankPage();
+    }
+  }
+
+  init().catch(err => { console.error(err); alert(err.message || String(err)); });
+})();
+</script>
+</body>
+</html>
