@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.2.0" />
+  <meta name="fibery-html-editor-version" content="8.2.1" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -106,6 +106,13 @@
     .panel-preview-only #editorPane, .panel-preview-only #splitter { display: none !important; }
     .panel-preview-only #splitArea { grid-template-columns: minmax(0, 1fr) !important; }
     .mini-tooltip { animation: miniTooltip .16s ease-out; }
+    .draft-diff-line { display:grid; grid-template-columns:3rem minmax(0,1fr); border-bottom:1px solid rgb(243 244 246); font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace; font-size:12px; line-height:1.4; }
+    .draft-diff-line-number { border-right:1px solid rgb(243 244 246); padding:.25rem .5rem; text-align:right; color:rgb(156 163 175); user-select:none; }
+    .draft-diff-line-code { padding:.25rem .5rem; white-space:pre; overflow-x:auto; }
+    .draft-diff-added { background:rgb(236 253 245); }
+    .draft-diff-removed { background:rgb(254 242 242); }
+    .draft-diff-changed { background:rgb(255 251 235); }
+    .draft-diff-empty { color:transparent; user-select:none; }
     @keyframes miniTooltip { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
@@ -324,9 +331,24 @@
         <div id="draftRecoveryDiffSummary" class="flex flex-wrap items-center gap-2 text-xs text-gray-600"></div>
       </div>
       <div class="min-h-0 flex-1 overflow-auto p-4 sm:p-5">
-        <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <div id="draftCurrentColumn"></div>
-          <div id="draftLocalColumn"></div>
+        <div class="space-y-4">
+          <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div id="draftCurrentColumn"></div>
+            <div id="draftLocalColumn"></div>
+          </div>
+          <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+            <div class="border-b border-gray-200 bg-gray-50 px-3 py-2 flex flex-wrap items-center justify-between gap-2">
+              <div class="text-xs font-semibold uppercase tracking-wide text-gray-600" data-i18n="draftFieldHtml">HTML / code</div>
+              <div id="draftCodeDiffLegend" class="flex flex-wrap items-center gap-2 text-[11px]"></div>
+            </div>
+            <div id="draftCodeDiffMonaco" class="hidden h-[360px] w-full"></div>
+            <div id="draftCodeDiffFallback" class="hidden h-[360px] overflow-hidden bg-white">
+              <div class="grid h-full grid-cols-1 gap-px bg-gray-200 lg:grid-cols-2">
+                <div id="draftFallbackCurrentPane" class="min-h-0 overflow-auto bg-white"></div>
+                <div id="draftFallbackLocalPane" class="min-h-0 overflow-auto bg-white"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <div class="border-t border-gray-200 px-4 py-3 sm:px-5 flex flex-wrap items-center justify-end gap-2">
@@ -433,7 +455,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '8.2.0';
+  const APP_VERSION = '8.2.1';
   window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
   document.documentElement.dataset.appVersion = APP_VERSION;
 
@@ -495,7 +517,12 @@
     draftDiffTitle: 'Title changed',
     draftDiffDescription: 'Description changed',
     draftDiffHtml: 'HTML changed',
-    draftUnsavedLabel: 'Unsaved page'
+    draftUnsavedLabel: 'Unsaved page',
+    draftLoadedFromFibery: 'Loaded from Fibery',
+    draftNoCodeDifferences: 'No code differences',
+    draftAdded: 'Added',
+    draftRemoved: 'Removed',
+    draftChanged: 'Changed'
   });
   Object.assign(I18N['pt-BR'], {
     draftRecoveryTitle: 'Recuperar rascunho local',
@@ -520,7 +547,12 @@
     draftDiffTitle: 'Titulo alterado',
     draftDiffDescription: 'Descricao alterada',
     draftDiffHtml: 'HTML alterado',
-    draftUnsavedLabel: 'Pagina nao salva'
+    draftUnsavedLabel: 'Pagina nao salva',
+    draftLoadedFromFibery: 'Carregada do Fibery',
+    draftNoCodeDifferences: 'Sem diferencas no codigo',
+    draftAdded: 'Adicionado',
+    draftRemoved: 'Removido',
+    draftChanged: 'Alterado'
   });
 
   const $ = (id) => document.getElementById(id);
@@ -537,7 +569,7 @@
     pageContextMenu: $('pageContextMenu'), moveProjectMenu: $('moveProjectMenu'), projectContextMenu: $('projectContextMenu'), editorPanelMenu: $('editorPanelMenu'), previewPanelMenu: $('previewPanelMenu'), createProjectModal: $('createProjectModal'), createProjectNameInput: $('createProjectNameInput'), closeCreateProjectBtn: $('closeCreateProjectBtn'), cancelCreateProjectBtn: $('cancelCreateProjectBtn'), confirmCreateProjectBtn: $('confirmCreateProjectBtn'),
     historyModal: $('historyModal'), closeHistoryBtn: $('closeHistoryBtn'), historyList: $('historyList'), logPanel: $('logPanel'), logBox: $('logBox'), clearLogBtn: $('clearLogBtn'),
     confirmModal: $('confirmModal'), confirmBox: $('confirmBox'), confirmTitle: $('confirmTitle'), confirmMessage: $('confirmMessage'), confirmCancelBtn: $('confirmCancelBtn'), confirmOkBtn: $('confirmOkBtn'), deletePreviewWrap: $('deletePreviewWrap'), deletePreviewFrame: $('deletePreviewFrame'), confirmOpenPreviewBtn: $('confirmOpenPreviewBtn'),
-    draftRecoveryModal: $('draftRecoveryModal'), draftRecoveryTitle: $('draftRecoveryTitle'), draftRecoverySubtitle: $('draftRecoverySubtitle'), draftRecoveryDiffSummary: $('draftRecoveryDiffSummary'), draftCurrentColumn: $('draftCurrentColumn'), draftLocalColumn: $('draftLocalColumn'), closeDraftRecoveryBtn: $('closeDraftRecoveryBtn'), restoreDraftBtn: $('restoreDraftBtn'), keepCurrentVersionBtn: $('keepCurrentVersionBtn'), discardDraftBtn: $('discardDraftBtn')
+    draftRecoveryModal: $('draftRecoveryModal'), draftRecoveryTitle: $('draftRecoveryTitle'), draftRecoverySubtitle: $('draftRecoverySubtitle'), draftRecoveryDiffSummary: $('draftRecoveryDiffSummary'), draftCurrentColumn: $('draftCurrentColumn'), draftLocalColumn: $('draftLocalColumn'), draftCodeDiffLegend: $('draftCodeDiffLegend'), draftCodeDiffMonaco: $('draftCodeDiffMonaco'), draftCodeDiffFallback: $('draftCodeDiffFallback'), draftFallbackCurrentPane: $('draftFallbackCurrentPane'), draftFallbackLocalPane: $('draftFallbackLocalPane'), closeDraftRecoveryBtn: $('closeDraftRecoveryBtn'), restoreDraftBtn: $('restoreDraftBtn'), keepCurrentVersionBtn: $('keepCurrentVersionBtn'), discardDraftBtn: $('discardDraftBtn')
   };
 
   const LS = {
@@ -559,7 +591,7 @@
     sidebar: { open: true, pages: [], loading: false, refreshTimer: null, hasMore: false, limit: 20, visibleLimit: 20, pageCache: {} },
     projects: { rows: [], items: [], pageToProject: {}, itemsByProject: {} },
     search: { debounce: null, query: '', pages: [] }, welcomeSearch: { debounce: null, query: '', pages: [] }, panelMode: 'both', previewFocus: false, pageMeta: {}, context: { pageId: '', pageTitle: '', projectId: '', createProjectTargetPageId: '' },
-    drafts: { byKey: {}, autosaveTimer: null, debounceMs: 900, unsavedId: 'local-unsaved-main', snoozedKeys: new Set(), activeDraftKey: '', promptToken: 0 }
+    drafts: { byKey: {}, autosaveTimer: null, debounceMs: 900, unsavedId: 'local-unsaved-main', snoozedKeys: new Set(), activeDraftKey: '', promptToken: 0, diffEditor: null, diffOriginalModel: null, diffModifiedModel: null, fallbackSyncing: false }
   };
 
   function preferredLang() { const saved = localStorage.getItem(LS.lang) || 'auto'; if (saved !== 'auto') return saved; return (navigator.language || '').toLowerCase().startsWith('pt') ? 'pt-BR' : 'en'; }
@@ -741,32 +773,252 @@
     if (isDifferent) return `<span class="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">${escapeHtml(t('draftDifferent'))}</span>`;
     return `<span class="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-semibold text-green-700">${escapeHtml(t('draftSame'))}</span>`;
   }
+  function draftMetadataLine(text = '') {
+    const value = String(text || '');
+    const textClass = value ? 'text-gray-500' : 'text-transparent';
+    return `<div class="mt-1 min-h-[16px] text-[11px] ${textClass}">${escapeHtml(value || ' ')}</div>`;
+  }
+  function draftPreviewSnippet(value, maxLines = 12) {
+    const text = String(value || '');
+    if (!text) return '-';
+    const lines = text.replace(/\r\n/g, '\n').split('\n');
+    const sliced = lines.slice(0, maxLines).join('\n');
+    return lines.length > maxLines ? `${sliced}\n...` : sliced;
+  }
   function draftColumnHtml(label, snapshot, diff, options = {}) {
-    const updatedAtText = options.updatedAt ? `<div class="text-[11px] text-gray-500">${escapeHtml(t('draftUpdatedAt'))}: ${escapeHtml(draftUpdatedAtLabel(options.updatedAt))}</div>` : '';
+    const subtitle = String(options.subtitle || '');
     const titleValue = String(snapshot?.title || '');
     const descriptionValue = String(snapshot?.description || '');
     const htmlValue = String(snapshot?.html || '');
+    const previewValue = draftPreviewSnippet(htmlValue);
     return `
       <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
         <div class="border-b border-gray-200 bg-gray-50 px-3 py-2">
           <div class="text-sm font-semibold text-gray-800">${escapeHtml(label)}</div>
-          ${updatedAtText}
+          ${draftMetadataLine(subtitle)}
         </div>
         <div class="space-y-3 p-3">
           <div>
             <div class="mb-1 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-gray-500"><span>${escapeHtml(t('draftFieldTitle'))}</span>${draftFieldBadge(!!diff.title)}</div>
-            <div class="rounded-lg border border-gray-200 bg-gray-50 px-2 py-2 text-sm text-gray-800 whitespace-pre-wrap break-words">${escapeHtml(titleValue || '—')}</div>
+            <div class="rounded-lg border border-gray-200 bg-gray-50 px-2 py-2 text-sm text-gray-800 whitespace-pre-wrap break-words">${escapeHtml(titleValue || '-')}</div>
           </div>
           <div>
             <div class="mb-1 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-gray-500"><span>${escapeHtml(t('draftFieldDescription'))}</span>${draftFieldBadge(!!diff.description)}</div>
-            <div class="rounded-lg border border-gray-200 bg-gray-50 px-2 py-2 text-sm text-gray-700 whitespace-pre-wrap break-words min-h-[56px]">${escapeHtml(descriptionValue || '—')}</div>
+            <div class="rounded-lg border border-gray-200 bg-gray-50 px-2 py-2 text-sm text-gray-700 whitespace-pre-wrap break-words min-h-[56px]">${escapeHtml(descriptionValue || '-')}</div>
           </div>
           <div>
-            <div class="mb-1 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-gray-500"><span>${escapeHtml(t('draftFieldHtml'))}</span><span class="text-[11px] text-gray-500">${escapeHtml(t('draftChars'))}: ${htmlValue.length}</span></div>
-            <pre class="max-h-64 overflow-auto rounded-lg border border-gray-200 bg-gray-50 p-2 text-[12px] leading-5 text-gray-800 whitespace-pre-wrap break-all">${escapeHtml(htmlValue || '')}</pre>
+            <div class="mb-1 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-gray-500"><span>${escapeHtml(t('draftFieldHtml'))}</span>${draftFieldBadge(!!diff.html)}</div>
+            <div class="mb-1 text-[11px] text-gray-500">${escapeHtml(t('draftChars'))}: ${htmlValue.length}</div>
+            <pre class="max-h-32 overflow-auto rounded-lg border border-gray-200 bg-gray-50 p-2 text-[12px] leading-5 text-gray-800 whitespace-pre-wrap break-all">${escapeHtml(previewValue)}</pre>
           </div>
         </div>
       </div>`;
+  }
+  function draftLineCount(value) {
+    const text = String(value || '');
+    if (!text) return [];
+    return text.replace(/\r\n/g, '\n').split('\n');
+  }
+  function buildDraftLineDiffRows(currentHtml, draftHtml) {
+    const currentLines = draftLineCount(currentHtml);
+    const draftLines = draftLineCount(draftHtml);
+    let i = 0;
+    let j = 0;
+    let leftNo = 1;
+    let rightNo = 1;
+    const rows = [];
+    const stats = { added: 0, removed: 0, changed: 0 };
+
+    while (i < currentLines.length || j < draftLines.length) {
+      const leftLine = i < currentLines.length ? currentLines[i] : null;
+      const rightLine = j < draftLines.length ? draftLines[j] : null;
+
+      if (leftLine !== null && rightLine !== null && leftLine === rightLine) {
+        rows.push({ leftNo, rightNo, leftLine, rightLine, leftType: 'same', rightType: 'same' });
+        i += 1;
+        j += 1;
+        leftNo += 1;
+        rightNo += 1;
+        continue;
+      }
+
+      const draftLookahead = (leftLine !== null && j + 1 < draftLines.length) ? draftLines[j + 1] : null;
+      if (leftLine !== null && draftLookahead !== null && leftLine === draftLookahead) {
+        rows.push({ leftNo: '', rightNo, leftLine: '', rightLine, leftType: 'empty', rightType: 'added' });
+        j += 1;
+        rightNo += 1;
+        stats.added += 1;
+        continue;
+      }
+
+      const currentLookahead = (rightLine !== null && i + 1 < currentLines.length) ? currentLines[i + 1] : null;
+      if (rightLine !== null && currentLookahead !== null && currentLookahead === rightLine) {
+        rows.push({ leftNo, rightNo: '', leftLine, rightLine: '', leftType: 'removed', rightType: 'empty' });
+        i += 1;
+        leftNo += 1;
+        stats.removed += 1;
+        continue;
+      }
+
+      if (leftLine !== null && rightLine !== null) {
+        rows.push({ leftNo, rightNo, leftLine, rightLine, leftType: 'changed', rightType: 'changed' });
+        i += 1;
+        j += 1;
+        leftNo += 1;
+        rightNo += 1;
+        stats.changed += 1;
+        continue;
+      }
+
+      if (leftLine !== null) {
+        rows.push({ leftNo, rightNo: '', leftLine, rightLine: '', leftType: 'removed', rightType: 'empty' });
+        i += 1;
+        leftNo += 1;
+        stats.removed += 1;
+        continue;
+      }
+
+      rows.push({ leftNo: '', rightNo, leftLine: '', rightLine, leftType: 'empty', rightType: 'added' });
+      j += 1;
+      rightNo += 1;
+      stats.added += 1;
+    }
+
+    return { rows, stats };
+  }
+  function renderDraftCodeLegend(stats = {}) {
+    const added = Number(stats.added || 0);
+    const removed = Number(stats.removed || 0);
+    const changed = Number(stats.changed || 0);
+    const parts = [];
+    if (added) parts.push(`<span class="inline-flex items-center rounded-full border border-green-200 bg-green-50 px-2 py-1 font-semibold text-green-700">${escapeHtml(t('draftAdded'))}: ${added}</span>`);
+    if (removed) parts.push(`<span class="inline-flex items-center rounded-full border border-red-200 bg-red-50 px-2 py-1 font-semibold text-red-700">${escapeHtml(t('draftRemoved'))}: ${removed}</span>`);
+    if (changed) parts.push(`<span class="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-1 font-semibold text-amber-700">${escapeHtml(t('draftChanged'))}: ${changed}</span>`);
+    if (!parts.length) parts.push(`<span class="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2 py-1 font-semibold text-gray-600">${escapeHtml(t('draftNoCodeDifferences'))}</span>`);
+    els.draftCodeDiffLegend.innerHTML = parts.join('');
+  }
+  function draftFallbackLineHtml(lineNumber, text, type) {
+    const typeClass = type === 'added'
+      ? 'draft-diff-added'
+      : type === 'removed'
+        ? 'draft-diff-removed'
+        : type === 'changed'
+          ? 'draft-diff-changed'
+          : type === 'empty'
+            ? 'draft-diff-empty'
+            : '';
+    const safeNumber = lineNumber === '' ? '&nbsp;' : escapeHtml(String(lineNumber));
+    const safeText = text === '' ? '&nbsp;' : escapeHtml(String(text));
+    return `<div class="draft-diff-line ${typeClass}"><div class="draft-diff-line-number">${safeNumber}</div><div class="draft-diff-line-code">${safeText}</div></div>`;
+  }
+  function syncDraftFallbackScroll(source, target) {
+    if (state.drafts.fallbackSyncing) return;
+    state.drafts.fallbackSyncing = true;
+    target.scrollTop = source.scrollTop;
+    target.scrollLeft = source.scrollLeft;
+    window.requestAnimationFrame(() => { state.drafts.fallbackSyncing = false; });
+  }
+  function renderDraftFallbackDiff(rows, stats) {
+    els.draftCodeDiffMonaco.classList.add('hidden');
+    els.draftCodeDiffFallback.classList.remove('hidden');
+    const leftHtml = rows.map(row => draftFallbackLineHtml(row.leftNo, row.leftLine, row.leftType)).join('');
+    const rightHtml = rows.map(row => draftFallbackLineHtml(row.rightNo, row.rightLine, row.rightType)).join('');
+    els.draftFallbackCurrentPane.innerHTML = leftHtml || '<div class="p-3 text-xs text-gray-500">-</div>';
+    els.draftFallbackLocalPane.innerHTML = rightHtml || '<div class="p-3 text-xs text-gray-500">-</div>';
+    els.draftFallbackCurrentPane.onscroll = () => syncDraftFallbackScroll(els.draftFallbackCurrentPane, els.draftFallbackLocalPane);
+    els.draftFallbackLocalPane.onscroll = () => syncDraftFallbackScroll(els.draftFallbackLocalPane, els.draftFallbackCurrentPane);
+    els.draftFallbackCurrentPane.scrollTop = 0;
+    els.draftFallbackLocalPane.scrollTop = 0;
+    renderDraftCodeLegend(stats);
+  }
+  function diffRangeLineCount(start, end) {
+    const safeStart = Number(start || 0);
+    const safeEnd = Number(end || 0);
+    if (safeStart <= 0 || safeEnd <= 0) return 0;
+    return Math.max(0, safeEnd - safeStart + 1);
+  }
+  function monacoDiffStatsFromChanges(lineChanges = []) {
+    const stats = { added: 0, removed: 0, changed: 0 };
+    for (const change of lineChanges) {
+      const removed = diffRangeLineCount(change.originalStartLineNumber, change.originalEndLineNumber);
+      const added = diffRangeLineCount(change.modifiedStartLineNumber, change.modifiedEndLineNumber);
+      if (removed && added) {
+        stats.changed += Math.max(removed, added);
+      } else if (removed) {
+        stats.removed += removed;
+      } else if (added) {
+        stats.added += added;
+      }
+    }
+    return stats;
+  }
+  function disposeDraftDiffEditor() {
+    if (state.drafts.diffEditor) {
+      state.drafts.diffEditor.dispose();
+      state.drafts.diffEditor = null;
+    }
+    if (state.drafts.diffOriginalModel) {
+      state.drafts.diffOriginalModel.dispose();
+      state.drafts.diffOriginalModel = null;
+    }
+    if (state.drafts.diffModifiedModel) {
+      state.drafts.diffModifiedModel.dispose();
+      state.drafts.diffModifiedModel = null;
+    }
+  }
+  function renderDraftCodeDiff(currentSnapshot, draftSnapshot) {
+    disposeDraftDiffEditor();
+    const currentHtml = String(currentSnapshot?.html || '');
+    const draftHtml = String(draftSnapshot?.html || '');
+    const fallback = buildDraftLineDiffRows(currentHtml, draftHtml);
+    renderDraftCodeLegend(fallback.stats);
+    els.draftCodeDiffMonaco.classList.add('hidden');
+    els.draftCodeDiffFallback.classList.add('hidden');
+
+    if (!(window.monaco && window.monaco.editor && els.draftCodeDiffMonaco)) {
+      renderDraftFallbackDiff(fallback.rows, fallback.stats);
+      return;
+    }
+
+    try {
+      state.drafts.diffOriginalModel = monaco.editor.createModel(currentHtml, 'html');
+      state.drafts.diffModifiedModel = monaco.editor.createModel(draftHtml, 'html');
+      state.drafts.diffEditor = monaco.editor.createDiffEditor(els.draftCodeDiffMonaco, {
+        automaticLayout: true,
+        readOnly: true,
+        originalEditable: false,
+        renderIndicators: true,
+        renderSideBySide: window.matchMedia('(min-width: 1024px)').matches,
+        minimap: { enabled: false },
+        lineNumbers: 'on',
+        scrollBeyondLastLine: false,
+        ignoreTrimWhitespace: false,
+        wordWrap: 'off',
+        fontSize: 12,
+        lineHeight: 20
+      });
+      state.drafts.diffEditor.setModel({ original: state.drafts.diffOriginalModel, modified: state.drafts.diffModifiedModel });
+      els.draftCodeDiffMonaco.classList.remove('hidden');
+
+      const refreshLegend = () => {
+        const editor = state.drafts.diffEditor;
+        if (!editor) return;
+        const changes = editor.getLineChanges() || [];
+        if (!changes.length) {
+          renderDraftCodeLegend(currentHtml === draftHtml ? { added: 0, removed: 0, changed: 0 } : fallback.stats);
+          return;
+        }
+        renderDraftCodeLegend(monacoDiffStatsFromChanges(changes));
+      };
+      state.drafts.diffEditor.onDidUpdateDiff(refreshLegend);
+      refreshLegend();
+      state.drafts.diffEditor.layout();
+      return;
+    } catch (err) {
+      log(err.message || String(err));
+      disposeDraftDiffEditor();
+      renderDraftFallbackDiff(fallback.rows, fallback.stats);
+    }
   }
   function renderDraftDiffSummary(diff) {
     const items = [];
@@ -777,6 +1029,11 @@
     els.draftRecoveryDiffSummary.innerHTML = labels.map(label => `<span class="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2 py-1 text-[11px] font-semibold text-gray-600">${escapeHtml(label)}</span>`).join('');
   }
   function closeDraftRecoveryModal() {
+    disposeDraftDiffEditor();
+    if (els.draftCodeDiffMonaco) els.draftCodeDiffMonaco.classList.add('hidden');
+    if (els.draftCodeDiffFallback) els.draftCodeDiffFallback.classList.add('hidden');
+    if (els.draftFallbackCurrentPane) els.draftFallbackCurrentPane.innerHTML = '';
+    if (els.draftFallbackLocalPane) els.draftFallbackLocalPane.innerHTML = '';
     els.draftRecoveryModal.classList.add('hidden');
     state.drafts.activeDraftKey = '';
   }
@@ -785,10 +1042,12 @@
     const draftSnapshot = draftSnapshotFromRecord(draftRecord);
     const diff = draftDiffMap(currentSnapshot, draftSnapshot);
     const subtitle = pageId ? t('draftRecoverySubtitleSaved') : t('draftRecoverySubtitleUnsaved');
+    const draftUpdatedLabel = draftUpdatedAtLabel(Number(draftRecord.updatedAt || 0));
     els.draftRecoverySubtitle.textContent = subtitle;
     renderDraftDiffSummary(diff);
-    els.draftCurrentColumn.innerHTML = draftColumnHtml(t('draftCurrentVersion'), currentSnapshot, diff);
-    els.draftLocalColumn.innerHTML = draftColumnHtml(t('draftLocalVersion'), draftSnapshot, diff, { updatedAt: Number(draftRecord.updatedAt || 0) });
+    els.draftCurrentColumn.innerHTML = draftColumnHtml(t('draftCurrentVersion'), currentSnapshot, diff, { subtitle: t('draftLoadedFromFibery') });
+    els.draftLocalColumn.innerHTML = draftColumnHtml(t('draftLocalVersion'), draftSnapshot, diff, { subtitle: `${t('draftUpdatedAt')}: ${draftUpdatedLabel || '-'}` });
+    renderDraftCodeDiff(currentSnapshot, draftSnapshot);
     state.drafts.activeDraftKey = key;
     els.draftRecoveryModal.classList.remove('hidden');
   }
