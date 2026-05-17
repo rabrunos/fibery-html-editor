@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.1.8" />
+  <meta name="fibery-html-editor-version" content="8.1.9" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -406,7 +406,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '8.1.8';
+  const APP_VERSION = '8.1.9';
   window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
   document.documentElement.dataset.appVersion = APP_VERSION;
 
@@ -1260,6 +1260,7 @@ ${projectName || ''}`, okText: t('deleteProject'), showPreview: false });
     els.openLastToggle.addEventListener('change', () => localStorage.setItem(LS.openLast, els.openLastToggle.checked ? '1' : '0'));
     els.versionLimitSelect.addEventListener('change', () => localStorage.setItem(LS.versionLimit, els.versionLimitSelect.value));
     els.pageContextMenu.addEventListener('click', async (e) => {
+      e.stopPropagation();
       const actionBtn = e.target.closest('[data-action]');
       if (!actionBtn) return;
       const action = actionBtn.dataset.action;
@@ -1275,6 +1276,7 @@ ${projectName || ''}`, okText: t('deleteProject'), showPreview: false });
       if (action === 'delete-page') await deletePageFromList(pageId, state.context.pageTitle || '');
     });
     els.moveProjectMenu.addEventListener('click', async (e) => {
+      e.stopPropagation();
       const btn = e.target.closest('[data-project-action]');
       if (!btn) return;
       const action = btn.dataset.projectAction;
@@ -1284,6 +1286,7 @@ ${projectName || ''}`, okText: t('deleteProject'), showPreview: false });
       if (action === 'move') await movePageToProject(pageId, btn.dataset.projectId);
     });
     els.projectContextMenu.addEventListener('click', async (e) => {
+      e.stopPropagation();
       const btn = e.target.closest('[data-action]');
       if (!btn) return;
       const action = btn.dataset.action;
@@ -1294,6 +1297,7 @@ ${projectName || ''}`, okText: t('deleteProject'), showPreview: false });
       if (action === 'delete-project') await deleteProject(projectId, projectName(projectId));
     });
     els.editorPanelMenu.addEventListener('click', async (e) => {
+      e.stopPropagation();
       const btn = e.target.closest('[data-panel-action]');
       if (!btn) return;
       const action = btn.dataset.panelAction;
@@ -1303,6 +1307,7 @@ ${projectName || ''}`, okText: t('deleteProject'), showPreview: false });
       if (action === 'select-all-code') selectAllCode(btn);
     });
     els.previewPanelMenu.addEventListener('click', (e) => {
+      e.stopPropagation();
       const btn = e.target.closest('[data-panel-action]');
       if (!btn) return;
       const action = btn.dataset.panelAction;
