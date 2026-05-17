@@ -1,195 +1,208 @@
 # AGENTS.md — Fibery HTML Editor
 
-## Objetivo do app
+## Purpose
 
-O **Fibery HTML Editor** é um editor operacional interno para criar, editar, visualizar, organizar e manter páginas HTML hospedadas no Fibery.
+This file gives instructions to Codex or any coding agent working inside this repository.
 
-Ele não é um editor HTML genérico. Toda evolução deve preservar o uso principal dentro do Fibery: abrir páginas existentes, editar conteúdo HTML, visualizar prévia, organizar páginas em projetos locais e operar com fluidez semelhante a ferramentas como ChatGPT, Notion e VSCode leve.
+Respond to the user in **Portuguese (Brazil)**.
 
-## Ambiente de execução
+The project is **Fibery HTML Editor**: an internal operational editor for creating, editing, previewing, organizing, and maintaining HTML pages hosted by Fibery.
 
-O app roda como uma página HTML customizada dentro do Fibery.
+It is not a generic HTML editor. Preserve the core Fibery workflow: open existing pages, edit HTML, preview, organize pages into local projects, and keep the experience fluid like a lightweight mix of ChatGPT, Notion, and VSCode.
 
-Premissas do ambiente:
+## Runtime environment
 
-- o Fibery hospeda a página;
-- o app é usado dentro de um workspace Fibery;
-- o acesso depende das permissões do workspace e da página/área onde o app está disponível;
-- o app não deve assumir exposição pública;
-- o app não possui backend próprio;
-- o app deve usar apenas recursos disponíveis no navegador e APIs/helpers oficiais do Fibery;
-- integrações com páginas, entidades, permissões, carregamento, listagem, salvamento e exclusão devem respeitar os helpers oficiais disponíveis na fonte do Fibery.
+The app runs as a custom HTML page inside Fibery.
 
-## Arquivos de referência
+Assumptions:
 
-### Arquivo HTML principal
+- Fibery hosts the page.
+- The app runs inside a Fibery workspace.
+- Access depends on workspace/page permissions.
+- The app must not assume public exposure.
+- The project has no owned backend.
+- Use browser capabilities plus Fibery-provided page/API behavior.
+- Page loading, listing, saving, deletion, validation, and permissions must respect the official Fibery reference files.
 
-O arquivo HTML do editor contém a interface principal, os estados locais, a experiência de edição, a sidebar, a prévia e os fluxos operacionais do app.
+## Files to read first
 
-Ao modificar esse arquivo:
+Before making changes, read:
 
-- preservar a estrutura visual aprovada;
-- evitar reescrever blocos grandes sem necessidade;
-- alterar o mínimo necessário;
-- manter compatibilidade com o ambiente de custom HTML page do Fibery;
-- não trocar a arquitetura por framework externo;
-- não adicionar backend, build step ou dependência obrigatória de servidor próprio.
+- `index.html`
+- `docs/roadmap.md`
+- `docs/fibery-src/page-api.js`
+- `docs/fibery-src/editor.js`
 
-### `page-api.js`
+If the task touches app behavior, also read the relevant nearby code in `index.html`.
 
-Arquivo oficial de helper/API do Fibery usado como referência para operações de páginas.
+## Main HTML file
 
-Função deste arquivo no projeto:
+`index.html` contains the app UI, state, sidebar, editor, preview, menus, local persistence, and operational flows.
 
-- fonte oficial para descobrir como carregar, listar, salvar, excluir, validar página e checar permissões;
-- não deve ser recriado manualmente dentro do app;
-- não deve ser editado como se fosse código do projeto;
-- não deve ser substituído por endpoints inventados;
-- se o HTML precisar acessar diretamente seus exports, usar importação compatível com o ambiente real do Fibery e testar no workspace.
+When modifying it:
 
-Helpers conhecidos nesse arquivo:
+- preserve the approved visual structure;
+- avoid large rewrites;
+- make the smallest safe patch;
+- keep compatibility with Fibery custom HTML page hosting;
+- do not add a backend;
+- do not require a framework migration or build pipeline;
+- preserve existing UX unless the task explicitly asks otherwise.
 
-- `createEmptyPage`
-- `checkIsAdmin`
-- `loadPages`
-- `loadPage`
-- `savePage`
-- `deletePage`
-- `validatePageData`
+## Fibery reference files
 
-### `editor.js`
+Official/reference Fibery files live under:
 
-Arquivo oficial/de referência do editor base disponível na fonte do Fibery.
+- `docs/fibery-src/page-api.js`
+- `docs/fibery-src/editor.js`
 
-Função deste arquivo no projeto:
+Treat them as copied reference/source-of-truth from the Fibery environment, not as project-owned code.
 
-- servir como referência de integração e comportamento esperado dos helpers oficiais;
-- mostrar padrões originais de carregamento, salvamento, exclusão, modo de visualização e controle de permissão;
-- não deve substituir automaticamente o editor customizado atual;
-- não deve ser editado como se fosse código local do projeto, salvo se o ambiente real do Fibery exigir manutenção direta desse arquivo.
+Rules:
 
-## Fontes de verdade
+- Do not edit them unless the user explicitly asks.
+- Do not recreate their helpers manually for theoretical cleanliness.
+- Do not invent endpoints, SDKs, response formats, or persistence structures.
+- If the current app already works with Fibery APIs, do not rewrite the integration just because it could look cleaner.
+- If a change touches loading, saving, deletion, validation, admin checks, or preview routes, inspect these files first.
 
-A ordem de confiança para integração deve ser:
+## Source of truth order
 
-1. helpers oficiais disponíveis na fonte do Fibery;
-2. comportamento real testado no workspace Fibery;
-3. HTML atual funcional do editor;
-4. documentação oficial do Fibery;
-5. suposições somente quando explicitamente marcadas como suposição.
+Use this confidence order:
 
-Nunca inventar API, endpoint, formato de resposta, SDK ou estrutura de persistência.
+1. official Fibery reference files;
+2. behavior actually tested inside the Fibery workspace;
+3. current functional `index.html`;
+4. official Fibery documentation;
+5. assumptions, only when explicitly labeled as assumptions.
 
-## Arquitetura do app
+Never invent API behavior.
 
-O app é uma aplicação frontend única, executada no navegador.
+## Architecture
 
-Componentes principais:
+The app is a single frontend app running in the browser.
 
-- sidebar lateral;
-- lista de páginas recentes;
-- organização local por projetos;
-- busca de páginas;
-- tela inicial em branco/welcome;
-- editor de código HTML;
-- preview em iframe;
-- modo foco da prévia;
-- menus contextuais;
-- configurações locais;
-- histórico local de versões;
-- logs opcionais;
-- metadata local para ordenação e organização.
+Main parts:
 
-Não há backend próprio. Qualquer persistência além do Fibery deve usar armazenamento local do navegador.
+- sidebar;
+- recent pages;
+- local projects;
+- page search;
+- welcome/blank view;
+- HTML code editor;
+- iframe preview;
+- preview focus mode;
+- context menus;
+- local settings;
+- local version history;
+- optional logs;
+- local page metadata.
 
-## Persistência local
+There is no owned backend. Any persistence outside Fibery must use browser storage.
 
-O app usa persistência local para estados que não pertencem diretamente ao Fibery.
+## Local persistence
 
-### IndexedDB
+Use **IndexedDB** for structured local data:
 
-Usar IndexedDB para dados locais estruturados, como:
-
-- histórico local de versões;
+- local version history;
 - snapshots;
-- metadados locais de página;
-- projetos locais;
-- vínculos página-projeto.
+- local page metadata;
+- local projects;
+- page-to-project links.
 
-### localStorage
+Use **localStorage** for simple preferences:
 
-Usar localStorage para preferências simples, como:
+- language;
+- open last page;
+- last opened page;
+- version/history limits;
+- editor/preview split size;
+- sidebar open/closed state;
+- panel mode.
 
-- idioma;
-- abrir última página ao iniciar;
-- página aberta anteriormente;
-- limite de versões locais;
-- tamanho do split editor/preview;
-- estado aberto/fechado da sidebar;
-- modo de painel editor/preview.
+Do not move structured data from IndexedDB into localStorage. Do not delete local data without clear migration or confirmation.
 
-Não trocar IndexedDB por localStorage para dados grandes ou estruturados. Não apagar dados locais sem migração ou confirmação clara.
+## UX rules
 
-## Regras de UX
+Preserve the approved UX.
 
-Toda alteração deve preservar a experiência já aprovada.
-
-Prioridades:
+Priorities:
 
 1. UX;
-2. estabilidade;
-3. fluidez;
-4. persistência;
+2. stability;
+3. fluidity;
+4. persistence;
 5. performance;
-6. visual.
+6. visual consistency.
 
-Regras obrigatórias:
+Mandatory rules:
 
-- não fazer a sidebar piscar;
-- não reconstruir listas inteiras sem necessidade;
-- não resetar seleção ao atualizar dados;
-- não sumir e voltar com painéis sem motivo;
-- não recarregar preview desnecessariamente;
-- não perder estado local;
-- não quebrar responsividade horizontal atual;
-- não remover animações suaves aprovadas;
-- não simplificar funcionalidades já aprovadas;
-- não trocar layout sem objetivo claro;
-- não mexer no sistema de ícones enquanto a correção dos SVGs não for priorizada.
+- do not make the sidebar blink;
+- do not rebuild lists unnecessarily;
+- do not reset selections unnecessarily;
+- do not hide/show panels without reason;
+- do not reload preview unnecessarily;
+- do not lose local state;
+- do not break horizontal responsiveness;
+- do not remove approved features;
+- do not simplify the UI by sacrificing operational flows;
+- do not rework icons unless the task is specifically about icons.
 
-Preferir:
+Prefer:
 
-- diff incremental;
-- atualização seletiva de DOM;
-- comparação de estado anterior e próximo;
-- classes e helpers pequenos;
-- funções previsíveis;
-- mudanças fáceis de reverter.
+- incremental DOM updates;
+- previous-vs-next state comparison;
+- small helpers;
+- predictable functions;
+- reversible changes.
 
-Evitar:
+Avoid:
 
-- hacks frágeis;
-- duplicação de DOM;
-- recriação total de listas;
-- dependências desnecessárias;
-- efeitos visuais chamativos sem necessidade;
-- mudanças globais de CSS que afetem sidebar, páginas, projetos ou preview.
+- fragile hacks;
+- duplicate DOM;
+- full list recreation without need;
+- unnecessary dependencies;
+- global CSS changes that affect sidebar, pages, projects, or preview.
 
-## Metadata local de páginas
+## Versioning
 
-A ordenação de páginas depende de metadata local.
+Every implementation that changes the main HTML app must update version metadata in `index.html`.
 
-Regras:
+Required places:
 
-- páginas editadas/salvas pelo editor podem aparecer acima das páginas apenas listadas pela API;
-- páginas sem metadata local devem ficar abaixo, preservando a ordem original da listagem/API;
-- abrir página pode atualizar metadata de abertura;
-- salvar conteúdo pode atualizar metadata de salvamento;
-- renomear não deve contar como edição relevante de conteúdo;
-- mover para projeto, fixar ou arquivar são ações locais e não devem alterar o conteúdo da página;
-- ações de organização local não devem ser confundidas com edição real da página.
+```html
+<meta name="fibery-html-editor-version" content="x.y.z" />
+```
 
-Campos conceituais recomendados:
+```js
+const APP_VERSION = 'x.y.z';
+window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
+document.documentElement.dataset.appVersion = APP_VERSION;
+```
+
+Derive the next version from the current version in `index.html`, not from memory.
+
+Use:
+
+- patch for bug fixes, safe cleanups, and small UX refinements;
+- minor for user-facing features or structural changes;
+- major only for breaking architecture or data-model changes.
+
+## Page metadata
+
+Page ordering depends on local metadata.
+
+Rules:
+
+- pages edited/saved by this editor may appear above API-only pages;
+- pages without local metadata should remain below and preserve API/list order;
+- opening a page may update open metadata;
+- saving content may update save metadata;
+- renaming does not count as relevant content editing;
+- moving to project, pinning, or archiving are local organization actions and must not change page content;
+- do not confuse local organization with real page editing.
+
+Recommended conceptual fields:
 
 - `lastOpenedAt`
 - `lastSavedAt`
@@ -198,229 +211,288 @@ Campos conceituais recomendados:
 - `pinnedAt`
 - `archivedAt`
 
-Nem todo campo precisa existir imediatamente, mas novas mudanças devem respeitar essa separação conceitual.
+Not every field must exist immediately, but new work must respect the distinction.
 
-## Permissões e modo somente leitura
+## Permissions and read-only mode
 
-O app deve respeitar a checagem oficial de admin/permissão disponível nos helpers do Fibery.
+Respect Fibery admin/permission checks.
 
-Quando o usuário não tiver permissão administrativa/de edição:
+When the user cannot edit:
 
-- bloquear salvamento;
-- bloquear criação;
-- bloquear exclusão;
-- colocar editor em modo somente leitura;
-- preservar capacidade de visualização quando possível;
-- não esconder erros de permissão.
+- block save;
+- block create;
+- block delete;
+- make editor read-only;
+- preserve viewing when possible;
+- do not hide permission errors.
 
-Não criar regras paralelas de permissão sem validar contra o comportamento real do Fibery.
+Do not create parallel permission systems unless the task explicitly requires it and behavior is validated in Fibery.
 
 ## Preview
 
-A prévia usa iframe apontando para a rota de visualização da página quando há ID salvo.
+The preview uses an iframe pointing to the page view route when the page has a saved ID.
 
-Regras:
+Rules:
 
-- não recarregar iframe se não for necessário;
-- preservar modo foco;
-- preservar botão/overlay de saída do modo foco;
-- não quebrar layout ao entrar ou sair do foco;
-- página nova sem ID pode ter preview limitado/local até ser salva;
-- futuras melhorias devem respeitar o fluxo atual de preview.
+- avoid unnecessary iframe reloads;
+- preserve preview focus mode;
+- preserve focus exit UI;
+- do not break layout when entering or exiting focus;
+- new unsaved pages may have limited/local preview until saved.
 
 ## Sidebar
 
-A sidebar é parte crítica da experiência.
+The sidebar is critical. Preserve:
 
-Preservar:
+- open/closed state;
+- page list;
+- projects above recent pages;
+- current page selection;
+- new page button;
+- search button;
+- settings button;
+- refresh button;
+- load more;
+- hover with three-dots menus;
+- icon alignment;
+- consistent item height.
 
-- abrir/fechar com estado persistido;
-- lista de páginas;
-- projetos acima das páginas recentes;
-- seleção da página atual;
-- botão novo;
-- botão busca;
-- botão configurações;
-- botão refresh;
-- paginação/load more;
-- hover com 3 pontinhos;
-- alinhamento visual dos ícones;
-- altura visual consistente dos itens.
+Sidebar updates should be incremental whenever possible.
 
-Atualizações da sidebar devem ser incrementais sempre que possível.
+## Projects
 
-## Projetos
+Projects are local browser organization, not Fibery entities.
 
-Projetos são organização local do navegador, não estrutura oficial do Fibery.
+Rules:
 
-Regras:
+- create, rename, delete projects locally;
+- deleting a project must not delete Fibery pages;
+- move/remove pages locally;
+- preserve links in IndexedDB;
+- changing local organization must not alter page content;
+- do not treat local projects as Fibery entities unless a future official integration is planned and tested.
 
-- criar projeto localmente;
-- renomear projeto localmente;
-- excluir projeto sem excluir páginas do Fibery;
-- mover/remover páginas de projetos localmente;
-- preservar vínculos em IndexedDB;
-- não alterar conteúdo da página ao mudar organização local;
-- não tratar projeto local como entidade Fibery, a menos que uma integração oficial seja planejada e testada.
+## Search
 
-## Busca
+Search must remain fast and operational.
 
-A busca deve continuar rápida e operacional.
+Rules:
 
-Regras:
+- preserve welcome search;
+- preserve opening a page from a result;
+- preserve opening preview;
+- add context menus without breaking primary click behavior;
+- debounce queries;
+- avoid unnecessary requests.
 
-- evitar modal pesado quando um dropdown inline resolver melhor;
-- preservar busca na tela welcome;
-- preservar abertura de página pelo resultado;
-- preservar ação de abrir preview;
-- adicionar menus contextuais nos resultados sem quebrar clique principal;
-- aplicar debounce em consultas;
-- não buscar em excesso sem necessidade.
+## History and snapshots
 
-## Histórico e snapshots
+History is local.
 
-Histórico é local no navegador.
+Rules:
 
-Regras:
-
-- salvar versões em IndexedDB;
-- respeitar limite configurado pelo usuário;
-- permitir restauração controlada;
-- não depender de backend próprio;
-- não prometer histórico compartilhado entre usuários/dispositivos;
-- tratar snapshots como recurso local até existir integração oficial diferente.
+- store versions in IndexedDB;
+- respect the configured version limit;
+- allow controlled restore;
+- do not depend on a backend;
+- do not promise shared history across users/devices;
+- treat snapshots as local until an official shared integration exists.
 
 ## Editor
 
-O editor atual é baseado em Monaco quando disponível, com fallback para textarea.
+The editor uses Monaco when available, with textarea fallback.
 
-Preservar:
+Preserve:
 
-- contador de caracteres;
-- copiar código;
-- importar HTML;
-- colar e substituir;
-- selecionar tudo;
-- salvar;
-- estado dirty/unsaved;
-- fallback seguro quando Monaco não carregar;
-- read-only quando não houver permissão.
+- character count;
+- copy code;
+- import HTML;
+- paste and replace;
+- select all;
+- save;
+- dirty/unsaved state;
+- safe fallback when Monaco fails;
+- read-only mode when permission is missing.
 
-Futuras mudanças para editor triplo devem preservar o editor atual como base e migrar incrementalmente.
+Future triple-editor work must migrate incrementally and preserve existing complete-HTML pages.
 
-## Editor triplo planejado
+## Planned triple editor
 
-Evolução planejada:
+Planned direction:
 
-- separar HTML, CSS e JS;
-- permitir ocultar painéis individualmente;
-- permitir layout horizontal e vertical;
-- persistir layout e visibilidade dos painéis;
-- combinar HTML/CSS/JS para preview;
-- salvar de forma compatível com as páginas Fibery atuais;
-- evitar quebrar páginas existentes que já são HTML completo.
+- separate HTML, CSS, and JS;
+- allow panels to be individually hidden;
+- support horizontal and vertical layouts;
+- persist layout and visibility;
+- combine HTML/CSS/JS for preview;
+- save compatibly with existing Fibery HTML pages;
+- avoid breaking existing complete HTML pages.
 
-Estratégia recomendada:
+Recommended sequence:
 
-- primeiro introduzir estrutura de dados compatível;
-- depois UI tripla;
-- depois preview combinado;
-- depois importação inteligente de HTML completo para HTML/CSS/JS.
+1. compatible data structure;
+2. triple editor UI;
+3. combined preview;
+4. intelligent import of complete HTML into HTML/CSS/JS.
 
-## Mobile e layout vertical
+## Mobile and vertical layout
 
-Evolução planejada:
+Planned direction:
 
-- criar layout vertical para telas pequenas;
-- adaptar sidebar e menus para toque;
-- aumentar áreas clicáveis em mobile;
-- preservar desktop sem regressão;
-- evitar drag-resize complexo em telas pequenas até existir desenho específico.
+- vertical layout for small screens;
+- touch-friendly sidebar and menus;
+- larger tap targets;
+- no desktop regression;
+- avoid complex drag-resize on small screens until designed.
 
-## Atualizar App
+## Update App
 
-O botão de atualizar app deve ser tratado com cuidado, pois pode afetar a própria página do editor.
+Updating the app can affect the editor page itself.
 
-Regras:
+Rules:
 
-- detectar claramente quando a página aberta é a página do app/editor;
-- pedir confirmação antes de sobrescrever conteúdo crítico;
-- usar helpers oficiais para salvar;
-- não criar endpoint próprio;
-- não assumir formato de deploy sem teste no workspace;
-- preservar backup/snapshot local antes de atualização relevante.
+- clearly detect when the current page is the app/editor page;
+- confirm before overwriting critical content;
+- use official save behavior;
+- do not create new endpoints;
+- do not assume deployment format without Fibery testing;
+- preserve local backup/snapshot before meaningful update operations.
 
-## Ícones
+## Icons
 
-Os SVGs/HeroIcons existentes podem estar parcialmente deformados.
+Some SVG/HeroIcons may be partially malformed.
 
-Regras atuais:
+Rules:
 
-- não substituir sistema de ícones sem pedido específico;
-- não reestruturar todos os ícones em mudanças não relacionadas;
-- manter estrutura atual até uma etapa dedicada de correção visual;
-- se houver troca futura, fazer em uma versão isolada e testável.
+- do not replace the icon system unless explicitly requested;
+- do not rework all icons as part of unrelated tasks;
+- keep current structure until a dedicated icon fix task;
+- if icons are fixed later, do it in an isolated, testable version.
 
-## Internacionalização
+## Internationalization
 
-O app suporta idioma automático/EN/PT-BR.
+The app supports auto/EN/PT-BR.
 
-Regras:
+Rules:
 
-- novas strings visíveis devem entrar no mapa de i18n;
-- preservar `data-i18n`, `data-i18n-title` e `data-i18n-placeholder` quando aplicável;
-- não misturar texto hardcoded em português/inglês sem motivo;
-- manter fallback em inglês quando chave não existir.
+- new visible strings must be added to i18n maps;
+- preserve `data-i18n`, `data-i18n-title`, and `data-i18n-placeholder` where applicable;
+- do not mix hardcoded Portuguese/English without reason;
+- preserve English fallback.
 
-## Protocolo para novas alterações
+## Investigation discipline
 
-Antes de alterar código:
+Investigate before changing code.
 
-1. ler o HTML atual;
-2. consultar `page-api.js` e `editor.js` quando a mudança tocar API ou integração;
-3. identificar se a funcionalidade já existe;
-4. evitar implementar duplicado;
-5. definir o menor patch possível;
-6. preservar estados locais e UX aprovada.
+Do not assume a proposed hypothesis is correct just because the prompt mentions it.
 
-Depois de alterar código:
+When fixing bugs:
 
-1. validar sintaxe do JavaScript;
-2. revisar IDs usados em `getElementById`;
-3. revisar eventos com `addEventListener`;
-4. revisar impacto na sidebar;
-5. revisar impacto em preview/foco;
-6. revisar localStorage/IndexedDB;
-7. revisar i18n;
-8. documentar o que mudou.
+- reproduce or reason from current code;
+- identify the confirmed root cause;
+- explain the confirmed cause in the final response;
+- treat prompt hints as hypotheses unless evidence confirms them.
 
-## Coisas que não devem ser feitas
+Bad approach:
 
-Não fazer:
+- blindly applying `stopPropagation()` because the prompt mentioned event propagation.
 
-- inventar API;
-- criar backend próprio;
-- trocar IndexedDB por outro sistema sem decisão explícita;
-- recriar helpers oficiais;
-- editar arquivos oficiais do Fibery como se fossem do projeto;
-- remover funcionalidades aprovadas;
-- simplificar a UI sacrificando fluxo operacional;
-- transformar o app em editor genérico;
-- tornar o app público por padrão;
-- adicionar autenticação paralela;
-- salvar tokens no código;
-- depender de dados dinâmicos neste documento;
-- usar este documento como changelog.
+Good approach:
 
-## Como responder ao evoluir o projeto
+- inspect the event flow, confirm why the submenu closes or does not appear, then apply the smallest fix.
 
-Ao entregar uma nova alteração, responder sempre com:
+## Commit and push
+
+Never commit or push unless the prompt explicitly allows it.
+
+If commit/push is allowed:
+
+- run validations first;
+- do not commit or push if validation fails;
+- do not force-push;
+- run `git status`;
+- include only relevant files;
+- use a concise commit message;
+- report commit and push status.
+
+If the prompt forbids commit/push, leave changes uncommitted and report what changed.
+
+## Validation
+
+Before finishing, validate what is possible locally:
+
+- JavaScript syntax;
+- IDs used by `getElementById`;
+- event listeners;
+- i18n keys;
+- version metadata;
+- IndexedDB/localStorage impact;
+- sidebar/preview/menu regressions by static or local checks when possible.
+
+Some validations require real Fibery runtime and usually cannot be completed locally:
+
+- login/session;
+- workspace permissions;
+- `/api/ai-answer/pages/...`;
+- custom HTML page runtime;
+- Fibery-hosted `tailwind.css`;
+- real preview inside Fibery;
+- real save/load/delete/admin behavior.
+
+Separate local validations from manual Fibery tests. Never claim Fibery runtime validation unless actually performed there.
+
+## Before changing code
+
+1. Read the current HTML.
+2. Read Fibery reference files when the task touches API or integration.
+3. Check whether the feature already exists.
+4. Avoid duplicate implementations.
+5. Define the smallest safe patch.
+6. Preserve local state and approved UX.
+
+## After changing code
+
+1. Validate syntax.
+2. Review IDs.
+3. Review event handlers.
+4. Review sidebar impact.
+5. Review preview/focus impact.
+6. Review localStorage/IndexedDB impact.
+7. Review i18n.
+8. Update version metadata if `index.html` changed.
+9. Document what changed.
+
+## Do not do
+
+Do not:
+
+- invent APIs;
+- create a backend;
+- replace IndexedDB without explicit decision;
+- recreate official helpers;
+- edit Fibery reference files as project code;
+- remove approved features;
+- simplify UI by breaking operational flow;
+- turn the app into a generic editor;
+- make it public by default;
+- add parallel authentication;
+- store tokens in code;
+- use this document as changelog.
+
+## Final response requirements
+
+Respond to the user in Portuguese (Brazil).
+
+Focus primarily on what changed for the user/frontend, not only code internals.
+
+Use this structure:
 
 1. O que foi implementado.
 2. O que foi corrigido.
 3. O que mudou visualmente.
-4. Próxima versão sugerida.
-5. Novas ideias/anotações futuras.
-6. Atualização do planejamento caso novas ideias apareçam.
+4. Validações realizadas.
+5. Testes manuais necessários no Fibery.
+6. Commit/push realizado.
+7. Próxima versão sugerida.
 
-Esse formato funciona como registro operacional entre ciclos de desenvolvimento.
+Mention code internals only when useful. Prefer user-facing explanations such as button behavior, menus, sidebar flow, preview behavior, search behavior, editor behavior, project organization, or settings changes.
