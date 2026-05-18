@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.3.1" />
+  <meta name="fibery-html-editor-version" content="8.4.0" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -459,7 +459,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '8.3.1';
+  const APP_VERSION = '8.4.0';
   window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
   document.documentElement.dataset.appVersion = APP_VERSION;
 
@@ -558,7 +558,11 @@
     localPreviewPocCssLoadedShort: 'CSS OK',
     localPreviewPocCssFailedShort: 'CSS FAIL',
     localPreviewPocCssTimeoutShort: 'CSS TIMEOUT',
-    localPreviewPocCssMissingShort: 'CSS MISSING'
+    localPreviewPocCssMissingShort: 'CSS MISSING',
+    localPreviewStatus: 'Local preview',
+    localPreviewStatusTailwind: 'Local preview (tailwind)',
+    localPreviewTailwindBrowserLoaded: 'Local preview Tailwind browser loaded',
+    localPreviewTailwindBrowserFailed: 'Local preview Tailwind browser failed'
   });
   Object.assign(I18N['pt-BR'], {
     draftRecoveryTitle: 'Recuperar rascunho local',
@@ -620,7 +624,11 @@
     localPreviewPocCssLoadedShort: 'CSS OK',
     localPreviewPocCssFailedShort: 'CSS FALHOU',
     localPreviewPocCssTimeoutShort: 'CSS TIMEOUT',
-    localPreviewPocCssMissingShort: 'CSS AUSENTE'
+    localPreviewPocCssMissingShort: 'CSS AUSENTE',
+    localPreviewStatus: 'Prévia local',
+    localPreviewStatusTailwind: 'Prévia local (tailwind)',
+    localPreviewTailwindBrowserLoaded: 'Tailwind browser da prévia local carregado',
+    localPreviewTailwindBrowserFailed: 'Tailwind browser da prévia local falhou'
   });
 
   const $ = (id) => document.getElementById(id);
@@ -659,7 +667,7 @@
   const state = {
     isAdmin: false, lang: 'en', appPageId: detectCurrentAppPageId(), current: { id: '', title: '', description: '', html: '' }, currentBaseline: { id: '', title: '', description: '', html: '' }, blank: true, dirty: false, db: null, saving: false,
     code: { editor: null, suppress: false, fallback: false }, confirmResolver: null,
-    preview: { mode: 'real', localObjectUrl: '', localTailwindHref: '', localRenderMode: '', localBaseHref: '', localStatusLabel: '', activeRequestId: '' },
+    preview: { mode: 'real', localObjectUrl: '', localStatusLabel: '', activeRequestId: '', debounceTimer: null, debounceMs: 500, lastLocalDocSignature: '', lastLocalHtmlSignature: '', lastLocalUsesTailwind: false, lastRealUrl: '' },
     sidebar: { open: true, pages: [], loading: false, refreshTimer: null, hasMore: false, limit: 20, visibleLimit: 20, pageCache: {} },
     projects: { rows: [], items: [], pageToProject: {}, itemsByProject: {} },
     search: { debounce: null, query: '', pages: [] }, welcomeSearch: { debounce: null, query: '', pages: [] }, panelMode: 'both', previewFocus: false, pageMeta: {}, context: { pageId: '', pageTitle: '', projectId: '', createProjectTargetPageId: '' },
@@ -678,49 +686,42 @@
     try { URL.revokeObjectURL(current); } catch (_) {}
     state.preview.localObjectUrl = '';
   }
-  function localPreviewModeLabel(renderMode = 'blob') { return renderMode === 'srcdoc' ? t('localPreviewPocModeSrcdoc') : t('localPreviewPocModeBlob'); }
+  function clearPreviewDebounce() {
+    if (!state.preview.debounceTimer) return;
+    window.clearTimeout(state.preview.debounceTimer);
+    state.preview.debounceTimer = null;
+  }
   function localPreviewBaseHref() {
     try { return new URL('.', window.location.href).href; } catch (_) {}
     try { return window.location.origin + '/'; } catch (_) {}
     return '';
   }
-  function localPreviewStatusLabel({ renderMode = 'blob', cssHref = '', useBase = false } = {}) {
-    const parts = [t('localPreviewPocStatus'), localPreviewModeLabel(renderMode)];
-    if (cssHref) parts.push(cssHref);
-    if (useBase) parts.push(t('localPreviewPocWithBase'));
-    return parts.join(' · ');
+  function localPreviewStatusLabel({ usesTailwind = false } = {}) { return usesTailwind ? t('localPreviewStatusTailwind') : t('localPreviewStatus'); }
+  function htmlUsesTailwindStylesheet(html = '') {
+    return /<link\b[^>]*href\s*=\s*["'](?:\.\/|\/)?tailwind\.css["'][^>]*>/i.test(String(html || ''));
   }
+  function shouldUseLocalPreview() { if (state.blank) return false; if (!state.current.id) return true; return !sameSnapshot(currentSnapshotFromState(), currentBaselineSnapshot()); }
   function localPreviewRequestId() { return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`; }
   function handleLocalPreviewPocMessage(event) {
     const data = event?.data;
     if (!data || data.source !== LOCAL_PREVIEW_POC_MESSAGE_SOURCE) return;
     if (event.source !== els.previewFrame.contentWindow) return;
-    if (state.preview.mode !== 'local-poc') return;
+    if (state.preview.mode !== 'local') return;
     if (!data.requestId || data.requestId !== state.preview.activeRequestId) return;
 
-    const resolvedHref = String(data.resolvedHref || data.cssHref || state.preview.localTailwindHref || '');
-    let statusSuffix = '';
-
     if (data.type === 'css-load') {
-      statusSuffix = t('localPreviewPocCssLoadedShort');
-      log(`${t('localPreviewPocCssLoaded')}: ${resolvedHref || '-'}`);
+      log(`${t('localPreviewPocCssLoaded')}: ${String(data.resolvedHref || data.cssHref || '-')}`);
     } else if (data.type === 'css-error') {
-      statusSuffix = t('localPreviewPocCssFailedShort');
-      log(`${t('localPreviewPocCssFailed')}: ${resolvedHref || '-'}`);
+      log(`${t('localPreviewPocCssFailed')}: ${String(data.resolvedHref || data.cssHref || '-')}`);
     } else if (data.type === 'css-timeout') {
-      statusSuffix = t('localPreviewPocCssTimeoutShort');
-      log(`${t('localPreviewPocCssTimeout')}: ${resolvedHref || '-'}`);
+      log(`${t('localPreviewPocCssTimeout')}: ${String(data.resolvedHref || data.cssHref || '-')}`);
     } else if (data.type === 'css-missing') {
-      statusSuffix = t('localPreviewPocCssMissingShort');
-      log(`${t('localPreviewPocCssMissing')}: ${resolvedHref || '-'}`);
-    } else {
-      return;
+      log(`${t('localPreviewPocCssMissing')}: ${String(data.resolvedHref || data.cssHref || '-')}`);
+    } else if (data.type === 'tailwind-browser-load') {
+      log(t('localPreviewTailwindBrowserLoaded'));
+    } else if (data.type === 'tailwind-browser-error') {
+      log(t('localPreviewTailwindBrowserFailed'));
     }
-
-    const baseLabel = state.preview.localStatusLabel || t('localPreviewPocStatus');
-    const fullStatus = `${baseLabel} · ${statusSuffix}`;
-    els.previewStatus.textContent = fullStatus;
-    setStatus(fullStatus);
   }
 
   function getMetaMap() { return state.pageMeta || {}; }
@@ -753,7 +754,7 @@
 
   function setCodeValue(value) { const next = value || ''; state.code.suppress = true; if (state.code.editor) { const model = state.code.editor.getModel(); if (model && model.getValue() !== next) model.setValue(next); } els.codeEditorFallback.value = next; state.code.suppress = false; updateCharCount(); }
   function setCodeReadOnly(readOnly) { if (state.code.editor) state.code.editor.updateOptions({ readOnly: !!readOnly }); els.codeEditorFallback.readOnly = !!readOnly; }
-  function setupCodeEditor() { return new Promise((resolve) => { const fallback = () => { state.code.fallback = true; els.codeEditor.classList.add('hidden'); els.codeEditorFallback.classList.remove('hidden'); els.codeEditorFallback.addEventListener('input', () => { updateCurrentFromInputs(); updateCharCount(); markDirty(true); }); log('Monaco not available. Using textarea fallback.'); resolve(false); }; if (!window.require) return fallback(); try { window.require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' } }); window.require(['vs/editor/editor.main'], () => { try { state.code.editor = monaco.editor.create(els.codeEditor, { value: '', language: 'html', theme: 'vs', automaticLayout: true, minimap: { enabled: true }, fontSize: 13, lineHeight: 20, tabSize: 2, wordWrap: 'on', scrollBeyondLastLine: false, renderWhitespace: 'selection', bracketPairColorization: { enabled: true } }); state.code.editor.onDidChangeModelContent(() => { if (state.code.suppress) return; updateCurrentFromInputs(); updateCharCount(); markDirty(true); }); resolve(true); } catch (_) { fallback(); } }, fallback); } catch (_) { fallback(); } }); }
+  function setupCodeEditor() { return new Promise((resolve) => { const fallback = () => { state.code.fallback = true; els.codeEditor.classList.add('hidden'); els.codeEditorFallback.classList.remove('hidden'); els.codeEditorFallback.addEventListener('input', () => { updateCurrentFromInputs(); updateCharCount(); markDirty(true); scheduleLocalPreviewRefresh(); }); log('Monaco not available. Using textarea fallback.'); resolve(false); }; if (!window.require) return fallback(); try { window.require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' } }); window.require(['vs/editor/editor.main'], () => { try { state.code.editor = monaco.editor.create(els.codeEditor, { value: '', language: 'html', theme: 'vs', automaticLayout: true, minimap: { enabled: true }, fontSize: 13, lineHeight: 20, tabSize: 2, wordWrap: 'on', scrollBeyondLastLine: false, renderWhitespace: 'selection', bracketPairColorization: { enabled: true } }); state.code.editor.onDidChangeModelContent(() => { if (state.code.suppress) return; updateCurrentFromInputs(); updateCharCount(); markDirty(true); scheduleLocalPreviewRefresh(); }); resolve(true); } catch (_) { fallback(); } }, fallback); } catch (_) { fallback(); } }); }
 
   function applyI18n() {
     state.lang = preferredLang();
@@ -1289,7 +1290,7 @@
     state.current.html = snapshot.html;
     renderCurrent();
     markDirty(true);
-    refreshPreview();
+    syncPreviewMode({ immediate: true });
     if (key) clearDismissedRecovery(key);
     if (state.drafts.reopenCandidate?.key === key) state.drafts.reopenCandidate = null;
     updateRecoveryReopenButton();
@@ -1408,13 +1409,15 @@
   }
 
   function showBlankPage() {
+    clearPreviewDebounce();
     revokeLocalPreviewObjectUrl();
     state.preview.mode = 'real';
-    state.preview.localTailwindHref = '';
-    state.preview.localRenderMode = '';
-    state.preview.localBaseHref = '';
     state.preview.localStatusLabel = '';
     state.preview.activeRequestId = '';
+    state.preview.lastLocalDocSignature = '';
+    state.preview.lastLocalHtmlSignature = '';
+    state.preview.lastLocalUsesTailwind = false;
+    state.preview.lastRealUrl = '';
     state.blank = true;
     state.current = { id: '', title: '', description: '', html: '' };
     setCurrentBaseline();
@@ -1466,101 +1469,110 @@
     updateRecoveryReopenButton();
   }
   function viewUrl(id) { if (!id) return 'about:blank'; return new URL('/api/ai-answer/pages/' + encodeURIComponent(id) + '/view', window.location.origin).href; }
-  function localPreviewProbeScript({ requestId, cssHref, renderMode, baseHref }) {
-    const payload = JSON.stringify({ source: LOCAL_PREVIEW_POC_MESSAGE_SOURCE, requestId: String(requestId || ''), cssHref: String(cssHref || ''), renderMode: String(renderMode || ''), baseHref: String(baseHref || '') });
-    return `<script>(function(){var base=${payload};function send(type,extra){try{parent.postMessage(Object.assign({},base,{type:type,at:Date.now()},extra||{}),'*');}catch(_){}}window.addEventListener('DOMContentLoaded',function(){var link=document.querySelector('link[data-local-preview-poc=\"tailwind\"]');if(!link){send('css-missing');return;}var done=false;function finish(type){if(done)return;done=true;send(type,{resolvedHref:String(link.href||'')});}link.addEventListener('load',function(){finish('css-load');},{once:true});link.addEventListener('error',function(){finish('css-error');},{once:true});window.setTimeout(function(){finish('css-timeout');},4000);});})();<\/script>`;
+  function localPreviewProbeScript({ requestId, cssHref, baseHref, enableTailwindBrowser }) {
+    const payload = JSON.stringify({ source: LOCAL_PREVIEW_POC_MESSAGE_SOURCE, requestId: String(requestId || ''), cssHref: String(cssHref || ''), baseHref: String(baseHref || ''), enableTailwindBrowser: !!enableTailwindBrowser });
+    return `<script>(function(){var base=${payload};function send(type,extra){try{parent.postMessage(Object.assign({},base,{type:type,at:Date.now()},extra||{}),'*');}catch(_){}}window.addEventListener('DOMContentLoaded',function(){var link=document.querySelector('link[data-local-preview-tailwind=\"stylesheet\"]');if(link){var done=false;function finish(type){if(done)return;done=true;send(type,{resolvedHref:String(link.href||'')});}link.addEventListener('load',function(){finish('css-load');},{once:true});link.addEventListener('error',function(){finish('css-error');},{once:true});window.setTimeout(function(){finish('css-timeout');},4000);}else if(base.enableTailwindBrowser){send('css-missing');}var browser=document.querySelector('script[data-local-preview-tailwind=\"browser\"]');if(browser){browser.addEventListener('load',function(){send('tailwind-browser-load');},{once:true});browser.addEventListener('error',function(){send('tailwind-browser-error');},{once:true});}});})();<\/script>`;
   }
-  function buildLocalPreviewPocDocument(userHtml, options = {}) {
+  function buildLocalPreviewDocument(userHtml, options = {}) {
     const html = String(userHtml || '');
-    const cssHref = String(options.cssHref || '');
-    const useBase = !!options.useBase;
     const baseHref = String(options.baseHref || '');
+    const enableTailwindBrowser = !!options.enableTailwindBrowser;
     const injectionParts = ['<meta charset="UTF-8" />'];
-    if (useBase && baseHref) injectionParts.push(`<base href="${escapeHtmlAttr(baseHref)}" data-local-preview-poc="base" />`);
-    if (cssHref) injectionParts.push(`<link rel="stylesheet" href="${escapeHtmlAttr(cssHref)}" data-local-preview-poc="tailwind" />`);
-    injectionParts.push(localPreviewProbeScript(options));
+    if (baseHref) injectionParts.push(`<base href="${escapeHtmlAttr(baseHref)}" data-local-preview="base" />`);
+    if (enableTailwindBrowser) {
+      injectionParts.push('<link rel="stylesheet" href="tailwind.css" data-local-preview-tailwind="stylesheet" />');
+      // Preview-only: runtime Tailwind for unsaved iframe content. Never saved to Fibery.
+      injectionParts.push('<script src="https://cdn.tailwindcss.com" data-local-preview-tailwind="browser"><\/script>');
+    }
+    injectionParts.push(localPreviewProbeScript({
+      requestId: options.requestId,
+      cssHref: enableTailwindBrowser ? 'tailwind.css' : '',
+      baseHref,
+      enableTailwindBrowser
+    }));
     const headInjection = injectionParts.join('\n');
-    if (/<head[\s>]/i.test(html)) {
-      return html.replace(/<head([^>]*)>/i, `<head$1>\n${headInjection}\n`);
-    }
-    if (/<html[\s>]/i.test(html)) {
-      return html.replace(/<html([^>]*)>/i, `<html$1>\n<head>\n${headInjection}\n</head>\n`);
-    }
-    if (/<body[\s>]/i.test(html)) {
-      return `<!doctype html>\n<html>\n<head>\n${headInjection}\n</head>\n${html}\n</html>`;
-    }
+    if (/<head[\s>]/i.test(html)) return html.replace(/<head([^>]*)>/i, `<head$1>\n${headInjection}\n`);
+    if (/<html[\s>]/i.test(html)) return html.replace(/<html([^>]*)>/i, `<html$1>\n<head>\n${headInjection}\n</head>\n`);
+    if (/<body[\s>]/i.test(html)) return `<!doctype html>\n<html>\n<head>\n${headInjection}\n</head>\n${html}\n</html>`;
     return `<!doctype html>\n<html>\n<head>\n${headInjection}\n</head>\n<body>\n${html}\n</body>\n</html>`;
   }
-  function renderLocalPreviewPoc(options = {}) {
-    const normalized = {
-      renderMode: options.renderMode === 'srcdoc' ? 'srcdoc' : 'blob',
-      cssHref: String(options.cssHref || 'tailwind.css'),
-      useBase: !!options.useBase
-    };
-    const requestId = localPreviewRequestId();
-    const baseHref = normalized.useBase ? localPreviewBaseHref() : '';
+  function renderLocalPreview() {
     updateCurrentFromInputs();
     const html = getCodeValue();
-    const doc = buildLocalPreviewPocDocument(html, {
-      requestId,
-      renderMode: normalized.renderMode,
-      cssHref: normalized.cssHref,
-      useBase: normalized.useBase,
-      baseHref
-    });
-    revokeLocalPreviewObjectUrl();
-    state.preview.mode = 'local-poc';
-    state.preview.localTailwindHref = normalized.cssHref;
-    state.preview.localBaseHref = baseHref;
-    state.preview.activeRequestId = requestId;
+    const usesTailwind = htmlUsesTailwindStylesheet(html);
+    const requestId = localPreviewRequestId();
+    const baseHref = localPreviewBaseHref();
+    const doc = buildLocalPreviewDocument(html, { requestId, baseHref, enableTailwindBrowser: usesTailwind });
+    const docSignature = snapshotSignature({ title: '', description: '', html: doc });
+    const htmlSignature = snapshotSignature({ title: '', description: '', html });
 
-    let finalRenderMode = normalized.renderMode;
-    if (normalized.renderMode === 'blob') {
-      try {
-        const blob = new Blob([doc], { type: 'text/html;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        state.preview.localObjectUrl = url;
-        els.previewFrame.removeAttribute('srcdoc');
-        els.previewFrame.src = url;
-      } catch (_) {
-        finalRenderMode = 'srcdoc';
-        log(t('localPreviewPocLoadFallback'));
-      }
+    if (state.preview.mode === 'local' && state.preview.lastLocalDocSignature === docSignature) {
+      const statusLabel = localPreviewStatusLabel({ usesTailwind });
+      els.previewStatus.textContent = statusLabel;
+      state.preview.localStatusLabel = statusLabel;
+      state.preview.lastLocalUsesTailwind = usesTailwind;
+      return;
     }
-    if (finalRenderMode === 'srcdoc') {
-      els.previewFrame.removeAttribute('src');
-      els.previewFrame.srcdoc = doc;
-    }
-    state.preview.localRenderMode = finalRenderMode;
-    const statusLabel = localPreviewStatusLabel({ renderMode: finalRenderMode, cssHref: normalized.cssHref, useBase: normalized.useBase });
+
+    clearPreviewDebounce();
+    revokeLocalPreviewObjectUrl();
+    state.preview.mode = 'local';
+    state.preview.activeRequestId = requestId;
+    state.preview.lastLocalDocSignature = docSignature;
+    state.preview.lastLocalHtmlSignature = htmlSignature;
+    state.preview.lastLocalUsesTailwind = usesTailwind;
+    const statusLabel = localPreviewStatusLabel({ usesTailwind });
     state.preview.localStatusLabel = statusLabel;
     els.previewStatus.textContent = statusLabel;
     setStatus(statusLabel);
-    log(`${t('localPreviewPocStarting')}: ${localPreviewModeLabel(finalRenderMode)} · ${normalized.cssHref}${normalized.useBase ? ` · ${t('localPreviewPocWithBase')} (${baseHref || '-'})` : ''}`);
-    log(`${t('localPreviewPocRendered')}: ${localPreviewModeLabel(finalRenderMode)} · ${normalized.cssHref}`);
+
+    els.previewFrame.removeAttribute('src');
+    els.previewFrame.srcdoc = doc;
   }
-  function refreshPreview() {
+  function renderRealPreview({ forceReload = false } = {}) {
+    clearPreviewDebounce();
     revokeLocalPreviewObjectUrl();
     state.preview.mode = 'real';
-    state.preview.localTailwindHref = '';
-    state.preview.localRenderMode = '';
-    state.preview.localBaseHref = '';
-    state.preview.localStatusLabel = '';
     state.preview.activeRequestId = '';
+    state.preview.localStatusLabel = '';
+    state.preview.lastLocalDocSignature = '';
+    state.preview.lastLocalHtmlSignature = '';
+    state.preview.lastLocalUsesTailwind = false;
     if (!state.current.id) {
       els.previewFrame.removeAttribute('src');
       els.previewFrame.srcdoc = '<div style="font-family:system-ui;padding:24px;color:#6b7280;">' + t('noPage') + '</div>';
       els.previewStatus.textContent = '—';
       return;
     }
-    els.previewStatus.textContent = state.current.title || state.current.id;
     const url = viewUrl(state.current.id);
+    els.previewStatus.textContent = state.current.title || state.current.id;
     els.previewFrame.removeAttribute('srcdoc');
-    if (els.previewFrame.src === url) {
+    if (forceReload && els.previewFrame.src === url) {
       try { els.previewFrame.contentWindow.location.reload(); return; } catch (_) {}
     }
-    els.previewFrame.src = url;
+    if (els.previewFrame.src !== url || forceReload) els.previewFrame.src = url;
+    state.preview.lastRealUrl = url;
   }
+  function scheduleLocalPreviewRefresh() {
+    if (state.blank) return;
+    if (!shouldUseLocalPreview()) { renderRealPreview(); return; }
+    clearPreviewDebounce();
+    state.preview.debounceTimer = window.setTimeout(() => {
+      state.preview.debounceTimer = null;
+      if (!shouldUseLocalPreview()) { renderRealPreview(); return; }
+      renderLocalPreview();
+    }, state.preview.debounceMs);
+  }
+  function syncPreviewMode({ immediate = false, forceRealReload = false } = {}) {
+    if (state.blank) return;
+    if (shouldUseLocalPreview()) {
+      if (immediate) { clearPreviewDebounce(); renderLocalPreview(); return; }
+      scheduleLocalPreviewRefresh();
+      return;
+    }
+    renderRealPreview({ forceReload: !!forceRealReload });
+  }
+  function refreshPreview() { renderRealPreview({ forceReload: true }); }
 
   async function loadPage(id) {
     await flushDraftAutosaveNow();
@@ -1572,7 +1584,7 @@
     await savePageMeta(state.current.id, { title: state.current.title, description: state.current.description, lastOpenedAt: Date.now() });
     renderCurrent();
     localStorage.setItem(LS.lastPageId, state.current.id);
-    refreshPreview();
+    syncPreviewMode({ immediate: true });
     setStatus(t('pageLoaded'));
     log(`${t('pageLoaded')}: ${state.current.title || state.current.id}`);
     void maybePromptDraftRecoveryForCurrentPage(promptToken);
@@ -1581,7 +1593,7 @@
   async function confirmAction({ title, message, okText = 'OK', showPreview = false, previewId = '', openPreviewId = '' } = {}) { els.confirmTitle.textContent = title || ''; els.confirmMessage.textContent = message || ''; els.confirmOkBtn.textContent = okText; const previewTargetId = previewId || state.current.id; els.confirmOpenPreviewBtn.dataset.previewId = openPreviewId || previewTargetId || ''; els.deletePreviewWrap.classList.toggle('hidden', !showPreview); if (showPreview && previewTargetId) els.deletePreviewFrame.src = viewUrl(previewTargetId); else { els.deletePreviewFrame.removeAttribute('src'); els.confirmOpenPreviewBtn.dataset.previewId = ''; } els.confirmModal.classList.remove('hidden'); return new Promise(resolve => { state.confirmResolver = resolve; }); }
   function closeConfirm(result) { els.confirmModal.classList.add('hidden'); els.deletePreviewFrame.removeAttribute('src'); els.confirmOpenPreviewBtn.dataset.previewId = ''; const resolver = state.confirmResolver; state.confirmResolver = null; if (resolver) resolver(!!result); }
 
-  async function newPage() { const ok = await confirmAction({ title: t('createPageTitle'), message: t('createPageMessage'), okText: t('create') }); if (!ok) return; await flushDraftAutosaveNow(); state.current = { id: '', title: 'Untitled Page', description: '', html: '' }; setCurrentBaseline(); renderCurrent(); refreshPreview(); markDirty(true); setStatus(t('pageCreated')); els.titleInput.focus(); els.titleInput.select(); }
+  async function newPage() { const ok = await confirmAction({ title: t('createPageTitle'), message: t('createPageMessage'), okText: t('create') }); if (!ok) return; await flushDraftAutosaveNow(); state.current = { id: '', title: 'Untitled Page', description: '', html: '' }; setCurrentBaseline(); renderCurrent(); markDirty(true); syncPreviewMode({ immediate: true }); setStatus(t('pageCreated')); els.titleInput.focus(); els.titleInput.select(); }
   async function deleteCurrentPage() { if (!state.current.id) return; const ok = await confirmAction({ title: t('deleteTitle'), message: t('deleteMessage'), okText: t('deleteConfirm'), showPreview: false }); if (!ok) return; try { const oldId = state.current.id; await API.deletePage(oldId); if (localStorage.getItem(LS.lastPageId) === oldId) localStorage.removeItem(LS.lastPageId); await deletePageMeta(oldId); showBlankPage(); await loadSidebarPages({ force: true, reset: true }); setStatus(t('deleted')); log(t('deleted')); } catch (err) { alert(err.message || String(err)); log(err.message || String(err)); } }
   async function deletePageFromList(id, title) { if (!id || !state.isAdmin) return; const ok = await confirmAction({ title: t('deleteTitle'), message: `${t('deleteMessage')}
 
@@ -1610,7 +1622,7 @@ ${title || id}`, okText: t('deleteConfirm'), showPreview: true, previewId: id, o
       await saveHistory(action);
       setCurrentBaseline();
       renderCurrent();
-      refreshPreview();
+      syncPreviewMode({ immediate: true, forceRealReload: true });
       if (state.sidebar.open) await loadSidebarPages({ force: true, reset: true });
       setStatus(t('saved'));
       log(`${t('saved')}: ${state.current.title || state.current.id}`);
@@ -2014,18 +2026,7 @@ ${projectName || ''}`, okText: t('deleteProject'), showPreview: false });
   function openPreviewPanelMenu(event) {
     event.preventDefault(); event.stopPropagation();
     if (!shouldToggleFloatingMenu(els.previewPanelMenu, event.currentTarget)) return;
-    const realPreviewAction = state.preview.mode === 'local-poc'
-      ? `<button class="context-menu-item" data-panel-action="real-preview">${escapeHtml(t('backToRealPreview'))}</button><div class="my-1 border-t border-gray-100"></div>`
-      : '';
     els.previewPanelMenu.innerHTML = `
-      ${realPreviewAction}
-      <button class="context-menu-item" data-panel-action="local-preview-poc-blob-relative">${escapeHtml(t('localPreviewPocBlobRelative'))}</button>
-      <button class="context-menu-item" data-panel-action="local-preview-poc-blob-root">${escapeHtml(t('localPreviewPocBlobRoot'))}</button>
-      <div class="my-1 border-t border-gray-100"></div>
-      <button class="context-menu-item" data-panel-action="local-preview-poc-srcdoc-relative">${escapeHtml(t('localPreviewPocSrcdocRelative'))}</button>
-      <button class="context-menu-item" data-panel-action="local-preview-poc-srcdoc-root">${escapeHtml(t('localPreviewPocSrcdocRoot'))}</button>
-      <button class="context-menu-item" data-panel-action="local-preview-poc-srcdoc-base">${escapeHtml(t('localPreviewPocSrcdocBase'))}</button>
-      <div class="my-1 border-t border-gray-100"></div>
       <button class="context-menu-item" data-panel-action="copy-preview-link">${escapeHtml(t('copyPreviewLink'))}</button>
       <button class="context-menu-item" data-panel-action="open-preview">${escapeHtml(t('openPreview'))}</button>
       <button class="context-menu-item" data-panel-action="refresh-preview">${escapeHtml(t('refreshPreview'))}</button>`;
@@ -2059,6 +2060,7 @@ ${projectName || ''}`, okText: t('deleteProject'), showPreview: false });
     setCodeValue(text || '');
     updateCurrentFromInputs();
     markDirty(true);
+    scheduleLocalPreviewRefresh();
     showToastNear(target, t('pastedReplaced'));
   }
   function importHtmlFile(target) {
@@ -2075,6 +2077,7 @@ ${projectName || ''}`, okText: t('deleteProject'), showPreview: false });
         setCodeValue(String(reader.result || ''));
         updateCurrentFromInputs();
         markDirty(true);
+        scheduleLocalPreviewRefresh();
         showToastNear(target || els.editorPanelMenuBtn, t('htmlImported'));
         log(`${t('htmlImported')}: ${file.name}`);
       };
@@ -2274,8 +2277,8 @@ ${projectName || ''}`, okText: t('deleteProject'), showPreview: false });
   }
 
   function bindEvents() {
-    els.titleInput.addEventListener('input', () => { updateCurrentFromInputs(); markDirty(true); });
-    els.descriptionInput.addEventListener('input', () => { updateCurrentFromInputs(); markDirty(true); });
+    els.titleInput.addEventListener('input', () => { updateCurrentFromInputs(); markDirty(true); scheduleLocalPreviewRefresh(); });
+    els.descriptionInput.addEventListener('input', () => { updateCurrentFromInputs(); markDirty(true); scheduleLocalPreviewRefresh(); });
     els.saveBtn.addEventListener('click', () => savePage('save'));
     els.refreshBtn.addEventListener('click', () => { els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); refreshPreview(); });
     els.newPageBtn.addEventListener('click', newPage);
@@ -2387,12 +2390,6 @@ ${projectName || ''}`, okText: t('deleteProject'), showPreview: false });
       if (!btn) return;
       const action = btn.dataset.panelAction;
       closeContextMenus();
-      if (action === 'local-preview-poc-blob-relative') renderLocalPreviewPoc({ renderMode: 'blob', cssHref: 'tailwind.css', useBase: false });
-      if (action === 'local-preview-poc-blob-root') renderLocalPreviewPoc({ renderMode: 'blob', cssHref: '/tailwind.css', useBase: false });
-      if (action === 'local-preview-poc-srcdoc-relative') renderLocalPreviewPoc({ renderMode: 'srcdoc', cssHref: 'tailwind.css', useBase: false });
-      if (action === 'local-preview-poc-srcdoc-root') renderLocalPreviewPoc({ renderMode: 'srcdoc', cssHref: '/tailwind.css', useBase: false });
-      if (action === 'local-preview-poc-srcdoc-base') renderLocalPreviewPoc({ renderMode: 'srcdoc', cssHref: 'tailwind.css', useBase: true });
-      if (action === 'real-preview') refreshPreview();
       if (action === 'copy-preview-link') copyText(state.current.id ? viewUrl(state.current.id) : '', btn, t('copiedPreviewLink'));
       if (action === 'open-preview' && state.current.id) window.open(viewUrl(state.current.id), '_blank');
       if (action === 'refresh-preview') refreshPreview();
@@ -2425,7 +2422,7 @@ ${projectName || ''}`, okText: t('deleteProject'), showPreview: false });
       }
       if (state.sidebar.open) loadSidebarPages({ force: true, reset: false });
     });
-    window.addEventListener('beforeunload', () => { stopSidebarAutoRefresh(); revokeLocalPreviewObjectUrl(); void flushDraftAutosaveNow(); });
+    window.addEventListener('beforeunload', () => { stopSidebarAutoRefresh(); clearPreviewDebounce(); revokeLocalPreviewObjectUrl(); void flushDraftAutosaveNow(); });
   }
 
   async function init() {
