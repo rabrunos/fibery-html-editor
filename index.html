@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.4.0" />
+  <meta name="fibery-html-editor-version" content="8.4.1" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -459,7 +459,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '8.4.0';
+  const APP_VERSION = '8.4.1';
   window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
   document.documentElement.dataset.appVersion = APP_VERSION;
 
@@ -662,7 +662,7 @@
     return '';
   }
 
-  const LOCAL_PREVIEW_POC_MESSAGE_SOURCE = 'fibery-html-editor/local-preview-poc';
+  const LOCAL_PREVIEW_MESSAGE_SOURCE = 'fibery-html-editor/local-preview';
 
   const state = {
     isAdmin: false, lang: 'en', appPageId: detectCurrentAppPageId(), current: { id: '', title: '', description: '', html: '' }, currentBaseline: { id: '', title: '', description: '', html: '' }, blank: true, dirty: false, db: null, saving: false,
@@ -701,10 +701,17 @@
     return /<link\b[^>]*href\s*=\s*["'](?:\.\/|\/)?tailwind\.css["'][^>]*>/i.test(String(html || ''));
   }
   function shouldUseLocalPreview() { if (state.blank) return false; if (!state.current.id) return true; return !sameSnapshot(currentSnapshotFromState(), currentBaselineSnapshot()); }
+  function localPreviewRenderSignature(html, baseHref, usesTailwind) {
+    return snapshotSignature({
+      title: String(baseHref || ''),
+      description: usesTailwind ? '1' : '0',
+      html: String(html || '')
+    });
+  }
   function localPreviewRequestId() { return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`; }
-  function handleLocalPreviewPocMessage(event) {
+  function handleLocalPreviewMessage(event) {
     const data = event?.data;
-    if (!data || data.source !== LOCAL_PREVIEW_POC_MESSAGE_SOURCE) return;
+    if (!data || data.source !== LOCAL_PREVIEW_MESSAGE_SOURCE) return;
     if (event.source !== els.previewFrame.contentWindow) return;
     if (state.preview.mode !== 'local') return;
     if (!data.requestId || data.requestId !== state.preview.activeRequestId) return;
@@ -1470,7 +1477,7 @@
   }
   function viewUrl(id) { if (!id) return 'about:blank'; return new URL('/api/ai-answer/pages/' + encodeURIComponent(id) + '/view', window.location.origin).href; }
   function localPreviewProbeScript({ requestId, cssHref, baseHref, enableTailwindBrowser }) {
-    const payload = JSON.stringify({ source: LOCAL_PREVIEW_POC_MESSAGE_SOURCE, requestId: String(requestId || ''), cssHref: String(cssHref || ''), baseHref: String(baseHref || ''), enableTailwindBrowser: !!enableTailwindBrowser });
+    const payload = JSON.stringify({ source: LOCAL_PREVIEW_MESSAGE_SOURCE, requestId: String(requestId || ''), cssHref: String(cssHref || ''), baseHref: String(baseHref || ''), enableTailwindBrowser: !!enableTailwindBrowser });
     return `<script>(function(){var base=${payload};function send(type,extra){try{parent.postMessage(Object.assign({},base,{type:type,at:Date.now()},extra||{}),'*');}catch(_){}}window.addEventListener('DOMContentLoaded',function(){var link=document.querySelector('link[data-local-preview-tailwind=\"stylesheet\"]');if(link){var done=false;function finish(type){if(done)return;done=true;send(type,{resolvedHref:String(link.href||'')});}link.addEventListener('load',function(){finish('css-load');},{once:true});link.addEventListener('error',function(){finish('css-error');},{once:true});window.setTimeout(function(){finish('css-timeout');},4000);}else if(base.enableTailwindBrowser){send('css-missing');}var browser=document.querySelector('script[data-local-preview-tailwind=\"browser\"]');if(browser){browser.addEventListener('load',function(){send('tailwind-browser-load');},{once:true});browser.addEventListener('error',function(){send('tailwind-browser-error');},{once:true});}});})();<\/script>`;
   }
   function buildLocalPreviewDocument(userHtml, options = {}) {
@@ -1500,25 +1507,26 @@
     updateCurrentFromInputs();
     const html = getCodeValue();
     const usesTailwind = htmlUsesTailwindStylesheet(html);
-    const requestId = localPreviewRequestId();
     const baseHref = localPreviewBaseHref();
-    const doc = buildLocalPreviewDocument(html, { requestId, baseHref, enableTailwindBrowser: usesTailwind });
-    const docSignature = snapshotSignature({ title: '', description: '', html: doc });
+    const renderSignature = localPreviewRenderSignature(html, baseHref, usesTailwind);
     const htmlSignature = snapshotSignature({ title: '', description: '', html });
 
-    if (state.preview.mode === 'local' && state.preview.lastLocalDocSignature === docSignature) {
+    if (state.preview.mode === 'local' && state.preview.lastLocalDocSignature === renderSignature) {
       const statusLabel = localPreviewStatusLabel({ usesTailwind });
       els.previewStatus.textContent = statusLabel;
       state.preview.localStatusLabel = statusLabel;
       state.preview.lastLocalUsesTailwind = usesTailwind;
+      setStatus(statusLabel);
       return;
     }
 
+    const requestId = localPreviewRequestId();
+    const doc = buildLocalPreviewDocument(html, { requestId, baseHref, enableTailwindBrowser: usesTailwind });
     clearPreviewDebounce();
     revokeLocalPreviewObjectUrl();
     state.preview.mode = 'local';
     state.preview.activeRequestId = requestId;
-    state.preview.lastLocalDocSignature = docSignature;
+    state.preview.lastLocalDocSignature = renderSignature;
     state.preview.lastLocalHtmlSignature = htmlSignature;
     state.preview.lastLocalUsesTailwind = usesTailwind;
     const statusLabel = localPreviewStatusLabel({ usesTailwind });
@@ -2394,7 +2402,7 @@ ${projectName || ''}`, okText: t('deleteProject'), showPreview: false });
       if (action === 'open-preview' && state.current.id) window.open(viewUrl(state.current.id), '_blank');
       if (action === 'refresh-preview') refreshPreview();
     });
-    window.addEventListener('message', handleLocalPreviewPocMessage);
+    window.addEventListener('message', handleLocalPreviewMessage);
     els.createProjectNameInput.addEventListener('input', () => { els.confirmCreateProjectBtn.disabled = !els.createProjectNameInput.value.trim(); });
     els.createProjectNameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && els.createProjectNameInput.value.trim()) createProject(); if (e.key === 'Escape') closeCreateProjectModal(); });
     els.confirmCreateProjectBtn.addEventListener('click', () => createProject());
