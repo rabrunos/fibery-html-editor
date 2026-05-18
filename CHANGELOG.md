@@ -1,215 +1,190 @@
-# Changelog
-
-Todas as mudanças relevantes do Fibery HTML Editor devem ser registradas neste arquivo.
-
-Formato padrão:
-
-* novas entradas entram no topo;
-* cada versão usa `## [x.y.z] - YYYY-MM-DD`;
-* usar apenas as seções que fizerem sentido:
-
-  * `### Implementado`
-  * `### Corrigido`
-  * `### Ajustes técnicos`
-  * `### Mudanças visuais`
-  * `### Validação`
-  * `### Observações`
-* manter descrições objetivas e focadas no usuário/frontend.
-
-> Histórico inicial reconstruído em 2026-05-18 com base no estado atual do GitHub, versão declarada no `index.html`, issues abertas/relevantes e commits recentes disponíveis. Versões antigas sem tag/release pública foram agrupadas quando a reconstrução exata não era segura.
-
 ## [8.5.0] - 2026-05-18
 
-### Implementado
+### Added
 
-* Adicionado painel de `Atualizar App` com verificação remota de versão pelo GitHub.
-* Exibição da versão instalada (local) e versão disponível (remota), com comparação semver simples `x.y.z`.
-* Adicionada seção `O que mudou` com carregamento de `CHANGELOG.md` remoto.
-* Incluídos estados de status para: versão atualizada, nova versão disponível e falha de verificação.
+* Added an Update App panel with remote version checking through GitHub.
+* Added display of the installed version and the available remote version.
+* Added simple `x.y.z` semver comparison for update status.
+* Added a “What changed” section that loads the remote `CHANGELOG.md`.
+* Added status states for up-to-date, update available, and verification failure.
 
-### Ajustes técnicos
+### Technical adjustments
 
-* Leitura remota feita por URLs raw do GitHub em constantes centralizadas para facilitar manutenção futura.
-* Parsing da versão remota a partir do metadata `<meta name="fibery-html-editor-version" ...>`.
-* Exibição do changelog remoto feita como texto (sem execução de HTML/JS remoto).
-* Atualizado versionamento do app para `8.5.0` no metadata e em `APP_VERSION`.
+* Centralized raw GitHub URLs for easier future maintenance.
+* Remote version is parsed from the `fibery-html-editor-version` metadata in `index.html`.
+* Remote changelog is displayed safely as text, without executing remote HTML or JavaScript.
+* Updated app version metadata and `APP_VERSION` to `8.5.0`.
 
-### Observações
+### Notes
 
-* Esta etapa não aplica atualização automaticamente.
-* Esta etapa não salva nada no Fibery.
-* Esta etapa não altera conteúdo das páginas do usuário.
-
-## [Não lançado]
-
-### Observações
-
-* Próximas mudanças relevantes devem ser adicionadas aqui ou em uma nova seção de versão no topo quando a versão for definida.
+* This version does not apply updates automatically.
+* This version does not save anything to Fibery during update checks.
+* This version does not modify user pages.
 
 ## [8.4.1] - 2026-05-18
 
-### Corrigido
+### Fixed
 
-* Polido o preview inteligente para evitar reconstruções desnecessárias do iframe local quando o conteúdo efetivo da prévia não mudou.
-* Ajustado o status interno do preview local para deixar de usar nomenclatura de PoC no fluxo principal.
-* Mantido o retorno seguro para preview real quando o conteúdo volta ao baseline salvo/carregado.
+* Polished intelligent preview to avoid unnecessary iframe rebuilds when the effective preview content did not change.
+* Adjusted internal local preview status to stop using PoC wording in the main flow.
+* Preserved the safe return to real preview when content matches the saved/loaded baseline.
 
-### Ajustes técnicos
+### Technical adjustments
 
-* Adicionada assinatura específica para renderização do preview local, considerando HTML, `baseHref` e uso de Tailwind.
-* Renomeada a origem das mensagens internas de preview para `fibery-html-editor/local-preview`.
-* Mantido filtro de mensagens vindas do iframe por `requestId` e `contentWindow`.
-* Sincronizado versionamento do app em metadata e `APP_VERSION`.
+* Added a dedicated local preview render signature based on HTML, `baseHref`, and Tailwind usage.
+* Renamed the internal preview message source to `fibery-html-editor/local-preview`.
+* Kept iframe message filtering by `requestId` and `contentWindow`.
+* Kept app version metadata and `APP_VERSION` in sync.
 
-### Validação
+### Validation
 
-* Mudança derivada do commit recente `Polish intelligent preview`.
+* Based on the recent `Polish intelligent preview` commit.
 
 ## [8.4.0] - 2026-05-18
 
-### Implementado
+### Added
 
-* Implementada a alternância automática entre preview real e preview local.
-* Implementado live preview local com debounce, sem salvar no Fibery enquanto o usuário digita.
-* Consolidada a estratégia de preview local com `srcdoc + base + tailwind.css`.
-* Adicionado suporte a Tailwind browser/CDN apenas dentro do iframe local, para melhorar a visualização de classes novas/arbitrárias durante edição.
-* Mantido o preview real como referência quando o conteúdo atual corresponde ao baseline salvo/carregado.
-* Ao salvar manualmente, o app volta a usar o preview real do Fibery.
+* Added automatic switching between real preview and local preview.
+* Added local live preview with debounce, without saving to Fibery while typing.
+* Consolidated local preview around `srcdoc + base + tailwind.css`.
+* Added Tailwind browser/CDN support only inside the local preview iframe to improve visualization of new/arbitrary classes while editing.
+* Kept real preview as the reference when current content matches the saved/loaded baseline.
+* Manual save returns the preview to the real Fibery preview.
 
-### Corrigido
+### Fixed
 
-* Removido o fluxo manual de PoC como experiência principal do usuário.
-* Preservado o fluxo de autosave, histórico e recovery sem transformar preview local em salvamento real.
-* Evitadas chamadas de API de preview/salvamento enquanto o usuário digita.
+* Removed the manual PoC flow from the main user experience.
+* Preserved autosave, history, and recovery flows without turning local preview into a real save.
+* Avoided preview/save API calls while the user types.
 
-### Ajustes técnicos
+### Technical adjustments
 
-* O HTML gerado para o iframe local é separado do HTML do editor.
-* O Tailwind browser/CDN é injetado somente no documento temporário do iframe.
-* O conteúdo salvo no Fibery continua sendo somente o HTML do usuário.
-* A decisão entre preview real/local usa baseline confiável, não apenas estado `dirty`.
+* The generated local iframe HTML is kept separate from the editor HTML.
+* Tailwind browser/CDN is injected only into the temporary iframe document.
+* Saved Fibery content remains only the user’s original HTML.
+* Real/local preview decisions use a reliable baseline instead of only `dirty` state.
 
-### Mudanças visuais
+### Visual changes
 
-* A área de preview passa a responder automaticamente às edições locais.
-* O menu de preview permanece simples, sem botões diagnósticos da PoC no fluxo normal.
+* The preview area now responds automatically to local edits.
+* The preview menu remains simple, without diagnostic PoC buttons in the normal flow.
 
 ## [8.3.1] - 2026-05-18
 
-### Implementado
+### Added
 
-* Adicionados modos diagnósticos para investigar carregamento de CSS no preview local:
+* Added diagnostic modes to investigate CSS loading in local preview:
 
-  * Blob com `tailwind.css`;
-  * Blob com `/tailwind.css`;
-  * `srcdoc` com `tailwind.css`;
-  * `srcdoc` com `/tailwind.css`;
+  * Blob with `tailwind.css`;
+  * Blob with `/tailwind.css`;
+  * `srcdoc` with `tailwind.css`;
+  * `srcdoc` with `/tailwind.css`;
   * `srcdoc + base`.
-* Adicionada instrumentação para identificar carregamento, falha, ausência ou timeout do CSS da prévia local.
-* Adicionados logs/status para facilitar testes no runtime real do Fibery.
+* Added instrumentation to detect CSS load, failure, missing stylesheet, and timeout in local preview.
+* Added logs/status messages to help testing in the real Fibery runtime.
 
-### Corrigido
+### Fixed
 
-* Confirmado por teste real que Blob não era a estratégia mais confiável para `tailwind.css`.
-* Confirmado que `/tailwind.css` não é confiável como caminho global.
-* Identificado que `srcdoc + base + tailwind.css` é a estratégia mais robusta para o ambiente atual.
+* Confirmed through real testing that Blob was not the most reliable strategy for `tailwind.css`.
+* Confirmed that `/tailwind.css` is not reliable as a global path.
+* Identified `srcdoc + base + tailwind.css` as the most robust strategy for the current environment.
 
-### Ajustes técnicos
+### Technical adjustments
 
-* Adicionado uso de `<base href="...">` no documento local para melhorar resolução de caminhos relativos.
-* Adicionado `postMessage` filtrado para receber diagnósticos do iframe local.
+* Added `<base href="...">` to the local document to improve relative path resolution.
+* Added filtered `postMessage` diagnostics from the local preview iframe.
 
 ## [8.3.0] - 2026-05-18
 
-### Implementado
+### Added
 
-* Implementada a primeira PoC de preview local no menu da prévia.
-* Adicionadas ações explícitas para testar:
+* Added the first local preview PoC to the preview menu.
+* Added explicit actions to test:
 
-  * `Prévia local PoC (tailwind.css)`;
-  * `Prévia local PoC (/tailwind.css)`;
-  * retorno para prévia real.
-* A PoC passou a renderizar o HTML atual do editor no iframe sem salvar no Fibery.
+  * `Local preview PoC (tailwind.css)`;
+  * `Local preview PoC (/tailwind.css)`;
+  * return to real preview.
+* The PoC renders the current editor HTML inside the iframe without saving to Fibery.
 
-### Corrigido
+### Fixed
 
-* Adicionado controle de ciclo de vida de Blob URL com `URL.revokeObjectURL`.
-* Mantido o preview real como padrão através do fluxo `/api/ai-answer/pages/{id}/view`.
+* Added Blob URL lifecycle cleanup with `URL.revokeObjectURL`.
+* Kept real preview as the default through `/api/ai-answer/pages/{id}/view`.
 
-### Ajustes técnicos
+### Technical adjustments
 
-* O preview local da PoC não chama `API.savePage`.
-* O preview local da PoC não cria histórico manual.
-* O preview local da PoC não interfere diretamente em autosave/drafts.
+* Local preview PoC does not call `API.savePage`.
+* Local preview PoC does not create manual history.
+* Local preview PoC does not directly interfere with autosave/drafts.
 
 ## [8.2.4] - 2026-05-18
 
-### Corrigido
+### Fixed
 
-* Polido o fluxo de autosave, recovery e diff após separação entre autosave local e histórico manual.
-* Melhorado o comportamento de recuperação para evitar reaparecimento insistente do modal grande quando o usuário mantém a versão atual.
-* Ajustada limpeza de drafts/autosaves obsoletos após salvamento manual quando não há diferença real.
-* Reforçado que restore aplica no editor, marca como não salvo e não salva automaticamente no Fibery.
+* Polished autosave, recovery, and diff flows after separating local autosave from manual history.
+* Improved recovery behavior to avoid repeatedly showing the large modal after the user keeps the current version.
+* Adjusted cleanup of obsolete drafts/autosaves after manual save when there is no real difference.
+* Reinforced that restore applies to the editor, marks content as unsaved, and does not save automatically to Fibery.
 
-### Ajustes técnicos
+### Technical adjustments
 
-* Mantida a separação entre histórico manual e autosaves.
-* Preservado autosave como recurso local, sem chamada de API do Fibery.
-* Reforçada a comparação com baseline para decidir se existe diferença relevante.
+* Kept manual history and autosaves separated.
+* Preserved autosave as local-only, without Fibery API calls.
+* Reinforced baseline comparison to decide whether there is a relevant difference.
 
 ## [8.2.x] - 2026-05-17
 
-### Implementado
+### Added
 
-* Implementada a base de autosave local.
-* Implementada recuperação de rascunho local.
-* Implementado diff antes de restaurar rascunho/autosave.
-* Separado histórico manual de autosaves.
-* Adicionado limite próprio para autosaves.
-* Adicionado botão discreto para reabrir comparação de recovery.
+* Added the local autosave foundation.
+* Added local draft recovery.
+* Added diff before restoring drafts/autosaves.
+* Separated manual history from autosaves.
+* Added a dedicated autosave limit.
+* Added a discreet button to reopen recovery comparison.
 
-### Corrigido
+### Fixed
 
-* Corrigidos textos PT-BR e problemas de codificação/símbolos quebrados.
-* Ajustados fluxos para garantir que autosave não salva no Fibery.
-* Ajustado restore para marcar dirty sem salvar automaticamente.
+* Fixed PT-BR text and broken encoding/symbol issues.
+* Adjusted flows to ensure autosave does not save to Fibery.
+* Adjusted restore so it marks content as dirty without saving automatically.
 
-### Ajustes técnicos
+### Technical adjustments
 
-* Autosaves, histórico manual e metadata local usam IndexedDB.
-* Preferências simples continuam em localStorage.
-* Histórico manual passa a representar salvamentos intencionais.
+* Autosaves, manual history, and local metadata use IndexedDB.
+* Simple preferences remain in localStorage.
+* Manual history now represents intentional saves.
 
 ## [8.1.x] - 2026-05-17
 
-### Corrigido
+### Fixed
 
-* Ajustada limpeza de busca.
-* Corrigidos menus de três pontinhos.
-* Corrigido submenu “Mover para projeto” para permanecer aberto durante interação.
-* Refinados comportamentos de sidebar, menus contextuais e organização local.
+* Adjusted search cleanup.
+* Fixed three-dot menus.
+* Fixed the “Move to project” submenu so it stays open during interaction.
+* Refined sidebar, context menu, and local organization behavior.
 
-### Ajustes técnicos
+### Technical adjustments
 
-* Mantida a organização de projetos como recurso local, sem criar entidades no Fibery.
-* Preservada a seleção atual e reduzidos resets desnecessários de UI.
+* Kept project organization as a local feature, without creating Fibery entities.
+* Preserved current selection and reduced unnecessary UI resets.
 
-## [Antes de 8.1.x]
+## [Before 8.1.x]
 
-### Implementado
+### Added
 
-* Criada base do Fibery HTML Editor como Custom HTML Page em arquivo único.
-* Implementado carregamento/listagem de páginas HTML do Fibery.
-* Implementada edição de título, descrição e HTML.
-* Implementado salvamento manual no Fibery.
-* Implementada exclusão de páginas quando permitido.
-* Implementado preview real usando o endpoint de visualização do Fibery.
-* Implementada sidebar com páginas e organização local.
-* Implementado editor de código com Monaco e fallback em textarea.
-* Implementadas preferências locais básicas, como idioma, última página, layout e painel editor/preview.
+* Created the Fibery HTML Editor foundation as a single-file Custom HTML Page.
+* Added loading/listing of Fibery HTML pages.
+* Added editing of title, description, and HTML.
+* Added manual save to Fibery.
+* Added page deletion when allowed.
+* Added real preview using the Fibery view endpoint.
+* Added sidebar with pages and local organization.
+* Added code editor with Monaco and textarea fallback.
+* Added basic local preferences such as language, last page, layout, and editor/preview panel mode.
 
-### Ajustes técnicos
+### Technical adjustments
 
-* Mantida arquitetura de frontend único, sem backend próprio.
-* Usadas APIs/comportamentos disponíveis do Fibery.
-* Usado IndexedDB/localStorage para persistência local do app.
+* Kept the architecture as a single frontend with no owned backend.
+* Used available Fibery APIs/behavior.
+* Used IndexedDB/localStorage for local app persistence.

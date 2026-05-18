@@ -146,34 +146,35 @@ Every implementation, correction, relevant refactor, user-facing change, technic
 
 Rules:
 
-* keep the changelog in Portuguese (Brazil);
-* always use the same format already present in `CHANGELOG.md`;
+* keep `CHANGELOG.md` in English;
+* do not add an introductory header, explanation, or format guide inside `CHANGELOG.md`;
+* the file must start directly with the latest version entry;
 * add new entries at the top of the file;
-* when a version is known, create or update a section named `## [x.y.z] - YYYY-MM-DD`;
-* when the next version is not known yet, add the entry under `## [Não lançado]`;
-* if `index.html` version changes, the changelog section must match that version;
-* summarize objectively what changed, including implementations, fixes, technical adjustments, relevant UX/visual changes and validation notes;
+* every entry must use `## [x.y.z] - YYYY-MM-DD`;
+* if the next version is not known yet, do not add a placeholder section unless the user explicitly asks;
+* if `index.html` version changes, the top changelog entry must match that version;
+* summarize objectively what changed, including implementations, fixes, technical adjustments, relevant UX/visual changes, validation notes, and known limitations when useful;
 * keep entries concise and useful for a user deciding whether to update;
 * do not add noisy internal details unless they explain behavior, risk, migration, validation, or a known limitation;
 * do not add a changelog entry only because `CHANGELOG.md` itself was edited as part of recording another change;
 * issue-only roadmap planning does not require a changelog update unless repository files are changed or the prompt explicitly asks.
 
-Recommended section order inside each version:
+Allowed section headings inside each version:
 
 ```md
 ## [x.y.z] - YYYY-MM-DD
 
-### Implementado
+### Added
 
-### Corrigido
+### Fixed
 
-### Ajustes técnicos
+### Technical adjustments
 
-### Mudanças visuais
+### Visual changes
 
-### Validação
+### Validation
 
-### Observações
+### Notes
 ```
 
 Use only the subsections that have content.
