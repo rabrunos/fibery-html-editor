@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.3.0" />
+  <meta name="fibery-html-editor-version" content="8.3.1" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -459,7 +459,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '8.3.0';
+  const APP_VERSION = '8.3.1';
   window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
   document.documentElement.dataset.appVersion = APP_VERSION;
 
@@ -538,11 +538,27 @@
     reopenRecoveryComparison: 'Reopen recovery comparison',
     noAutosaves: 'No autosaves',
     restoredFromHistory: 'Version restored to editor',
-    localPreviewPocRelative: 'Local preview PoC (tailwind.css)',
-    localPreviewPocRoot: 'Local preview PoC (/tailwind.css)',
+    localPreviewPocBlobRelative: 'Local preview PoC · Blob · tailwind.css',
+    localPreviewPocBlobRoot: 'Local preview PoC · Blob · /tailwind.css',
+    localPreviewPocSrcdocRelative: 'Local preview PoC · srcdoc · tailwind.css',
+    localPreviewPocSrcdocRoot: 'Local preview PoC · srcdoc · /tailwind.css',
+    localPreviewPocSrcdocBase: 'Local preview PoC · srcdoc + base',
     backToRealPreview: 'Back to real preview',
     localPreviewPocStatus: 'Local preview (PoC)',
-    localPreviewPocRendered: 'Local preview PoC rendered'
+    localPreviewPocModeBlob: 'Blob',
+    localPreviewPocModeSrcdoc: 'srcdoc',
+    localPreviewPocWithBase: 'with base',
+    localPreviewPocStarting: 'Local preview PoC',
+    localPreviewPocRendered: 'Local preview PoC rendered',
+    localPreviewPocCssLoaded: 'Local preview CSS loaded',
+    localPreviewPocCssFailed: 'Local preview CSS failed',
+    localPreviewPocCssTimeout: 'Local preview CSS timeout',
+    localPreviewPocCssMissing: 'Local preview CSS link not found',
+    localPreviewPocLoadFallback: 'Blob unavailable, fallback to srcdoc',
+    localPreviewPocCssLoadedShort: 'CSS OK',
+    localPreviewPocCssFailedShort: 'CSS FAIL',
+    localPreviewPocCssTimeoutShort: 'CSS TIMEOUT',
+    localPreviewPocCssMissingShort: 'CSS MISSING'
   });
   Object.assign(I18N['pt-BR'], {
     draftRecoveryTitle: 'Recuperar rascunho local',
@@ -584,11 +600,27 @@
     reopenRecoveryComparison: 'Reabrir comparação',
     noAutosaves: 'Sem salvamentos automáticos',
     restoredFromHistory: 'Versão restaurada no editor',
-    localPreviewPocRelative: 'Prévia local PoC (tailwind.css)',
-    localPreviewPocRoot: 'Prévia local PoC (/tailwind.css)',
+    localPreviewPocBlobRelative: 'Prévia local PoC · Blob · tailwind.css',
+    localPreviewPocBlobRoot: 'Prévia local PoC · Blob · /tailwind.css',
+    localPreviewPocSrcdocRelative: 'Prévia local PoC · srcdoc · tailwind.css',
+    localPreviewPocSrcdocRoot: 'Prévia local PoC · srcdoc · /tailwind.css',
+    localPreviewPocSrcdocBase: 'Prévia local PoC · srcdoc + base',
     backToRealPreview: 'Voltar para prévia real',
     localPreviewPocStatus: 'Prévia local (PoC)',
-    localPreviewPocRendered: 'Prévia local PoC renderizada'
+    localPreviewPocModeBlob: 'Blob',
+    localPreviewPocModeSrcdoc: 'srcdoc',
+    localPreviewPocWithBase: 'com base',
+    localPreviewPocStarting: 'Prévia local PoC',
+    localPreviewPocRendered: 'Prévia local PoC renderizada',
+    localPreviewPocCssLoaded: 'CSS da prévia local carregado',
+    localPreviewPocCssFailed: 'CSS da prévia local falhou',
+    localPreviewPocCssTimeout: 'CSS da prévia local expirou',
+    localPreviewPocCssMissing: 'Link de CSS da prévia local não encontrado',
+    localPreviewPocLoadFallback: 'Blob indisponível, fallback para srcdoc',
+    localPreviewPocCssLoadedShort: 'CSS OK',
+    localPreviewPocCssFailedShort: 'CSS FALHOU',
+    localPreviewPocCssTimeoutShort: 'CSS TIMEOUT',
+    localPreviewPocCssMissingShort: 'CSS AUSENTE'
   });
 
   const $ = (id) => document.getElementById(id);
@@ -622,10 +654,12 @@
     return '';
   }
 
+  const LOCAL_PREVIEW_POC_MESSAGE_SOURCE = 'fibery-html-editor/local-preview-poc';
+
   const state = {
     isAdmin: false, lang: 'en', appPageId: detectCurrentAppPageId(), current: { id: '', title: '', description: '', html: '' }, currentBaseline: { id: '', title: '', description: '', html: '' }, blank: true, dirty: false, db: null, saving: false,
     code: { editor: null, suppress: false, fallback: false }, confirmResolver: null,
-    preview: { mode: 'real', localObjectUrl: '', localTailwindHref: '' },
+    preview: { mode: 'real', localObjectUrl: '', localTailwindHref: '', localRenderMode: '', localBaseHref: '', localStatusLabel: '', activeRequestId: '' },
     sidebar: { open: true, pages: [], loading: false, refreshTimer: null, hasMore: false, limit: 20, visibleLimit: 20, pageCache: {} },
     projects: { rows: [], items: [], pageToProject: {}, itemsByProject: {} },
     search: { debounce: null, query: '', pages: [] }, welcomeSearch: { debounce: null, query: '', pages: [] }, panelMode: 'both', previewFocus: false, pageMeta: {}, context: { pageId: '', pageTitle: '', projectId: '', createProjectTargetPageId: '' },
@@ -643,6 +677,50 @@
     if (!current) return;
     try { URL.revokeObjectURL(current); } catch (_) {}
     state.preview.localObjectUrl = '';
+  }
+  function localPreviewModeLabel(renderMode = 'blob') { return renderMode === 'srcdoc' ? t('localPreviewPocModeSrcdoc') : t('localPreviewPocModeBlob'); }
+  function localPreviewBaseHref() {
+    try { return new URL('.', window.location.href).href; } catch (_) {}
+    try { return window.location.origin + '/'; } catch (_) {}
+    return '';
+  }
+  function localPreviewStatusLabel({ renderMode = 'blob', cssHref = '', useBase = false } = {}) {
+    const parts = [t('localPreviewPocStatus'), localPreviewModeLabel(renderMode)];
+    if (cssHref) parts.push(cssHref);
+    if (useBase) parts.push(t('localPreviewPocWithBase'));
+    return parts.join(' · ');
+  }
+  function localPreviewRequestId() { return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`; }
+  function handleLocalPreviewPocMessage(event) {
+    const data = event?.data;
+    if (!data || data.source !== LOCAL_PREVIEW_POC_MESSAGE_SOURCE) return;
+    if (event.source !== els.previewFrame.contentWindow) return;
+    if (state.preview.mode !== 'local-poc') return;
+    if (!data.requestId || data.requestId !== state.preview.activeRequestId) return;
+
+    const resolvedHref = String(data.resolvedHref || data.cssHref || state.preview.localTailwindHref || '');
+    let statusSuffix = '';
+
+    if (data.type === 'css-load') {
+      statusSuffix = t('localPreviewPocCssLoadedShort');
+      log(`${t('localPreviewPocCssLoaded')}: ${resolvedHref || '-'}`);
+    } else if (data.type === 'css-error') {
+      statusSuffix = t('localPreviewPocCssFailedShort');
+      log(`${t('localPreviewPocCssFailed')}: ${resolvedHref || '-'}`);
+    } else if (data.type === 'css-timeout') {
+      statusSuffix = t('localPreviewPocCssTimeoutShort');
+      log(`${t('localPreviewPocCssTimeout')}: ${resolvedHref || '-'}`);
+    } else if (data.type === 'css-missing') {
+      statusSuffix = t('localPreviewPocCssMissingShort');
+      log(`${t('localPreviewPocCssMissing')}: ${resolvedHref || '-'}`);
+    } else {
+      return;
+    }
+
+    const baseLabel = state.preview.localStatusLabel || t('localPreviewPocStatus');
+    const fullStatus = `${baseLabel} · ${statusSuffix}`;
+    els.previewStatus.textContent = fullStatus;
+    setStatus(fullStatus);
   }
 
   function getMetaMap() { return state.pageMeta || {}; }
@@ -1333,6 +1411,10 @@
     revokeLocalPreviewObjectUrl();
     state.preview.mode = 'real';
     state.preview.localTailwindHref = '';
+    state.preview.localRenderMode = '';
+    state.preview.localBaseHref = '';
+    state.preview.localStatusLabel = '';
+    state.preview.activeRequestId = '';
     state.blank = true;
     state.current = { id: '', title: '', description: '', html: '' };
     setCurrentBaseline();
@@ -1384,45 +1466,87 @@
     updateRecoveryReopenButton();
   }
   function viewUrl(id) { if (!id) return 'about:blank'; return new URL('/api/ai-answer/pages/' + encodeURIComponent(id) + '/view', window.location.origin).href; }
-  function buildLocalPreviewPocDocument(userHtml, tailwindHref) {
+  function localPreviewProbeScript({ requestId, cssHref, renderMode, baseHref }) {
+    const payload = JSON.stringify({ source: LOCAL_PREVIEW_POC_MESSAGE_SOURCE, requestId: String(requestId || ''), cssHref: String(cssHref || ''), renderMode: String(renderMode || ''), baseHref: String(baseHref || '') });
+    return `<script>(function(){var base=${payload};function send(type,extra){try{parent.postMessage(Object.assign({},base,{type:type,at:Date.now()},extra||{}),'*');}catch(_){}}window.addEventListener('DOMContentLoaded',function(){var link=document.querySelector('link[data-local-preview-poc=\"tailwind\"]');if(!link){send('css-missing');return;}var done=false;function finish(type){if(done)return;done=true;send(type,{resolvedHref:String(link.href||'')});}link.addEventListener('load',function(){finish('css-load');},{once:true});link.addEventListener('error',function(){finish('css-error');},{once:true});window.setTimeout(function(){finish('css-timeout');},4000);});})();</script>`;
+  }
+  function buildLocalPreviewPocDocument(userHtml, options = {}) {
     const html = String(userHtml || '');
-    const headInjection = `<meta charset="UTF-8" />\n<link rel="stylesheet" href="${escapeHtmlAttr(tailwindHref)}" data-local-preview-poc="tailwind" />`;
+    const cssHref = String(options.cssHref || '');
+    const useBase = !!options.useBase;
+    const baseHref = String(options.baseHref || '');
+    const injectionParts = ['<meta charset="UTF-8" />'];
+    if (useBase && baseHref) injectionParts.push(`<base href="${escapeHtmlAttr(baseHref)}" data-local-preview-poc="base" />`);
+    if (cssHref) injectionParts.push(`<link rel="stylesheet" href="${escapeHtmlAttr(cssHref)}" data-local-preview-poc="tailwind" />`);
+    injectionParts.push(localPreviewProbeScript(options));
+    const headInjection = injectionParts.join('\n');
     if (/<head[\s>]/i.test(html)) {
       return html.replace(/<head([^>]*)>/i, `<head$1>\n${headInjection}\n`);
     }
     if (/<html[\s>]/i.test(html)) {
       return html.replace(/<html([^>]*)>/i, `<html$1>\n<head>\n${headInjection}\n</head>\n`);
     }
+    if (/<body[\s>]/i.test(html)) {
+      return `<!doctype html>\n<html>\n<head>\n${headInjection}\n</head>\n${html}\n</html>`;
+    }
     return `<!doctype html>\n<html>\n<head>\n${headInjection}\n</head>\n<body>\n${html}\n</body>\n</html>`;
   }
-  function renderLocalPreviewPoc(tailwindHref = 'tailwind.css') {
+  function renderLocalPreviewPoc(options = {}) {
+    const normalized = {
+      renderMode: options.renderMode === 'srcdoc' ? 'srcdoc' : 'blob',
+      cssHref: String(options.cssHref || 'tailwind.css'),
+      useBase: !!options.useBase
+    };
+    const requestId = localPreviewRequestId();
+    const baseHref = normalized.useBase ? localPreviewBaseHref() : '';
     updateCurrentFromInputs();
     const html = getCodeValue();
-    const doc = buildLocalPreviewPocDocument(html, tailwindHref);
+    const doc = buildLocalPreviewPocDocument(html, {
+      requestId,
+      renderMode: normalized.renderMode,
+      cssHref: normalized.cssHref,
+      useBase: normalized.useBase,
+      baseHref
+    });
     revokeLocalPreviewObjectUrl();
     state.preview.mode = 'local-poc';
-    state.preview.localTailwindHref = tailwindHref;
-    let usedBlob = false;
-    try {
-      const blob = new Blob([doc], { type: 'text/html;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      state.preview.localObjectUrl = url;
-      els.previewFrame.removeAttribute('srcdoc');
-      els.previewFrame.src = url;
-      usedBlob = true;
-    } catch (_) {}
-    if (!usedBlob) {
+    state.preview.localTailwindHref = normalized.cssHref;
+    state.preview.localBaseHref = baseHref;
+    state.preview.activeRequestId = requestId;
+
+    let finalRenderMode = normalized.renderMode;
+    if (normalized.renderMode === 'blob') {
+      try {
+        const blob = new Blob([doc], { type: 'text/html;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        state.preview.localObjectUrl = url;
+        els.previewFrame.removeAttribute('srcdoc');
+        els.previewFrame.src = url;
+      } catch (_) {
+        finalRenderMode = 'srcdoc';
+        log(t('localPreviewPocLoadFallback'));
+      }
+    }
+    if (finalRenderMode === 'srcdoc') {
       els.previewFrame.removeAttribute('src');
       els.previewFrame.srcdoc = doc;
     }
-    els.previewStatus.textContent = `${t('localPreviewPocStatus')} · ${tailwindHref}`;
-    setStatus(t('localPreviewPocStatus'));
-    log(`${t('localPreviewPocRendered')}: ${tailwindHref}`);
+    state.preview.localRenderMode = finalRenderMode;
+    const statusLabel = localPreviewStatusLabel({ renderMode: finalRenderMode, cssHref: normalized.cssHref, useBase: normalized.useBase });
+    state.preview.localStatusLabel = statusLabel;
+    els.previewStatus.textContent = statusLabel;
+    setStatus(statusLabel);
+    log(`${t('localPreviewPocStarting')}: ${localPreviewModeLabel(finalRenderMode)} · ${normalized.cssHref}${normalized.useBase ? ` · ${t('localPreviewPocWithBase')} (${baseHref || '-'})` : ''}`);
+    log(`${t('localPreviewPocRendered')}: ${localPreviewModeLabel(finalRenderMode)} · ${normalized.cssHref}`);
   }
   function refreshPreview() {
     revokeLocalPreviewObjectUrl();
     state.preview.mode = 'real';
     state.preview.localTailwindHref = '';
+    state.preview.localRenderMode = '';
+    state.preview.localBaseHref = '';
+    state.preview.localStatusLabel = '';
+    state.preview.activeRequestId = '';
     if (!state.current.id) {
       els.previewFrame.removeAttribute('src');
       els.previewFrame.srcdoc = '<div style="font-family:system-ui;padding:24px;color:#6b7280;">' + t('noPage') + '</div>';
@@ -1895,8 +2019,12 @@ ${projectName || ''}`, okText: t('deleteProject'), showPreview: false });
       : '';
     els.previewPanelMenu.innerHTML = `
       ${realPreviewAction}
-      <button class="context-menu-item" data-panel-action="local-preview-poc-relative">${escapeHtml(t('localPreviewPocRelative'))}</button>
-      <button class="context-menu-item" data-panel-action="local-preview-poc-root">${escapeHtml(t('localPreviewPocRoot'))}</button>
+      <button class="context-menu-item" data-panel-action="local-preview-poc-blob-relative">${escapeHtml(t('localPreviewPocBlobRelative'))}</button>
+      <button class="context-menu-item" data-panel-action="local-preview-poc-blob-root">${escapeHtml(t('localPreviewPocBlobRoot'))}</button>
+      <div class="my-1 border-t border-gray-100"></div>
+      <button class="context-menu-item" data-panel-action="local-preview-poc-srcdoc-relative">${escapeHtml(t('localPreviewPocSrcdocRelative'))}</button>
+      <button class="context-menu-item" data-panel-action="local-preview-poc-srcdoc-root">${escapeHtml(t('localPreviewPocSrcdocRoot'))}</button>
+      <button class="context-menu-item" data-panel-action="local-preview-poc-srcdoc-base">${escapeHtml(t('localPreviewPocSrcdocBase'))}</button>
       <div class="my-1 border-t border-gray-100"></div>
       <button class="context-menu-item" data-panel-action="copy-preview-link">${escapeHtml(t('copyPreviewLink'))}</button>
       <button class="context-menu-item" data-panel-action="open-preview">${escapeHtml(t('openPreview'))}</button>
@@ -2259,13 +2387,17 @@ ${projectName || ''}`, okText: t('deleteProject'), showPreview: false });
       if (!btn) return;
       const action = btn.dataset.panelAction;
       closeContextMenus();
-      if (action === 'local-preview-poc-relative') renderLocalPreviewPoc('tailwind.css');
-      if (action === 'local-preview-poc-root') renderLocalPreviewPoc('/tailwind.css');
+      if (action === 'local-preview-poc-blob-relative') renderLocalPreviewPoc({ renderMode: 'blob', cssHref: 'tailwind.css', useBase: false });
+      if (action === 'local-preview-poc-blob-root') renderLocalPreviewPoc({ renderMode: 'blob', cssHref: '/tailwind.css', useBase: false });
+      if (action === 'local-preview-poc-srcdoc-relative') renderLocalPreviewPoc({ renderMode: 'srcdoc', cssHref: 'tailwind.css', useBase: false });
+      if (action === 'local-preview-poc-srcdoc-root') renderLocalPreviewPoc({ renderMode: 'srcdoc', cssHref: '/tailwind.css', useBase: false });
+      if (action === 'local-preview-poc-srcdoc-base') renderLocalPreviewPoc({ renderMode: 'srcdoc', cssHref: 'tailwind.css', useBase: true });
       if (action === 'real-preview') refreshPreview();
       if (action === 'copy-preview-link') copyText(state.current.id ? viewUrl(state.current.id) : '', btn, t('copiedPreviewLink'));
       if (action === 'open-preview' && state.current.id) window.open(viewUrl(state.current.id), '_blank');
       if (action === 'refresh-preview') refreshPreview();
     });
+    window.addEventListener('message', handleLocalPreviewPocMessage);
     els.createProjectNameInput.addEventListener('input', () => { els.confirmCreateProjectBtn.disabled = !els.createProjectNameInput.value.trim(); });
     els.createProjectNameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && els.createProjectNameInput.value.trim()) createProject(); if (e.key === 'Escape') closeCreateProjectModal(); });
     els.confirmCreateProjectBtn.addEventListener('click', () => createProject());
