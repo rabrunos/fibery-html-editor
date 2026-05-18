@@ -1,3 +1,27 @@
+## [8.5.1] - 2026-05-18
+
+### Added
+
+* Added visual highlighting for installed and latest versions inside the Update App panel.
+* Added semantic badges in the "What changed" section to identify installed, latest, current, outdated, and newer versions.
+* Added status-driven color emphasis for version values (green when up to date, red alert when outdated).
+
+### Technical adjustments
+
+* Replaced plain-text changelog display with a minimal safe renderer for:
+  * `## [x.y.z] - YYYY-MM-DD` version headings;
+  * `###` section headings;
+  * list items (`-` and `*`);
+  * paragraphs.
+* Kept changelog rendering safe by creating DOM nodes with text content only, without executing remote HTML/JS.
+* Updated app version metadata and `APP_VERSION` to `8.5.1`.
+
+### Notes
+
+* This version still does not apply updates automatically.
+* This version still does not save anything to Fibery during update checks.
+* This version still does not modify user pages.
+
 ## [8.5.0] - 2026-05-18
 
 ### Added

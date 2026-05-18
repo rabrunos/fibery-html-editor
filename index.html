@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.5.0" />
+  <meta name="fibery-html-editor-version" content="8.5.1" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -113,6 +113,22 @@
     .draft-diff-removed { background:rgb(254 242 242); }
     .draft-diff-changed { background:rgb(255 251 235); }
     .draft-diff-empty { color:transparent; user-select:none; }
+    .update-changelog-version-heading { display:flex; align-items:center; justify-content:space-between; gap:.75rem; border-radius:.75rem; border:1px solid rgb(229 231 235); background:rgb(249 250 251); padding:.5rem .625rem; }
+    .update-changelog-version-heading.latest { border-color:rgb(134 239 172); background:rgb(240 253 244); }
+    .update-changelog-version-heading.installed-current { border-color:rgb(134 239 172); background:rgb(240 253 244); }
+    .update-changelog-version-heading.installed-outdated { border-color:rgb(254 202 202); background:rgb(254 242 242); }
+    .update-changelog-version-heading.newer-than-installed { border-color:rgb(167 243 208); background:rgb(236 253 245); }
+    .update-changelog-version-badges { display:flex; align-items:center; flex-wrap:wrap; gap:.375rem; }
+    .update-changelog-badge { display:inline-flex; align-items:center; border-radius:999px; border:1px solid transparent; padding:.125rem .5rem; font-size:11px; font-weight:600; line-height:1.2; }
+    .update-changelog-badge.badge-latest { border-color:rgb(134 239 172); background:rgb(220 252 231); color:rgb(22 101 52); }
+    .update-changelog-badge.badge-installed { border-color:rgb(191 219 254); background:rgb(239 246 255); color:rgb(30 64 175); }
+    .update-changelog-badge.badge-current { border-color:rgb(134 239 172); background:rgb(220 252 231); color:rgb(22 101 52); }
+    .update-changelog-badge.badge-outdated { border-color:rgb(254 202 202); background:rgb(254 226 226); color:rgb(153 27 27); }
+    .update-changelog-badge.badge-newer { border-color:rgb(167 243 208); background:rgb(220 252 231); color:rgb(6 95 70); }
+    .update-changelog-list { margin-top:.5rem; margin-bottom:.75rem; padding-left:1rem; list-style:disc; color:rgb(55 65 81); }
+    .update-changelog-list-item { margin:.125rem 0; }
+    .update-changelog-section-title { margin-top:.625rem; margin-bottom:.25rem; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.02em; color:rgb(75 85 99); }
+    .update-changelog-paragraph { margin-top:.375rem; margin-bottom:.5rem; color:rgb(55 65 81); }
     @keyframes miniTooltip { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
@@ -437,7 +453,7 @@
         </div>
         <div class="rounded-xl border border-gray-200 bg-white">
           <div class="border-b border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-600" data-i18n="updateWhatChanged">What changed</div>
-          <pre id="updateChangelogBox" class="max-h-[42vh] overflow-auto whitespace-pre-wrap p-3 text-xs leading-5 text-gray-700">-</pre>
+          <div id="updateChangelogBox" class="max-h-[42vh] overflow-auto p-3 text-xs leading-5 text-gray-700" aria-live="polite">-</div>
         </div>
       </div>
       <div class="shrink-0 border-t border-gray-200 p-3 flex justify-end">
@@ -495,7 +511,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '8.5.0';
+  const APP_VERSION = '8.5.1';
   window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
   document.documentElement.dataset.appVersion = APP_VERSION;
   const UPDATE_REMOTE = Object.freeze({
@@ -622,7 +638,13 @@
     updateChangelogEmpty: 'Remote changelog is empty.',
     updateRemoteVersionNotFound: 'Could not find remote version metadata',
     updateCheckErrorLog: 'Remote version check failed',
-    updateChangelogErrorLog: 'Remote changelog fetch failed'
+    updateChangelogErrorLog: 'Remote changelog fetch failed',
+    updateVersionBadgeInstalled: 'Installed',
+    updateVersionBadgeLatest: 'Latest',
+    updateVersionBadgeCurrent: 'Current',
+    updateVersionBadgeOutdated: 'Outdated',
+    updateVersionBadgeNewer: 'Newer',
+    updateVersionDate: 'Date'
   });
   Object.assign(I18N['pt-BR'], {
     draftRecoveryTitle: 'Recuperar rascunho local',
@@ -708,7 +730,13 @@
     updateChangelogEmpty: 'O changelog remoto está vazio.',
     updateRemoteVersionNotFound: 'Não foi possível encontrar metadata de versão remota',
     updateCheckErrorLog: 'Falha ao verificar versão remota',
-    updateChangelogErrorLog: 'Falha ao buscar changelog remoto'
+    updateChangelogErrorLog: 'Falha ao buscar changelog remoto',
+    updateVersionBadgeInstalled: 'Instalada',
+    updateVersionBadgeLatest: 'Mais recente',
+    updateVersionBadgeCurrent: 'Atual',
+    updateVersionBadgeOutdated: 'Desatualizada',
+    updateVersionBadgeNewer: 'Mais nova',
+    updateVersionDate: 'Data'
   });
 
   const $ = (id) => document.getElementById(id);
@@ -792,21 +820,199 @@
     if (state.update.status === 'error') return t('updateStatusError');
     return t('updateNotChecked');
   }
+  function setUpdateVersionValueTone() {
+    if (!els.updateInstalledVersionValue || !els.updateAvailableVersionValue) return;
+    const neutral = ['text-gray-900'];
+    const positive = ['text-green-700'];
+    const alert = ['text-red-700'];
+    const info = ['text-blue-700'];
+    const all = [...neutral, ...positive, ...alert, ...info];
+    els.updateInstalledVersionValue.classList.remove(...all);
+    els.updateAvailableVersionValue.classList.remove(...all);
+    els.updateInstalledVersionValue.classList.add('text-gray-900');
+    els.updateAvailableVersionValue.classList.add('text-gray-900');
+
+    if (state.update.status === 'latest') {
+      els.updateInstalledVersionValue.classList.replace('text-gray-900', 'text-green-700');
+      els.updateAvailableVersionValue.classList.replace('text-gray-900', 'text-green-700');
+      return;
+    }
+    if (state.update.status === 'available') {
+      els.updateInstalledVersionValue.classList.replace('text-gray-900', 'text-red-700');
+      els.updateAvailableVersionValue.classList.replace('text-gray-900', 'text-green-700');
+      return;
+    }
+    if (state.update.status === 'local-newer') {
+      els.updateInstalledVersionValue.classList.replace('text-gray-900', 'text-blue-700');
+      return;
+    }
+  }
+  function updateVersionComparisonState() {
+    const localSemver = parseSemverSimple(APP_VERSION);
+    const remoteSemver = parseSemverSimple(state.update.remoteVersion || '');
+    const comparable = !!localSemver && !!remoteSemver;
+    return {
+      localSemver,
+      remoteSemver,
+      comparable,
+      localVsRemote: comparable ? compareSemverSimple(localSemver, remoteSemver) : null
+    };
+  }
+  function parseUpdateChangelogVersionHeading(line = '') {
+    const match = String(line || '').trim().match(/^##\s+\[(\d+\.\d+\.\d+)\]\s*-\s*(.+)$/);
+    if (!match) return null;
+    const semver = parseSemverSimple(match[1]);
+    if (!semver) return null;
+    return { version: semver.raw, date: String(match[2] || '').trim() };
+  }
+  function appendUpdateChangelogBadge(parent, text, toneClass) {
+    if (!parent || !text) return;
+    const badge = document.createElement('span');
+    badge.className = `update-changelog-badge ${toneClass || ''}`.trim();
+    badge.textContent = text;
+    parent.appendChild(badge);
+  }
+  function renderUpdateVersionHeading(container, headingLine, comparison) {
+    const heading = parseUpdateChangelogVersionHeading(headingLine);
+    if (!heading) return false;
+    const headingSemver = parseSemverSimple(heading.version);
+    const isInstalled = !!comparison.localSemver && heading.version === comparison.localSemver.raw;
+    const isLatest = !!comparison.remoteSemver && heading.version === comparison.remoteSemver.raw;
+    const isNewerThanInstalled = !!comparison.localSemver && !!headingSemver && compareSemverSimple(headingSemver, comparison.localSemver) > 0;
+    const isInstalledOutdated = isInstalled && comparison.localVsRemote !== null && comparison.localVsRemote < 0;
+    const isInstalledCurrent = isInstalled && comparison.localVsRemote !== null && comparison.localVsRemote === 0;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'update-changelog-version-heading';
+    if (isInstalledOutdated) wrapper.classList.add('installed-outdated');
+    else if (isInstalledCurrent) wrapper.classList.add('installed-current');
+    else if (isLatest) wrapper.classList.add('latest');
+    else if (isNewerThanInstalled) wrapper.classList.add('newer-than-installed');
+
+    const labelWrap = document.createElement('div');
+    const versionText = document.createElement('div');
+    versionText.className = 'text-sm font-semibold text-gray-900';
+    versionText.textContent = heading.version;
+    labelWrap.appendChild(versionText);
+    if (heading.date) {
+      const dateText = document.createElement('div');
+      dateText.className = 'text-[11px] text-gray-500';
+      dateText.textContent = `${t('updateVersionDate')}: ${heading.date}`;
+      labelWrap.appendChild(dateText);
+    }
+    wrapper.appendChild(labelWrap);
+
+    const badges = document.createElement('div');
+    badges.className = 'update-changelog-version-badges';
+    if (isInstalled) appendUpdateChangelogBadge(badges, t('updateVersionBadgeInstalled'), 'badge-installed');
+    if (isLatest) appendUpdateChangelogBadge(badges, t('updateVersionBadgeLatest'), 'badge-latest');
+    if (isInstalledCurrent) appendUpdateChangelogBadge(badges, t('updateVersionBadgeCurrent'), 'badge-current');
+    if (isInstalledOutdated) appendUpdateChangelogBadge(badges, t('updateVersionBadgeOutdated'), 'badge-outdated');
+    if (isNewerThanInstalled && !isInstalled) appendUpdateChangelogBadge(badges, t('updateVersionBadgeNewer'), 'badge-newer');
+    if (badges.childNodes.length) wrapper.appendChild(badges);
+
+    container.appendChild(wrapper);
+    return true;
+  }
+  function appendUpdateChangelogText(container, text) {
+    const value = String(text || '').trim();
+    if (!value) return;
+    const p = document.createElement('p');
+    p.className = 'update-changelog-paragraph';
+    p.textContent = value;
+    container.appendChild(p);
+  }
+  function renderUpdateChangelog(container, rawChangelog, comparison) {
+    container.textContent = '';
+    const source = String(rawChangelog || '').replace(/\r\n/g, '\n');
+    if (!source.trim()) {
+      appendUpdateChangelogText(container, t('updateChangelogUnavailable'));
+      return;
+    }
+    const lines = source.split('\n');
+    let paragraphBuffer = [];
+    let list = null;
+
+    const flushParagraph = () => {
+      if (!paragraphBuffer.length) return;
+      appendUpdateChangelogText(container, paragraphBuffer.join(' '));
+      paragraphBuffer = [];
+    };
+    const flushList = () => { list = null; };
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) {
+        flushParagraph();
+        flushList();
+        continue;
+      }
+
+      if (parseUpdateChangelogVersionHeading(line)) {
+        flushParagraph();
+        flushList();
+        renderUpdateVersionHeading(container, line, comparison);
+        continue;
+      }
+
+      const sectionHeading = trimmed.match(/^###\s+(.+)$/);
+      if (sectionHeading) {
+        flushParagraph();
+        flushList();
+        const heading = document.createElement('h4');
+        heading.className = 'update-changelog-section-title';
+        heading.textContent = sectionHeading[1].trim();
+        container.appendChild(heading);
+        continue;
+      }
+
+      const genericHeading = trimmed.match(/^##\s+(.+)$/);
+      if (genericHeading) {
+        flushParagraph();
+        flushList();
+        const heading = document.createElement('h3');
+        heading.className = 'update-changelog-section-title';
+        heading.textContent = genericHeading[1].trim();
+        container.appendChild(heading);
+        continue;
+      }
+
+      const listItem = trimmed.match(/^[-*]\s+(.+)$/);
+      if (listItem) {
+        flushParagraph();
+        if (!list) {
+          list = document.createElement('ul');
+          list.className = 'update-changelog-list';
+          container.appendChild(list);
+        }
+        const item = document.createElement('li');
+        item.className = 'update-changelog-list-item';
+        item.textContent = listItem[1].trim();
+        list.appendChild(item);
+        continue;
+      }
+
+      paragraphBuffer.push(trimmed);
+    }
+    flushParagraph();
+  }
   function renderUpdateAppPanel() {
     if (!els.updateInstalledVersionValue || !els.updateAvailableVersionValue || !els.updateCheckStatusText || !els.updateChangelogBox) return;
     els.updateInstalledVersionValue.textContent = APP_VERSION;
     els.updateAvailableVersionValue.textContent = state.update.remoteVersion || t('updateNotChecked');
     els.updateCheckStatusText.textContent = updateStatusMessage();
+    setUpdateVersionValueTone();
     if (els.updateVerifyAgainBtn) {
       els.updateVerifyAgainBtn.disabled = !!state.update.checking;
       els.updateVerifyAgainBtn.textContent = state.update.checking ? t('updateChecking') : t('updateCheckAgain');
     }
+    const comparison = updateVersionComparisonState();
     if (state.update.changelogLoading) {
-      els.updateChangelogBox.textContent = t('updateChangelogLoading');
+      renderUpdateChangelog(els.updateChangelogBox, t('updateChangelogLoading'), comparison);
     } else if (state.update.remoteChangelog) {
-      els.updateChangelogBox.textContent = state.update.remoteChangelog;
+      renderUpdateChangelog(els.updateChangelogBox, state.update.remoteChangelog, comparison);
     } else {
-      els.updateChangelogBox.textContent = t('updateChangelogUnavailable');
+      renderUpdateChangelog(els.updateChangelogBox, t('updateChangelogUnavailable'), comparison);
     }
   }
   async function checkRemoteUpdateInfo() {
