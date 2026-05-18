@@ -1,3 +1,13 @@
+## [8.7.1] - 2026-05-18
+
+### Technical adjustments
+
+* Refactored JavaScript source from 10 large numeric-prefixed files into 52 focused modules with descriptive names (e.g., `preview-base.js`, `drafts-autosave.js`, `sidebar-pages-render.js`).
+* Eliminated numeric file prefixes; concatenation order is now controlled exclusively by `source/config/manifest.json`.
+* Each new module covers a single functional area: version/config, i18n, state, utils, snapshot, update flow, IndexedDB core, page meta, drafts, history, editor, workspace, preview, page CRUD, projects, sidebar, search, context menus, UI modes, settings, event bindings, and lifecycle init.
+* Updated `AGENTS.md` to document the descriptive naming rule and the manifest-controlled ordering convention.
+* No behavior changes; app functionality is preserved exactly as in `8.7.0`.
+
 ## [8.7.0] - 2026-05-18
 
 ### Added

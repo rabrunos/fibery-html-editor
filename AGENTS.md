@@ -48,6 +48,12 @@ Canonical editing paths:
 * `source/js/` — JavaScript modules by functional area
 * `source/config/manifest.json` — version and deterministic assembly order
 
+### JavaScript module naming rules
+
+* Use descriptive names that reflect functional area; no numeric prefixes (e.g., `preview-base.js`, not `04-preview-base.js`).
+* The concatenation order is defined exclusively by the `js` array in `source/config/manifest.json`; do not rely on filename order.
+* `const` declaration order in the manifest must satisfy lexical dependencies: `app-version.js` → `i18n-base.js` → `i18n-en.js` / `i18n-pt-br.js` → `storage-keys.js` → `dom-refs.js` → `app-state.js`. All `function` declarations are hoisted within the IIFE and are order-independent.
+
 `index.html` is generated from these files.
 
 ## Build and Validation
