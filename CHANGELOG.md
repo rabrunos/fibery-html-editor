@@ -18,6 +18,28 @@ Formato padrão:
 
 > Histórico inicial reconstruído em 2026-05-18 com base no estado atual do GitHub, versão declarada no `index.html`, issues abertas/relevantes e commits recentes disponíveis. Versões antigas sem tag/release pública foram agrupadas quando a reconstrução exata não era segura.
 
+## [8.5.0] - 2026-05-18
+
+### Implementado
+
+* Adicionado painel de `Atualizar App` com verificação remota de versão pelo GitHub.
+* Exibição da versão instalada (local) e versão disponível (remota), com comparação semver simples `x.y.z`.
+* Adicionada seção `O que mudou` com carregamento de `CHANGELOG.md` remoto.
+* Incluídos estados de status para: versão atualizada, nova versão disponível e falha de verificação.
+
+### Ajustes técnicos
+
+* Leitura remota feita por URLs raw do GitHub em constantes centralizadas para facilitar manutenção futura.
+* Parsing da versão remota a partir do metadata `<meta name="fibery-html-editor-version" ...>`.
+* Exibição do changelog remoto feita como texto (sem execução de HTML/JS remoto).
+* Atualizado versionamento do app para `8.5.0` no metadata e em `APP_VERSION`.
+
+### Observações
+
+* Esta etapa não aplica atualização automaticamente.
+* Esta etapa não salva nada no Fibery.
+* Esta etapa não altera conteúdo das páginas do usuário.
+
 ## [Não lançado]
 
 ### Observações

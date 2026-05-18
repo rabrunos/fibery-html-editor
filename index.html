@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.4.1" />
+  <meta name="fibery-html-editor-version" content="8.5.0" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -410,6 +410,42 @@
     </div>
   </div>
 
+  <!-- Update app modal -->
+  <div id="updateAppModal" class="hidden fixed inset-0 z-50 bg-black/25 p-6">
+    <div class="mx-auto mt-8 flex max-h-[84vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
+      <div class="shrink-0 border-b border-gray-200 p-4 flex items-center justify-between">
+        <div class="text-base font-semibold text-gray-900" data-i18n="updateAppTitle">Update App</div>
+        <button id="closeUpdateAppBtn" class="h-8 w-8 rounded-lg border border-gray-300 bg-white text-gray-600 hover:bg-gray-50">×</button>
+      </div>
+      <div class="min-h-0 flex-1 overflow-auto p-4 space-y-4">
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div class="rounded-xl border border-gray-200 bg-gray-50 p-3">
+            <div class="text-[11px] font-semibold uppercase tracking-wide text-gray-500" data-i18n="updateInstalledVersion">Installed version</div>
+            <div id="updateInstalledVersionValue" class="mt-1 text-sm font-semibold text-gray-900">-</div>
+          </div>
+          <div class="rounded-xl border border-gray-200 bg-gray-50 p-3">
+            <div class="text-[11px] font-semibold uppercase tracking-wide text-gray-500" data-i18n="updateAvailableVersion">Available version</div>
+            <div id="updateAvailableVersionValue" class="mt-1 text-sm font-semibold text-gray-900">-</div>
+          </div>
+        </div>
+        <div class="rounded-xl border border-gray-200 bg-white p-3">
+          <div class="mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-500" data-i18n="updateCheckStatus">Status</div>
+          <div id="updateCheckStatusText" class="text-sm text-gray-700"></div>
+          <div class="mt-3">
+            <button id="updateVerifyAgainBtn" class="h-8 rounded bg-blue-600 px-3 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40" data-i18n="updateCheckAgain">Check again</button>
+          </div>
+        </div>
+        <div class="rounded-xl border border-gray-200 bg-white">
+          <div class="border-b border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-600" data-i18n="updateWhatChanged">What changed</div>
+          <pre id="updateChangelogBox" class="max-h-[42vh] overflow-auto whitespace-pre-wrap p-3 text-xs leading-5 text-gray-700">-</pre>
+        </div>
+      </div>
+      <div class="shrink-0 border-t border-gray-200 p-3 flex justify-end">
+        <button id="updateCloseBtn" class="h-8 rounded border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 hover:bg-gray-50" data-i18n="updateClose">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- History modal -->
   <div id="historyModal" class="hidden fixed inset-0 z-50 bg-black/25 p-6">
     <div class="mx-auto flex h-full max-w-4xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
@@ -459,9 +495,13 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '8.4.1';
+  const APP_VERSION = '8.5.0';
   window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
   document.documentElement.dataset.appVersion = APP_VERSION;
+  const UPDATE_REMOTE = Object.freeze({
+    indexHtmlUrl: 'https://raw.githubusercontent.com/rabrunos/fibery-html-editor/main/index.html',
+    changelogUrl: 'https://raw.githubusercontent.com/rabrunos/fibery-html-editor/main/CHANGELOG.md'
+  });
 
   const API = {
     async checkIsAdmin() { const r = await fetch('/api/ai-answer/pages/is-admin'); if (!r.ok) return false; const data = await r.json(); return !!data.isAdmin; },
@@ -562,7 +602,27 @@
     localPreviewStatus: 'Local preview',
     localPreviewStatusTailwind: 'Local preview (tailwind)',
     localPreviewTailwindBrowserLoaded: 'Local preview Tailwind browser loaded',
-    localPreviewTailwindBrowserFailed: 'Local preview Tailwind browser failed'
+    localPreviewTailwindBrowserFailed: 'Local preview Tailwind browser failed',
+    updateAppTitle: 'Update App',
+    updateInstalledVersion: 'Installed version',
+    updateAvailableVersion: 'Available version',
+    updateCheckStatus: 'Status',
+    updateCheckAgain: 'Check again',
+    updateChecking: 'Checking...',
+    updateStatusLatest: 'You are using the latest version.',
+    updateStatusAvailable: 'New version available.',
+    updateStatusError: 'Could not check for updates.',
+    updateStatusInvalid: 'Could not compare versions.',
+    updateStatusLocalNewer: 'Installed version is newer than remote.',
+    updateWhatChanged: 'What changed',
+    updateClose: 'Close',
+    updateNotChecked: 'Not checked',
+    updateChangelogLoading: 'Loading remote changelog...',
+    updateChangelogUnavailable: 'Could not load remote changelog.',
+    updateChangelogEmpty: 'Remote changelog is empty.',
+    updateRemoteVersionNotFound: 'Could not find remote version metadata',
+    updateCheckErrorLog: 'Remote version check failed',
+    updateChangelogErrorLog: 'Remote changelog fetch failed'
   });
   Object.assign(I18N['pt-BR'], {
     draftRecoveryTitle: 'Recuperar rascunho local',
@@ -628,7 +688,27 @@
     localPreviewStatus: 'Prévia local',
     localPreviewStatusTailwind: 'Prévia local (tailwind)',
     localPreviewTailwindBrowserLoaded: 'Tailwind browser da prévia local carregado',
-    localPreviewTailwindBrowserFailed: 'Tailwind browser da prévia local falhou'
+    localPreviewTailwindBrowserFailed: 'Tailwind browser da prévia local falhou',
+    updateAppTitle: 'Atualizar App',
+    updateInstalledVersion: 'Versão instalada',
+    updateAvailableVersion: 'Versão disponível',
+    updateCheckStatus: 'Status',
+    updateCheckAgain: 'Verificar novamente',
+    updateChecking: 'Verificando...',
+    updateStatusLatest: 'Você está usando a versão mais recente.',
+    updateStatusAvailable: 'Nova versão disponível.',
+    updateStatusError: 'Não foi possível verificar atualização.',
+    updateStatusInvalid: 'Não foi possível comparar as versões.',
+    updateStatusLocalNewer: 'A versão instalada é mais nova que a remota.',
+    updateWhatChanged: 'O que mudou',
+    updateClose: 'Fechar',
+    updateNotChecked: 'Não verificado',
+    updateChangelogLoading: 'Carregando changelog remoto...',
+    updateChangelogUnavailable: 'Não foi possível carregar o changelog remoto.',
+    updateChangelogEmpty: 'O changelog remoto está vazio.',
+    updateRemoteVersionNotFound: 'Não foi possível encontrar metadata de versão remota',
+    updateCheckErrorLog: 'Falha ao verificar versão remota',
+    updateChangelogErrorLog: 'Falha ao buscar changelog remoto'
   });
 
   const $ = (id) => document.getElementById(id);
@@ -639,6 +719,7 @@
     quickBothBtn: $('quickBothBtn'), quickEditorBtn: $('quickEditorBtn'), quickPreviewBtn: $('quickPreviewBtn'),
     titleInput: $('titleInput'), descriptionInput: $('descriptionInput'), dirtyBadge: $('dirtyBadge'), statusText: $('statusText'),
     logToggleBtn: $('logToggleBtn'), logMenuText: $('logMenuText'), settingsModal: $('settingsModal'), closeSettingsBtn: $('closeSettingsBtn'), langSelect: $('langSelect'),
+    updateAppModal: $('updateAppModal'), closeUpdateAppBtn: $('closeUpdateAppBtn'), updateInstalledVersionValue: $('updateInstalledVersionValue'), updateAvailableVersionValue: $('updateAvailableVersionValue'), updateCheckStatusText: $('updateCheckStatusText'), updateVerifyAgainBtn: $('updateVerifyAgainBtn'), updateChangelogBox: $('updateChangelogBox'), updateCloseBtn: $('updateCloseBtn'),
     openLastToggle: $('openLastToggle'), versionLimitSelect: $('versionLimitSelect'), autosaveLimitSelect: $('autosaveLimitSelect'), codeEditor: $('codeEditor'), codeEditorFallback: $('codeEditorFallback'), charCount: $('charCount'), copyHtmlBtn: $('copyHtmlBtn'), editorPanelMenuBtn: $('editorPanelMenuBtn'),
     previewFrame: $('previewFrame'), previewStatus: $('previewStatus'), previewPanelMenuBtn: $('previewPanelMenuBtn'), previewFocusBtn: $('previewFocusBtn'), previewFocusExitBtn: $('previewFocusExitBtn'), splitter: $('splitter'), splitArea: $('splitArea'), editorPane: $('editorPane'), previewPane: $('previewPane'), dragOverlay: $('dragOverlay'),
     searchModal: $('searchModal'), closeSearchBtn: $('closeSearchBtn'), globalSearchInput: $('globalSearchInput'), globalSearchResults: $('globalSearchResults'),
@@ -667,6 +748,7 @@
   const state = {
     isAdmin: false, lang: 'en', appPageId: detectCurrentAppPageId(), current: { id: '', title: '', description: '', html: '' }, currentBaseline: { id: '', title: '', description: '', html: '' }, blank: true, dirty: false, db: null, saving: false,
     code: { editor: null, suppress: false, fallback: false }, confirmResolver: null,
+    update: { checking: false, status: 'idle', remoteVersion: '', remoteChangelog: '', changelogLoading: false },
     preview: { mode: 'real', localObjectUrl: '', localStatusLabel: '', activeRequestId: '', debounceTimer: null, debounceMs: 500, lastLocalDocSignature: '', lastLocalHtmlSignature: '', lastLocalUsesTailwind: false, lastRealUrl: '' },
     sidebar: { open: true, pages: [], loading: false, refreshTimer: null, hasMore: false, limit: 20, visibleLimit: 20, pageCache: {} },
     projects: { rows: [], items: [], pageToProject: {}, itemsByProject: {} },
@@ -680,6 +762,104 @@
   function escapeHtmlAttr(v) { return String(v ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
   function getCodeValue() { return state.code.editor ? state.code.editor.getValue() : els.codeEditorFallback.value; }
   function setStatus(text) { els.statusText.textContent = text; }
+  function parseSemverSimple(version = '') {
+    const match = String(version || '').trim().match(/^(\d+)\.(\d+)\.(\d+)$/);
+    if (!match) return null;
+    return { major: Number(match[1]), minor: Number(match[2]), patch: Number(match[3]), raw: `${Number(match[1])}.${Number(match[2])}.${Number(match[3])}` };
+  }
+  function compareSemverSimple(a, b) {
+    if (a.major !== b.major) return a.major - b.major;
+    if (a.minor !== b.minor) return a.minor - b.minor;
+    return a.patch - b.patch;
+  }
+  function extractRemoteVersionFromHtml(html = '') {
+    const source = String(html || '');
+    const match = source.match(/<meta\b[^>]*name=["']fibery-html-editor-version["'][^>]*content=["']([^"']+)["'][^>]*>/i)
+      || source.match(/<meta\b[^>]*content=["']([^"']+)["'][^>]*name=["']fibery-html-editor-version["'][^>]*>/i);
+    return String(match?.[1] || '').trim();
+  }
+  async function fetchRemoteText(url) {
+    const response = await fetch(url, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.text();
+  }
+  function updateStatusMessage() {
+    if (state.update.status === 'checking') return t('updateChecking');
+    if (state.update.status === 'latest') return t('updateStatusLatest');
+    if (state.update.status === 'available') return t('updateStatusAvailable');
+    if (state.update.status === 'local-newer') return t('updateStatusLocalNewer');
+    if (state.update.status === 'invalid') return t('updateStatusInvalid');
+    if (state.update.status === 'error') return t('updateStatusError');
+    return t('updateNotChecked');
+  }
+  function renderUpdateAppPanel() {
+    if (!els.updateInstalledVersionValue || !els.updateAvailableVersionValue || !els.updateCheckStatusText || !els.updateChangelogBox) return;
+    els.updateInstalledVersionValue.textContent = APP_VERSION;
+    els.updateAvailableVersionValue.textContent = state.update.remoteVersion || t('updateNotChecked');
+    els.updateCheckStatusText.textContent = updateStatusMessage();
+    if (els.updateVerifyAgainBtn) {
+      els.updateVerifyAgainBtn.disabled = !!state.update.checking;
+      els.updateVerifyAgainBtn.textContent = state.update.checking ? t('updateChecking') : t('updateCheckAgain');
+    }
+    if (state.update.changelogLoading) {
+      els.updateChangelogBox.textContent = t('updateChangelogLoading');
+    } else if (state.update.remoteChangelog) {
+      els.updateChangelogBox.textContent = state.update.remoteChangelog;
+    } else {
+      els.updateChangelogBox.textContent = t('updateChangelogUnavailable');
+    }
+  }
+  async function checkRemoteUpdateInfo() {
+    if (state.update.checking) return;
+    state.update.checking = true;
+    state.update.status = 'checking';
+    state.update.remoteVersion = '';
+    state.update.changelogLoading = true;
+    renderUpdateAppPanel();
+    const [indexResult, changelogResult] = await Promise.allSettled([
+      fetchRemoteText(UPDATE_REMOTE.indexHtmlUrl),
+      fetchRemoteText(UPDATE_REMOTE.changelogUrl)
+    ]);
+    if (indexResult.status === 'fulfilled') {
+      const remoteVersionRaw = extractRemoteVersionFromHtml(indexResult.value);
+      const localSemver = parseSemverSimple(APP_VERSION);
+      const remoteSemver = parseSemverSimple(remoteVersionRaw);
+      if (!remoteVersionRaw) {
+        state.update.status = 'error';
+        log(t('updateRemoteVersionNotFound'));
+      } else if (!localSemver || !remoteSemver) {
+        state.update.status = 'invalid';
+        state.update.remoteVersion = remoteVersionRaw;
+      } else {
+        state.update.remoteVersion = remoteSemver.raw;
+        const cmp = compareSemverSimple(localSemver, remoteSemver);
+        state.update.status = cmp === 0 ? 'latest' : (cmp < 0 ? 'available' : 'local-newer');
+      }
+    } else {
+      state.update.status = 'error';
+      log(`${t('updateCheckErrorLog')}: ${String(indexResult.reason?.message || indexResult.reason || '')}`);
+    }
+    if (changelogResult.status === 'fulfilled') {
+      const remoteChangelog = String(changelogResult.value || '').trim();
+      state.update.remoteChangelog = remoteChangelog || t('updateChangelogEmpty');
+    } else {
+      state.update.remoteChangelog = '';
+      log(`${t('updateChangelogErrorLog')}: ${String(changelogResult.reason?.message || changelogResult.reason || '')}`);
+    }
+    state.update.changelogLoading = false;
+    state.update.checking = false;
+    renderUpdateAppPanel();
+  }
+  function openUpdateAppModal() {
+    if (!els.updateAppModal) return;
+    els.updateAppModal.classList.remove('hidden');
+    renderUpdateAppPanel();
+    void checkRemoteUpdateInfo();
+  }
+  function closeUpdateAppModal() {
+    if (!els.updateAppModal) return;
+    els.updateAppModal.classList.add('hidden');
+  }
   function revokeLocalPreviewObjectUrl() {
     const current = state.preview?.localObjectUrl;
     if (!current) return;
@@ -779,6 +959,7 @@
     renderSidebarProjects();
     renderSidebarPages();
     updateRecoveryReopenButton();
+    renderUpdateAppPanel();
   }
   function log(message) { const time = new Date().toLocaleTimeString(state.lang === 'pt-BR' ? 'pt-BR' : 'en-US'); const line = document.createElement('div'); line.textContent = `[${time}] ${message}`; els.logBox.prepend(line); }
   function currentSnapshotFromState() {
@@ -2288,6 +2469,7 @@ ${projectName || ''}`, okText: t('deleteProject'), showPreview: false });
     els.titleInput.addEventListener('input', () => { updateCurrentFromInputs(); markDirty(true); scheduleLocalPreviewRefresh(); });
     els.descriptionInput.addEventListener('input', () => { updateCurrentFromInputs(); markDirty(true); scheduleLocalPreviewRefresh(); });
     els.saveBtn.addEventListener('click', () => savePage('save'));
+    els.updateAppBtn.addEventListener('click', openUpdateAppModal);
     els.refreshBtn.addEventListener('click', () => { els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); refreshPreview(); });
     els.newPageBtn.addEventListener('click', newPage);
     els.welcomeNewPageBtn.addEventListener('click', newPage);
@@ -2341,6 +2523,10 @@ ${projectName || ''}`, okText: t('deleteProject'), showPreview: false });
     els.confirmOpenPreviewBtn.addEventListener('click', () => { const id = els.confirmOpenPreviewBtn.dataset.previewId || state.current.id; if (id) window.open(viewUrl(id), '_blank'); });
     els.closeSettingsBtn.addEventListener('click', closeSettings);
     els.settingsModal.addEventListener('click', (e) => { if (e.target === els.settingsModal) closeSettings(); });
+    els.closeUpdateAppBtn.addEventListener('click', closeUpdateAppModal);
+    els.updateCloseBtn.addEventListener('click', closeUpdateAppModal);
+    els.updateVerifyAgainBtn.addEventListener('click', () => { void checkRemoteUpdateInfo(); });
+    els.updateAppModal.addEventListener('click', (e) => { if (e.target === els.updateAppModal) closeUpdateAppModal(); });
     els.langSelect.addEventListener('change', () => { localStorage.setItem(LS.lang, els.langSelect.value); applyI18n(); if (state.blank) showBlankPage(); else renderCurrent(); });
     els.openLastToggle.addEventListener('change', () => localStorage.setItem(LS.openLast, els.openLastToggle.checked ? '1' : '0'));
     els.versionLimitSelect.addEventListener('change', async () => { localStorage.setItem(LS.versionLimit, els.versionLimitSelect.value); if (state.current.id) await enforceHistoryLimit(state.current.id); });
@@ -2422,7 +2608,7 @@ ${projectName || ''}`, okText: t('deleteProject'), showPreview: false });
     els.confirmCancelBtn.addEventListener('click', () => closeConfirm(false));
     els.confirmOkBtn.addEventListener('click', () => closeConfirm(true));
     els.confirmModal.addEventListener('click', (e) => { if (e.target === els.confirmModal) closeConfirm(false); });
-    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (!els.draftRecoveryModal.classList.contains('hidden')) { keepCurrentVersionFromDraft(); return; } if (state.previewFocus) exitPreviewFocus(); els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); closeSearchModal(); closeSettings(); closeWelcomeSearch(); closeContextMenus(); closeCreateProjectModal(); } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); if (state.isAdmin && !state.blank) savePage('save'); } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearchModal(); } });
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (!els.draftRecoveryModal.classList.contains('hidden')) { keepCurrentVersionFromDraft(); return; } if (state.previewFocus) exitPreviewFocus(); els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); closeSearchModal(); closeSettings(); closeUpdateAppModal(); closeWelcomeSearch(); closeContextMenus(); closeCreateProjectModal(); } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); if (state.isAdmin && !state.blank) savePage('save'); } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearchModal(); } });
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         void flushDraftAutosaveNow();
