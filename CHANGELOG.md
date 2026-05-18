@@ -1,3 +1,28 @@
+## [8.6.0] - 2026-05-18
+
+### Added
+
+* Added a safe "Apply update" action in the Update App panel when a newer remote version is available.
+* Added explicit confirmation before applying remote app HTML to the current Fibery app page.
+* Added local update backup creation before save, stored as `update-backup` records in IndexedDB.
+
+### Technical adjustments
+
+* Added conservative remote HTML validation before update apply, including:
+  * required app version metadata;
+  * `APP_VERSION` declaration;
+  * required version assignment lines;
+  * remote version must be greater than local version.
+* Kept update apply flow on the existing save path (`API.savePage`) without adding new endpoints.
+* Added guarded apply-state handling to avoid double submit while checking/applying updates.
+* Updated app version metadata and `APP_VERSION` to `8.6.0`.
+
+### Notes
+
+* This version still does not apply updates automatically.
+* This version still requires explicit user confirmation before saving.
+* Full rollback flow is not implemented yet in this release.
+
 ## [8.5.1] - 2026-05-18
 
 ### Added

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.5.1" />
+  <meta name="fibery-html-editor-version" content="8.6.0" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -449,6 +449,7 @@
           <div id="updateCheckStatusText" class="text-sm text-gray-700"></div>
           <div class="mt-3">
             <button id="updateVerifyAgainBtn" class="h-8 rounded bg-blue-600 px-3 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40" data-i18n="updateCheckAgain">Check again</button>
+            <button id="updateApplyBtn" class="hidden h-8 rounded bg-emerald-600 px-3 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40" data-i18n="updateApply">Apply update</button>
           </div>
         </div>
         <div class="rounded-xl border border-gray-200 bg-white">
@@ -511,7 +512,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '8.5.1';
+  const APP_VERSION = '8.6.0';
   window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
   document.documentElement.dataset.appVersion = APP_VERSION;
   const UPDATE_REMOTE = Object.freeze({
@@ -624,7 +625,9 @@
     updateAvailableVersion: 'Available version',
     updateCheckStatus: 'Status',
     updateCheckAgain: 'Check again',
+    updateApply: 'Apply update',
     updateChecking: 'Checking...',
+    updateApplying: 'Applying update...',
     updateStatusLatest: 'You are using the latest version.',
     updateStatusAvailable: 'New version available.',
     updateStatusError: 'Could not check for updates.',
@@ -644,7 +647,25 @@
     updateVersionBadgeCurrent: 'Current',
     updateVersionBadgeOutdated: 'Outdated',
     updateVersionBadgeNewer: 'Newer',
-    updateVersionDate: 'Date'
+    updateVersionDate: 'Date',
+    updateApplyConfirmTitle: 'Apply app update?',
+    updateApplyConfirmMessage: 'The installed version will be replaced by remote GitHub HTML. A local backup will be created before saving. The update is applied only if saving to Fibery succeeds.',
+    updateApplyConfirmButton: 'Apply update',
+    updateApplyCanceled: 'Update canceled.',
+    updateAdminRequired: 'Admin permission is required to apply updates.',
+    updateAppPageRequired: 'Current page is not the app page.',
+    updateDownloading: 'Downloading remote update...',
+    updateValidating: 'Validating remote update...',
+    updateBackupCreating: 'Creating local backup...',
+    updateBackupCreated: 'Local backup created.',
+    updateBackupFailed: 'Local backup failed. Update canceled.',
+    updateRemoteHtmlInvalid: 'Remote HTML is invalid for safe update.',
+    updateRemoteVersionNotNewer: 'Remote version is not newer than installed version.',
+    updateSaving: 'Saving update to Fibery...',
+    updateApplied: 'Update applied successfully.',
+    updateAppliedReloadHint: 'Reload this app page to run the new version.',
+    updateApplyFailed: 'Failed to apply update.',
+    updateApplyUnavailableWhileChecking: 'Wait for remote version check to finish.'
   });
   Object.assign(I18N['pt-BR'], {
     draftRecoveryTitle: 'Recuperar rascunho local',
@@ -716,7 +737,9 @@
     updateAvailableVersion: 'Versão disponível',
     updateCheckStatus: 'Status',
     updateCheckAgain: 'Verificar novamente',
+    updateApply: 'Aplicar atualização',
     updateChecking: 'Verificando...',
+    updateApplying: 'Aplicando atualização...',
     updateStatusLatest: 'Você está usando a versão mais recente.',
     updateStatusAvailable: 'Nova versão disponível.',
     updateStatusError: 'Não foi possível verificar atualização.',
@@ -736,7 +759,25 @@
     updateVersionBadgeCurrent: 'Atual',
     updateVersionBadgeOutdated: 'Desatualizada',
     updateVersionBadgeNewer: 'Mais nova',
-    updateVersionDate: 'Data'
+    updateVersionDate: 'Data',
+    updateApplyConfirmTitle: 'Aplicar atualização do app?',
+    updateApplyConfirmMessage: 'A versão instalada será substituída pelo HTML remoto do GitHub. Um backup local será criado antes de salvar. A atualização só será aplicada se o salvamento no Fibery for concluído.',
+    updateApplyConfirmButton: 'Aplicar atualização',
+    updateApplyCanceled: 'Atualização cancelada.',
+    updateAdminRequired: 'Permissão de admin é necessária para aplicar atualizações.',
+    updateAppPageRequired: 'A página atual não é a página do app.',
+    updateDownloading: 'Baixando atualização remota...',
+    updateValidating: 'Validando atualização remota...',
+    updateBackupCreating: 'Criando backup local...',
+    updateBackupCreated: 'Backup local criado.',
+    updateBackupFailed: 'Falha ao criar backup local. Atualização cancelada.',
+    updateRemoteHtmlInvalid: 'O HTML remoto é inválido para atualização segura.',
+    updateRemoteVersionNotNewer: 'A versão remota não é mais nova que a instalada.',
+    updateSaving: 'Salvando atualização no Fibery...',
+    updateApplied: 'Atualização aplicada com sucesso.',
+    updateAppliedReloadHint: 'Recarregue esta página do app para usar a nova versão.',
+    updateApplyFailed: 'Falha ao aplicar atualização.',
+    updateApplyUnavailableWhileChecking: 'Aguarde a verificação da versão remota terminar.'
   });
 
   const $ = (id) => document.getElementById(id);
@@ -747,7 +788,7 @@
     quickBothBtn: $('quickBothBtn'), quickEditorBtn: $('quickEditorBtn'), quickPreviewBtn: $('quickPreviewBtn'),
     titleInput: $('titleInput'), descriptionInput: $('descriptionInput'), dirtyBadge: $('dirtyBadge'), statusText: $('statusText'),
     logToggleBtn: $('logToggleBtn'), logMenuText: $('logMenuText'), settingsModal: $('settingsModal'), closeSettingsBtn: $('closeSettingsBtn'), langSelect: $('langSelect'),
-    updateAppModal: $('updateAppModal'), closeUpdateAppBtn: $('closeUpdateAppBtn'), updateInstalledVersionValue: $('updateInstalledVersionValue'), updateAvailableVersionValue: $('updateAvailableVersionValue'), updateCheckStatusText: $('updateCheckStatusText'), updateVerifyAgainBtn: $('updateVerifyAgainBtn'), updateChangelogBox: $('updateChangelogBox'), updateCloseBtn: $('updateCloseBtn'),
+    updateAppModal: $('updateAppModal'), closeUpdateAppBtn: $('closeUpdateAppBtn'), updateInstalledVersionValue: $('updateInstalledVersionValue'), updateAvailableVersionValue: $('updateAvailableVersionValue'), updateCheckStatusText: $('updateCheckStatusText'), updateVerifyAgainBtn: $('updateVerifyAgainBtn'), updateApplyBtn: $('updateApplyBtn'), updateChangelogBox: $('updateChangelogBox'), updateCloseBtn: $('updateCloseBtn'),
     openLastToggle: $('openLastToggle'), versionLimitSelect: $('versionLimitSelect'), autosaveLimitSelect: $('autosaveLimitSelect'), codeEditor: $('codeEditor'), codeEditorFallback: $('codeEditorFallback'), charCount: $('charCount'), copyHtmlBtn: $('copyHtmlBtn'), editorPanelMenuBtn: $('editorPanelMenuBtn'),
     previewFrame: $('previewFrame'), previewStatus: $('previewStatus'), previewPanelMenuBtn: $('previewPanelMenuBtn'), previewFocusBtn: $('previewFocusBtn'), previewFocusExitBtn: $('previewFocusExitBtn'), splitter: $('splitter'), splitArea: $('splitArea'), editorPane: $('editorPane'), previewPane: $('previewPane'), dragOverlay: $('dragOverlay'),
     searchModal: $('searchModal'), closeSearchBtn: $('closeSearchBtn'), globalSearchInput: $('globalSearchInput'), globalSearchResults: $('globalSearchResults'),
@@ -776,7 +817,7 @@
   const state = {
     isAdmin: false, lang: 'en', appPageId: detectCurrentAppPageId(), current: { id: '', title: '', description: '', html: '' }, currentBaseline: { id: '', title: '', description: '', html: '' }, blank: true, dirty: false, db: null, saving: false,
     code: { editor: null, suppress: false, fallback: false }, confirmResolver: null,
-    update: { checking: false, status: 'idle', remoteVersion: '', remoteChangelog: '', changelogLoading: false },
+    update: { checking: false, applying: false, status: 'idle', remoteVersion: '', remoteChangelog: '', changelogLoading: false },
     preview: { mode: 'real', localObjectUrl: '', localStatusLabel: '', activeRequestId: '', debounceTimer: null, debounceMs: 500, lastLocalDocSignature: '', lastLocalHtmlSignature: '', lastLocalUsesTailwind: false, lastRealUrl: '' },
     sidebar: { open: true, pages: [], loading: false, refreshTimer: null, hasMore: false, limit: 20, visibleLimit: 20, pageCache: {} },
     projects: { rows: [], items: [], pageToProject: {}, itemsByProject: {} },
@@ -813,12 +854,177 @@
   }
   function updateStatusMessage() {
     if (state.update.status === 'checking') return t('updateChecking');
+    if (state.update.status === 'applying') return t('updateApplying');
     if (state.update.status === 'latest') return t('updateStatusLatest');
     if (state.update.status === 'available') return t('updateStatusAvailable');
     if (state.update.status === 'local-newer') return t('updateStatusLocalNewer');
     if (state.update.status === 'invalid') return t('updateStatusInvalid');
     if (state.update.status === 'error') return t('updateStatusError');
     return t('updateNotChecked');
+  }
+  function isCurrentAppPageForUpdate() {
+    if (state.blank) return false;
+    if (!state.current.id || !state.appPageId) return false;
+    return state.current.id === state.appPageId;
+  }
+  function canShowApplyUpdateButton() {
+    return state.update.status === 'available';
+  }
+  function canApplyUpdateNow() {
+    return canShowApplyUpdateButton() && !state.update.checking && !state.update.applying && state.isAdmin && isCurrentAppPageForUpdate();
+  }
+  function parseAppVersionFromHtmlSource(html = '') {
+    const source = String(html || '');
+    const match = source.match(/\b(?:const|let|var)\s+APP_VERSION\s*=\s*["']([^"']+)["']/);
+    return String(match?.[1] || '').trim();
+  }
+  function validateRemoteUpdateHtml(remoteHtml = '') {
+    const source = String(remoteHtml || '');
+    if (!source.trim()) return { ok: false, reason: 'empty' };
+    if (source.trim().length < 300) return { ok: false, reason: 'too-short' };
+    if (/^404:\s*Not Found/i.test(source.trim())) return { ok: false, reason: 'not-found' };
+    if (!/<html[\s>]/i.test(source) && !/<!doctype html/i.test(source)) return { ok: false, reason: 'not-html' };
+    if (!/fibery-html-editor/i.test(source)) return { ok: false, reason: 'not-editor' };
+
+    const metaVersion = extractRemoteVersionFromHtml(source);
+    if (!metaVersion) return { ok: false, reason: 'missing-meta-version' };
+    const metaSemver = parseSemverSimple(metaVersion);
+    if (!metaSemver) return { ok: false, reason: 'invalid-meta-version', metaVersion };
+
+    const appVersionLiteral = parseAppVersionFromHtmlSource(source);
+    if (!appVersionLiteral) return { ok: false, reason: 'missing-app-version' };
+    if (appVersionLiteral !== metaSemver.raw) return { ok: false, reason: 'version-mismatch', metaVersion: metaSemver.raw, appVersionLiteral };
+
+    if (!/window\.FIBERY_HTML_EDITOR_VERSION\s*=\s*APP_VERSION/.test(source)) return { ok: false, reason: 'missing-window-version-assign', metaVersion: metaSemver.raw };
+    if (!/document\.documentElement\.dataset\.appVersion\s*=\s*APP_VERSION/.test(source)) return { ok: false, reason: 'missing-dataset-version-assign', metaVersion: metaSemver.raw };
+
+    const localSemver = parseSemverSimple(APP_VERSION);
+    if (!localSemver) return { ok: false, reason: 'invalid-local-version' };
+    const cmp = compareSemverSimple(localSemver, metaSemver);
+    if (cmp >= 0) return { ok: false, reason: 'remote-not-newer', metaVersion: metaSemver.raw };
+    return { ok: true, remoteVersion: metaSemver.raw, localVersion: localSemver.raw };
+  }
+  function updateValidationReasonText(reason = '') {
+    if (reason === 'remote-not-newer') return t('updateRemoteVersionNotNewer');
+    return t('updateRemoteHtmlInvalid');
+  }
+  async function createUpdateBackupRecord({ pageId, fromVersion, toVersion, title, description, html }) {
+    if (!state.db) throw new Error('db-unavailable');
+    const createdAt = Date.now();
+    const snapshot = {
+      title: String(title || ''),
+      description: String(description || ''),
+      html: String(html || '')
+    };
+    const record = {
+      key: `update-backup:${pageId}:${createdAt}:${Math.random().toString(36).slice(2, 8)}`,
+      kind: 'update-backup',
+      source: 'update-backup',
+      action: 'update-backup',
+      pageId: String(pageId || ''),
+      fromVersion: String(fromVersion || ''),
+      toVersion: String(toVersion || ''),
+      title: snapshot.title,
+      description: snapshot.description,
+      html: snapshot.html,
+      signature: snapshotSignature(snapshot),
+      createdAt
+    };
+    await txPut('versions', record);
+    return record;
+  }
+  async function applyRemoteUpdate() {
+    if (state.update.applying) return;
+    if (state.update.checking) { setStatus(t('updateApplyUnavailableWhileChecking')); return; }
+    if (!state.isAdmin) { setStatus(t('updateAdminRequired')); log(t('updateAdminRequired')); return; }
+    if (!isCurrentAppPageForUpdate()) { setStatus(t('updateAppPageRequired')); log(t('updateAppPageRequired')); return; }
+    if (state.update.status !== 'available') { setStatus(t('updateRemoteVersionNotNewer')); return; }
+
+    state.update.applying = true;
+    const previousStatus = state.update.status;
+    state.update.status = 'applying';
+    renderUpdateAppPanel();
+
+    try {
+      setStatus(t('updateDownloading'));
+      const remoteHtml = await fetchRemoteText(UPDATE_REMOTE.indexHtmlUrl);
+      setStatus(t('updateValidating'));
+      const validation = validateRemoteUpdateHtml(remoteHtml);
+      if (!validation.ok) {
+        const reasonText = updateValidationReasonText(validation.reason);
+        log(`${reasonText}: ${String(validation.reason || 'unknown')}`);
+        setStatus(reasonText);
+        return;
+      }
+
+      const ok = await confirmAction({
+        title: t('updateApplyConfirmTitle'),
+        message: `${t('updateApplyConfirmMessage')}\n\n${t('updateInstalledVersion')}: ${validation.localVersion}\n${t('updateAvailableVersion')}: ${validation.remoteVersion}`,
+        okText: t('updateApplyConfirmButton'),
+        showPreview: false
+      });
+      if (!ok) { setStatus(t('updateApplyCanceled')); return; }
+
+      updateCurrentFromInputs();
+      setStatus(t('updateBackupCreating'));
+      let backupRecord = null;
+      try {
+        backupRecord = await createUpdateBackupRecord({
+          pageId: state.current.id,
+          fromVersion: validation.localVersion,
+          toVersion: validation.remoteVersion,
+          title: state.current.title,
+          description: state.current.description,
+          html: state.current.html
+        });
+      } catch (backupErr) {
+        const backupMsg = String(backupErr?.message || backupErr || '');
+        setStatus(t('updateBackupFailed'));
+        log(`${t('updateBackupFailed')}: ${backupMsg}`);
+        return;
+      }
+      log(`${t('updateBackupCreated')}: ${backupRecord.fromVersion} -> ${backupRecord.toVersion}`);
+
+      setStatus(t('updateSaving'));
+      const saved = await API.savePage({
+        id: state.current.id,
+        title: state.current.title,
+        description: state.current.description,
+        html: remoteHtml
+      });
+
+      state.current = {
+        id: saved.id || saved.data?.id || state.current.id,
+        title: saved.title || saved.data?.title || state.current.title,
+        description: saved.description || saved.data?.description || state.current.description,
+        html: saved.html || saved.data?.html || remoteHtml
+      };
+      localStorage.setItem(LS.lastPageId, state.current.id);
+      const now = Date.now();
+      await savePageMeta(state.current.id, { title: state.current.title, description: state.current.description, lastOpenedAt: now, lastSavedAt: now });
+      await clearAutosaveHistoryBySignature(state.current.id, snapshotSignature(state.current));
+      await saveHistory('update-app');
+      setCurrentBaseline();
+      renderCurrent();
+      syncPreviewMode({ immediate: true, forceRealReload: true });
+      if (state.sidebar.open) await loadSidebarPages({ force: true, reset: true });
+
+      state.update.remoteVersion = validation.remoteVersion;
+      state.update.status = 'latest';
+      setStatus(`${t('updateApplied')} ${t('updateAppliedReloadHint')}`);
+      log(`${t('updateApplied')}: ${validation.localVersion} -> ${validation.remoteVersion}`);
+      renderUpdateAppPanel();
+      void checkRemoteUpdateInfo();
+    } catch (err) {
+      const msg = String(err?.message || err || '');
+      setStatus(t('updateApplyFailed'));
+      log(`${t('updateApplyFailed')}: ${msg}`);
+      state.update.status = previousStatus;
+    } finally {
+      state.update.applying = false;
+      if (state.update.status === 'applying') state.update.status = previousStatus;
+      renderUpdateAppPanel();
+    }
   }
   function setUpdateVersionValueTone() {
     if (!els.updateInstalledVersionValue || !els.updateAvailableVersionValue) return;
@@ -1003,8 +1209,27 @@
     els.updateCheckStatusText.textContent = updateStatusMessage();
     setUpdateVersionValueTone();
     if (els.updateVerifyAgainBtn) {
-      els.updateVerifyAgainBtn.disabled = !!state.update.checking;
+      els.updateVerifyAgainBtn.disabled = !!state.update.checking || !!state.update.applying;
       els.updateVerifyAgainBtn.textContent = state.update.checking ? t('updateChecking') : t('updateCheckAgain');
+    }
+    if (els.updateApplyBtn) {
+      const showApply = canShowApplyUpdateButton();
+      els.updateApplyBtn.classList.toggle('hidden', !showApply);
+      const disableReason = !showApply
+        ? ''
+        : state.update.checking
+          ? t('updateApplyUnavailableWhileChecking')
+          : state.update.applying
+            ? t('updateApplying')
+            : !state.isAdmin
+              ? t('updateAdminRequired')
+              : !isCurrentAppPageForUpdate()
+                ? t('updateAppPageRequired')
+                : '';
+      const disabled = !!disableReason || !canApplyUpdateNow();
+      els.updateApplyBtn.disabled = disabled;
+      els.updateApplyBtn.textContent = state.update.applying ? t('updateApplying') : t('updateApply');
+      els.updateApplyBtn.title = disableReason || t('updateApply');
     }
     const comparison = updateVersionComparisonState();
     if (state.update.changelogLoading) {
@@ -1016,7 +1241,7 @@
     }
   }
   async function checkRemoteUpdateInfo() {
-    if (state.update.checking) return;
+    if (state.update.checking || state.update.applying) return;
     state.update.checking = true;
     state.update.status = 'checking';
     state.update.remoteVersion = '';
@@ -2660,7 +2885,7 @@ ${projectName || ''}`, okText: t('deleteProject'), showPreview: false });
   function enterPreviewFocus() { if (!state.current.id) return; state.previewFocus = true; document.body.classList.add('preview-focus'); }
   function exitPreviewFocus() { state.previewFocus = false; document.body.classList.remove('preview-focus'); window.setTimeout(() => { try { state.code.editor?.layout(); } catch (_) {} }, 0); }
 
-  function setAdminMode(isAdmin) { state.isAdmin = isAdmin; els.saveBtn.disabled = !isAdmin; els.newPageBtn.disabled = !isAdmin; if (els.welcomeNewPageBtn) els.welcomeNewPageBtn.disabled = !isAdmin; els.deleteBtn.disabled = !isAdmin || !state.current.id; if (!isAdmin) { setCodeReadOnly(true); els.titleInput.readOnly = true; els.descriptionInput.readOnly = true; setStatus(t('readOnly')); } }
+  function setAdminMode(isAdmin) { state.isAdmin = isAdmin; els.saveBtn.disabled = !isAdmin; els.newPageBtn.disabled = !isAdmin; if (els.welcomeNewPageBtn) els.welcomeNewPageBtn.disabled = !isAdmin; els.deleteBtn.disabled = !isAdmin || !state.current.id; if (!isAdmin) { setCodeReadOnly(true); els.titleInput.readOnly = true; els.descriptionInput.readOnly = true; setStatus(t('readOnly')); } renderUpdateAppPanel(); }
   function setupResize() { const saved = localStorage.getItem(LS.split); if (saved) setSplit(Number(saved)); let dragging = false; const move = (clientX) => { const rect = els.splitArea.getBoundingClientRect(); const pct = ((clientX - rect.left) / rect.width) * 100; setSplit(pct); }; const onPointerMove = (e) => { if (dragging) { e.preventDefault(); move(e.clientX); } }; const stop = () => { if (!dragging) return; dragging = false; document.body.classList.remove('select-none', 'split-dragging'); els.dragOverlay.classList.add('hidden'); els.previewFrame.classList.remove('pointer-events-none'); }; els.splitter.addEventListener('pointerdown', (e) => { dragging = true; e.preventDefault(); document.body.classList.add('select-none', 'split-dragging'); els.dragOverlay.classList.remove('hidden'); els.previewFrame.classList.add('pointer-events-none'); try { els.splitter.setPointerCapture(e.pointerId); } catch (_) {} move(e.clientX); }); window.addEventListener('pointermove', onPointerMove); window.addEventListener('pointerup', stop); window.addEventListener('pointercancel', stop); els.dragOverlay.addEventListener('pointermove', onPointerMove); els.dragOverlay.addEventListener('pointerup', stop); els.splitter.addEventListener('dblclick', () => setSplit(50)); }
   function setSplit(pct) { const clamped = Math.max(25, Math.min(75, pct || 50)); els.splitArea.style.gridTemplateColumns = `minmax(320px, ${clamped}%) 6px minmax(320px, 1fr)`; localStorage.setItem(LS.split, String(clamped)); }
 
@@ -2732,6 +2957,7 @@ ${projectName || ''}`, okText: t('deleteProject'), showPreview: false });
     els.closeUpdateAppBtn.addEventListener('click', closeUpdateAppModal);
     els.updateCloseBtn.addEventListener('click', closeUpdateAppModal);
     els.updateVerifyAgainBtn.addEventListener('click', () => { void checkRemoteUpdateInfo(); });
+    els.updateApplyBtn.addEventListener('click', () => { void applyRemoteUpdate(); });
     els.updateAppModal.addEventListener('click', (e) => { if (e.target === els.updateAppModal) closeUpdateAppModal(); });
     els.langSelect.addEventListener('change', () => { localStorage.setItem(LS.lang, els.langSelect.value); applyI18n(); if (state.blank) showBlankPage(); else renderCurrent(); });
     els.openLastToggle.addEventListener('change', () => localStorage.setItem(LS.openLast, els.openLastToggle.checked ? '1' : '0'));
