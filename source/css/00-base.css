@@ -1,0 +1,30 @@
+html, body { height: 100%; margin: 0; overflow: hidden; }
+    textarea { tab-size: 2; }
+    .clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .split-dragging iframe { pointer-events: none !important; }
+    .sidebar-transition { transition: width .16s ease; }
+    .sidebar-collapsed #toggleSidebarBtn { display: none; }
+    .sidebar-collapsed #brandLogo { display: inline-flex; }
+    .sidebar-collapsed #brandOpenIcon { display: none; }
+    .sidebar-collapsed #brandBtn:hover #brandLogo { display: none; }
+    .sidebar-collapsed #brandBtn:hover #brandOpenIcon { display: inline-flex; }
+    .sidebar-collapsed #sidebarScroll { visibility: hidden; pointer-events: none; }
+    .sidebar-collapsed #refreshSidebarBtn { display: none; }
+    .sidebar-active-indicator { position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 999px; background: rgb(37 99 235); }
+
+    .context-menu-item { display: flex; width: 100%; align-items: center; gap: .5rem; padding: .5rem .75rem; text-align: left; font-size: .875rem; color: rgb(55 65 81); }
+    .context-menu-item:hover { background: rgb(249 250 251); }
+    .context-menu-danger { color: rgb(185 28 28); }
+    .context-menu-danger:hover { background: rgb(254 242 242); }
+    .sidebar-more-btn { opacity: 0; transition: opacity .12s ease; }
+    .group:hover .sidebar-more-btn, .sidebar-more-btn.menu-open { opacity: 1; }
+    .inline-rename-input { height: 1.5rem; width: 100%; border-radius: .375rem; border: 1px solid rgb(147 197 253); background: #fff; padding: 0 .375rem; font-size: .875rem; outline: none; box-shadow: 0 0 0 2px rgb(191 219 254 / .6); }
+    .archived-badge { display:inline-flex; align-items:center; border-radius:999px; background:rgb(243 244 246); color:rgb(107 114 128); padding:0 .375rem; font-size:.625rem; font-weight:600; }
+    .sidebar-page-row { min-height: 50px; align-items: center; }
+    .sidebar-page-open { min-height: 50px; display: flex; flex-direction: column; justify-content: center; }
+    .sidebar-page-mainline { min-height: 20px; display: flex; align-items: center; }
+    .sidebar-page-description { height: 16px; line-height: 16px; }
+    .sidebar-page-menu-btn { margin-top: 0 !important; align-self: center; }
+    .panel-menu-btn { display:flex; height:1.5rem; width:1.5rem; flex-shrink:0; align-items:center; justify-content:center; border-radius:.375rem; border:1px solid rgb(229 231 235); background:#fff; color:rgb(107 114 128); }
+    .panel-menu-btn:hover, .panel-menu-btn.menu-open { background:rgb(249 250 251); color:rgb(17 24 39); }
+    .page-menu.menu-open, .project-menu.menu-open, #moreBtn.menu-open { background:rgb(243 244 246); color:rgb(17 24 39); }

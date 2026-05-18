@@ -1,0 +1,36 @@
+{
+  "version": "8.7.0",
+  "bodyOpenTag": "<body class=\"h-screen overflow-hidden bg-gray-50 text-gray-900 antialiased\">",
+  "template": "source/template/index.template.html",
+  "html": [
+    "source/html/layout-main.html",
+    "source/html/context-menus.html",
+    "source/html/modal-create-project.html",
+    "source/html/modal-draft-recovery.html",
+    "source/html/modal-search.html",
+    "source/html/modal-settings.html",
+    "source/html/modal-update-app.html",
+    "source/html/modal-history.html",
+    "source/html/modal-confirm.html",
+    "source/html/panel-log.html"
+  ],
+  "css": [
+    "source/css/00-base.css",
+    "source/css/01-sidebar-alignment.css",
+    "source/css/02-preview-and-diff.css",
+    "source/css/03-update-panel.css",
+    "source/css/04-animations.css"
+  ],
+  "js": [
+    "source/js/00-version-api-i18n-base.js",
+    "source/js/01-i18n-en-extended.js",
+    "source/js/02-i18n-ptbr-extended.js",
+    "source/js/03-dom-refs-and-state.js",
+    "source/js/04-core-utils-and-update-flow.js",
+    "source/js/05-page-meta-and-drafts.js",
+    "source/js/06-editor-workspace-and-preview.js",
+    "source/js/07-pages-projects-search.js",
+    "source/js/08-menus-context-and-history.js",
+    "source/js/09-lifecycle-init.js"
+  ]
+}

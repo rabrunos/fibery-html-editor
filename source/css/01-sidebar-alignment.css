@@ -1,0 +1,59 @@
+/* Sidebar icon optical alignment.
+       Expanded and collapsed states use the same visual axis.
+       Tweak only these values if a browser renders the icons slightly off. */
+    #brandBtn { padding-left: 6px !important; padding-right: 8px !important; }
+    #newPageBtn,
+    #searchPagesBtn,
+    #sidebarSettingsBtn { padding-left: 10px !important; padding-right: 8px !important; }
+
+    .sidebar-collapsed #newPageBtn,
+    .sidebar-collapsed #searchPagesBtn,
+    .sidebar-collapsed #sidebarSettingsBtn {
+      width: 36px !important;
+      height: 36px !important;
+      min-width: 36px !important;
+      min-height: 36px !important;
+      padding: 0 !important;
+      justify-content: center !important;
+      align-items: center !important;
+      margin-left: auto !important;
+      margin-right: auto !important;
+    }
+    .sidebar-collapsed #brandBtn {
+      width: 40px !important;
+      height: 40px !important;
+      min-width: 40px !important;
+      min-height: 40px !important;
+      padding: 0 !important;
+      justify-content: center !important;
+      align-items: center !important;
+      margin-left: auto !important;
+      margin-right: auto !important;
+    }
+    .sidebar-collapsed nav { border-bottom-color: transparent !important; }
+    .sidebar-collapsed #sidebarSettingsBtn span:first-child,
+    .sidebar-collapsed #newPageBtn span:first-child,
+    .sidebar-collapsed #searchPagesBtn span:first-child {
+      width: 20px !important;
+      height: 20px !important;
+      margin: 0 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+    .preview-focus #sidebar,
+    .preview-focus #pageHeader,
+    .preview-focus #editorPane,
+    .preview-focus #splitter {
+      display: none !important;
+    }
+    .preview-focus main { width: 100vw !important; height: 100vh !important; }
+    .preview-focus #splitArea { height: 100vh !important; grid-template-columns: minmax(0, 1fr) !important; }
+    .preview-focus #previewPane { display: flex !important; width: 100% !important; height: 100vh !important; }
+    .preview-focus #previewPane > div:first-child { display: none !important; }
+    #previewFocusExitZone { display: none; }
+    .preview-focus #previewFocusExitZone { display: flex; }
+    .preview-focus #previewFocusExitBtn { opacity: 1; transform: translateY(0); transition: background-color .12s ease, color .12s ease, border-color .12s ease; }
+    #previewFocusExitBtn .preview-focus-close-label { display: none; }
+    #previewFocusExitBtn:hover .preview-focus-showing-label { display: none; }
+    #previewFocusExitBtn:hover .preview-focus-close-label { display: inline; }

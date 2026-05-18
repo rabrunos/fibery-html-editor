@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.6.0" />
+  <meta name="fibery-html-editor-version" content="8.7.0" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
   <style>
-    html, body { height: 100%; margin: 0; overflow: hidden; }
+html, body { height: 100%; margin: 0; overflow: hidden; }
     textarea { tab-size: 2; }
     .clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .split-dragging iframe { pointer-events: none !important; }
@@ -41,7 +41,7 @@
     .page-menu.menu-open, .project-menu.menu-open, #moreBtn.menu-open { background:rgb(243 244 246); color:rgb(17 24 39); }
 
 
-    /* Sidebar icon optical alignment.
+/* Sidebar icon optical alignment.
        Expanded and collapsed states use the same visual axis.
        Tweak only these values if a browser renders the icons slightly off. */
     #brandBtn { padding-left: 6px !important; padding-right: 8px !important; }
@@ -101,7 +101,8 @@
     #previewFocusExitBtn:hover .preview-focus-showing-label { display: none; }
     #previewFocusExitBtn:hover .preview-focus-close-label { display: inline; }
 
-    .panel-editor-only #previewPane, .panel-editor-only #splitter { display: none !important; }
+
+.panel-editor-only #previewPane, .panel-editor-only #splitter { display: none !important; }
     .panel-editor-only #splitArea { grid-template-columns: minmax(0, 1fr) !important; }
     .panel-preview-only #editorPane, .panel-preview-only #splitter { display: none !important; }
     .panel-preview-only #splitArea { grid-template-columns: minmax(0, 1fr) !important; }
@@ -113,7 +114,9 @@
     .draft-diff-removed { background:rgb(254 242 242); }
     .draft-diff-changed { background:rgb(255 251 235); }
     .draft-diff-empty { color:transparent; user-select:none; }
-    .update-changelog-version-heading { display:flex; align-items:center; justify-content:space-between; gap:.75rem; border-radius:.75rem; border:1px solid rgb(229 231 235); background:rgb(249 250 251); padding:.5rem .625rem; }
+
+
+.update-changelog-version-heading { display:flex; align-items:center; justify-content:space-between; gap:.75rem; border-radius:.75rem; border:1px solid rgb(229 231 235); background:rgb(249 250 251); padding:.5rem .625rem; }
     .update-changelog-version-heading.latest { border-color:rgb(134 239 172); background:rgb(240 253 244); }
     .update-changelog-version-heading.installed-current { border-color:rgb(134 239 172); background:rgb(240 253 244); }
     .update-changelog-version-heading.installed-outdated { border-color:rgb(254 202 202); background:rgb(254 242 242); }
@@ -129,11 +132,13 @@
     .update-changelog-list-item { margin:.125rem 0; }
     .update-changelog-section-title { margin-top:.625rem; margin-bottom:.25rem; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.02em; color:rgb(75 85 99); }
     .update-changelog-paragraph { margin-top:.375rem; margin-bottom:.5rem; color:rgb(55 65 81); }
-    @keyframes miniTooltip { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+
+@keyframes miniTooltip { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
 <body class="h-screen overflow-hidden bg-gray-50 text-gray-900 antialiased">
-  <div id="app" class="h-screen overflow-hidden flex bg-gray-50">
+<div id="app" class="h-screen overflow-hidden flex bg-gray-50">
     <!-- Sidebar -->
     <aside id="sidebar" class="sidebar-transition h-full shrink-0 border-r border-gray-200 bg-white flex flex-col overflow-hidden" style="width:288px;">
       <div class="h-12 shrink-0 px-2 flex items-center justify-between border-b border-gray-100">
@@ -306,14 +311,15 @@
   <button id="reopenRecoveryBtn" class="hidden fixed bottom-4 right-4 z-[85] rounded-full border border-blue-200 bg-white px-3 py-1.5 text-xs font-semibold text-blue-700 shadow-lg hover:bg-blue-50" data-i18n="reopenRecoveryComparison">Reopen recovery comparison</button>
 
 
-  <!-- Context menus -->
+<!-- Context menus -->
   <div id="pageContextMenu" class="hidden fixed z-[90] min-w-56 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-2xl"></div>
   <div id="moveProjectMenu" class="hidden fixed z-[95] min-w-64 max-h-80 overflow-auto rounded-xl border border-gray-200 bg-white py-1 shadow-2xl"></div>
   <div id="projectContextMenu" class="hidden fixed z-[90] min-w-48 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-2xl"></div>
   <div id="editorPanelMenu" class="hidden fixed z-[90] min-w-52 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-2xl"></div>
   <div id="previewPanelMenu" class="hidden fixed z-[90] min-w-52 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-2xl"></div>
 
-  <!-- Create project modal -->
+
+<!-- Create project modal -->
   <div id="createProjectModal" class="hidden fixed inset-0 z-[70] bg-black/25 p-6">
     <div class="mx-auto mt-16 w-full max-w-lg overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
       <div class="border-b border-gray-200 px-4 py-3 flex items-center justify-between">
@@ -334,7 +340,8 @@
     </div>
   </div>
 
-  <!-- Draft recovery modal -->
+
+<!-- Draft recovery modal -->
   <div id="draftRecoveryModal" class="hidden fixed inset-0 z-[80] bg-black/25 p-4 sm:p-6">
     <div class="mx-auto mt-2 sm:mt-8 flex max-h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
       <div class="border-b border-gray-200 px-4 py-3 sm:px-5 flex items-start justify-between gap-3">
@@ -373,7 +380,8 @@
     </div>
   </div>
 
-  <!-- Search modal -->
+
+<!-- Search modal -->
   <div id="searchModal" class="hidden fixed inset-0 z-50 bg-black/25 p-6">
     <div class="mx-auto mt-10 flex max-h-[70vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
       <div class="h-16 shrink-0 border-b border-gray-200 px-3 flex items-center gap-3">
@@ -385,7 +393,8 @@
     </div>
   </div>
 
-  <!-- Settings modal -->
+
+<!-- Settings modal -->
   <div id="settingsModal" class="hidden fixed inset-0 z-50 bg-black/25 p-6">
     <div class="mx-auto mt-10 w-full max-w-md overflow-hidden rounded-xl bg-white shadow-2xl">
       <div class="border-b border-gray-200 p-3 flex items-center justify-between">
@@ -426,7 +435,8 @@
     </div>
   </div>
 
-  <!-- Update app modal -->
+
+<!-- Update app modal -->
   <div id="updateAppModal" class="hidden fixed inset-0 z-50 bg-black/25 p-6">
     <div class="mx-auto mt-8 flex max-h-[84vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
       <div class="shrink-0 border-b border-gray-200 p-4 flex items-center justify-between">
@@ -463,7 +473,8 @@
     </div>
   </div>
 
-  <!-- History modal -->
+
+<!-- History modal -->
   <div id="historyModal" class="hidden fixed inset-0 z-50 bg-black/25 p-6">
     <div class="mx-auto flex h-full max-w-4xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
       <div class="shrink-0 border-b border-gray-200 p-3 flex items-center justify-between">
@@ -477,7 +488,8 @@
     </div>
   </div>
 
-  <!-- Confirm modal -->
+
+<!-- Confirm modal -->
   <div id="confirmModal" class="hidden fixed inset-0 z-[60] bg-black/25 p-6">
     <div id="confirmBox" class="mx-auto mt-10 max-w-xl overflow-hidden rounded-xl bg-white shadow-2xl">
       <div class="border-b border-gray-200 p-4">
@@ -498,7 +510,8 @@
     </div>
   </div>
 
-  <!-- Log panel -->
+
+<!-- Log panel -->
   <div id="logPanel" class="hidden fixed bottom-3 right-3 z-40 w-[520px] max-w-[calc(100vw-24px)] rounded-lg border border-gray-200 bg-white shadow-xl">
     <div class="border-b border-gray-200 px-3 py-2 flex items-center justify-between">
       <div class="text-xs font-bold uppercase tracking-wide text-gray-500">Log</div>
@@ -506,13 +519,12 @@
     </div>
     <div id="logBox" class="max-h-56 overflow-auto p-3 font-mono text-[11px] leading-5 text-gray-600"></div>
   </div>
-
 <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
 <script>
 (() => {
   'use strict';
 
-  const APP_VERSION = '8.6.0';
+const APP_VERSION = '8.7.0';
   window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
   document.documentElement.dataset.appVersion = APP_VERSION;
   const UPDATE_REMOTE = Object.freeze({
@@ -555,7 +567,8 @@
     }
   };
 
-  Object.assign(I18N.en, {
+
+Object.assign(I18N.en, {
     draftRecoveryTitle: 'Recover local draft',
     draftRecoverySubtitleSaved: 'A local draft was found for this page. Compare before restoring.',
     draftRecoverySubtitleUnsaved: 'A local draft from an unsaved page was found.',
@@ -667,7 +680,9 @@
     updateApplyFailed: 'Failed to apply update.',
     updateApplyUnavailableWhileChecking: 'Wait for remote version check to finish.'
   });
-  Object.assign(I18N['pt-BR'], {
+
+
+Object.assign(I18N['pt-BR'], {
     draftRecoveryTitle: 'Recuperar rascunho local',
     draftRecoverySubtitleSaved: 'Foi encontrado um rascunho local para esta página. Compare antes de restaurar.',
     draftRecoverySubtitleUnsaved: 'Foi encontrado um rascunho local de uma página não salva.',
@@ -780,7 +795,8 @@
     updateApplyUnavailableWhileChecking: 'Aguarde a verificação da versão remota terminar.'
   });
 
-  const $ = (id) => document.getElementById(id);
+
+const $ = (id) => document.getElementById(id);
   const els = {
     sidebar: $('sidebar'), brandBtn: $('brandBtn'), toggleSidebarBtn: $('toggleSidebarBtn'), sidebarCloseIcon: $('sidebarCloseIcon'), sidebarOpenIcon: $('sidebarOpenIcon'), sidebarScroll: $('sidebarScroll'), sidebarProjectsSection: $('sidebarProjectsSection'), sidebarProjectsList: $('sidebarProjectsList'), newProjectBtn: $('newProjectBtn'), sidebarPagesList: $('sidebarPagesList'), refreshSidebarBtn: $('refreshSidebarBtn'), sidebarLoadMoreWrap: $('sidebarLoadMoreWrap'), sidebarLoadMoreBtn: $('sidebarLoadMoreBtn'), searchPagesBtn: $('searchPagesBtn'), sidebarSettingsBtn: $('sidebarSettingsBtn'),
     pageHeader: $('pageHeader'), welcomeView: $('welcomeView'), welcomeNewPageBtn: $('welcomeNewPageBtn'), welcomeSearchInput: $('welcomeSearchInput'), welcomeSearchResults: $('welcomeSearchResults'),
@@ -825,7 +841,8 @@
     drafts: { byKey: {}, autosaveTimer: null, autosaveIntervalMs: 60000, unsavedId: 'local-unsaved-main', lastAutosaveAtByKey: {}, promptToken: 0, diffEditor: null, diffOriginalModel: null, diffModifiedModel: null, fallbackSyncing: false, activeDraftKey: '', activeRecovery: null, reopenCandidate: null, dismissedMap: {} }
   };
 
-  function preferredLang() { const saved = localStorage.getItem(LS.lang) || 'auto'; if (saved !== 'auto') return saved; return (navigator.language || '').toLowerCase().startsWith('pt') ? 'pt-BR' : 'en'; }
+
+function preferredLang() { const saved = localStorage.getItem(LS.lang) || 'auto'; if (saved !== 'auto') return saved; return (navigator.language || '').toLowerCase().startsWith('pt') ? 'pt-BR' : 'en'; }
   function t(key) { return (I18N[state.lang] && I18N[state.lang][key]) || I18N.en[key] || key; }
   function escapeHtml(v) { return String(v ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
   function escapeHtmlAttr(v) { return String(v ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
@@ -1342,7 +1359,8 @@
     }
   }
 
-  function getMetaMap() { return state.pageMeta || {}; }
+
+function getMetaMap() { return state.pageMeta || {}; }
   function setMetaMap(map) { state.pageMeta = map || {}; try { localStorage.setItem(LS.pageMeta, JSON.stringify(state.pageMeta)); } catch (_) {} }
   async function savePageMetaRecord(record) { if (!state.db || !record?.id) return; await txPut('pageMeta', record); }
   function touchPageMeta(id, data = {}) {
@@ -1370,7 +1388,8 @@
   function groupLabel(time) { if (!time) return t('allPages'); const now = new Date(); const d = new Date(time); const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(); const startYesterday = startToday - 86400000; if (time >= startToday) return t('today'); if (time >= startYesterday) return t('yesterday'); const diff = startToday - new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); if (diff <= 7 * 86400000) return t('last7'); if (diff <= 30 * 86400000) return t('last30'); return t('older'); }
   function groupedPages(pages) { const rows = [...pages].sort((a,b) => pageTime(b) - pageTime(a)); const groups = new Map(); for (const page of rows) { const label = groupLabel(pageTime(page)); if (!groups.has(label)) groups.set(label, []); groups.get(label).push(page); } return Array.from(groups.entries()); }
 
-  function setCodeValue(value) { const next = value || ''; state.code.suppress = true; if (state.code.editor) { const model = state.code.editor.getModel(); if (model && model.getValue() !== next) model.setValue(next); } els.codeEditorFallback.value = next; state.code.suppress = false; updateCharCount(); }
+
+function setCodeValue(value) { const next = value || ''; state.code.suppress = true; if (state.code.editor) { const model = state.code.editor.getModel(); if (model && model.getValue() !== next) model.setValue(next); } els.codeEditorFallback.value = next; state.code.suppress = false; updateCharCount(); }
   function setCodeReadOnly(readOnly) { if (state.code.editor) state.code.editor.updateOptions({ readOnly: !!readOnly }); els.codeEditorFallback.readOnly = !!readOnly; }
   function setupCodeEditor() { return new Promise((resolve) => { const fallback = () => { state.code.fallback = true; els.codeEditor.classList.add('hidden'); els.codeEditorFallback.classList.remove('hidden'); els.codeEditorFallback.addEventListener('input', () => { updateCurrentFromInputs(); updateCharCount(); markDirty(true); scheduleLocalPreviewRefresh(); }); log('Monaco not available. Using textarea fallback.'); resolve(false); }; if (!window.require) return fallback(); try { window.require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' } }); window.require(['vs/editor/editor.main'], () => { try { state.code.editor = monaco.editor.create(els.codeEditor, { value: '', language: 'html', theme: 'vs', automaticLayout: true, minimap: { enabled: true }, fontSize: 13, lineHeight: 20, tabSize: 2, wordWrap: 'on', scrollBeyondLastLine: false, renderWhitespace: 'selection', bracketPairColorization: { enabled: true } }); state.code.editor.onDidChangeModelContent(() => { if (state.code.suppress) return; updateCurrentFromInputs(); updateCharCount(); markDirty(true); scheduleLocalPreviewRefresh(); }); resolve(true); } catch (_) { fallback(); } }, fallback); } catch (_) { fallback(); } }); }
 
@@ -2256,7 +2275,8 @@ ${title || id}`, okText: t('deleteConfirm'), showPreview: true, previewId: id, o
     }
   }
 
-  function normalizePageRows(rows) { return (rows || []).map(p => ({ id: p.id, title: p.title || 'Untitled', description: p.description || '', ...p })); }
+
+function normalizePageRows(rows) { return (rows || []).map(p => ({ id: p.id, title: p.title || 'Untitled', description: p.description || '', ...p })); }
   function pageListSignature(pages) { return pages.map(p => [p.id, p.title || '', p.description || ''].join('::')).join('|'); }
   function savedLocalPages() {
     return Object.values(getMetaMap())
@@ -2609,7 +2629,7 @@ ${projectName || ''}`, okText: t('deleteProject'), showPreview: false });
   function renderWelcomeSearchResults(rows) { if (!rows.length) { els.welcomeSearchResults.innerHTML = `<div class="p-4 text-center text-sm text-gray-400">${escapeHtml(t('noPages'))}</div>`; return; } let html = ''; if (!state.welcomeSearch.query) html += `<div class="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500">${escapeHtml(t('recentPages'))}</div>`; for (const [label, pages] of groupedPages(rows)) { if (state.welcomeSearch.query) html += `<div class="px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">${escapeHtml(label)}</div>`; for (const page of pages) html += searchRowHtml(page, true); } els.welcomeSearchResults.innerHTML = html; }
 
 
-  function positionFloatingMenu(menu, x, y) {
+function positionFloatingMenu(menu, x, y) {
     menu.classList.remove('hidden');
     const rect = menu.getBoundingClientRect();
     const left = Math.min(Math.max(8, x), window.innerWidth - rect.width - 8);
@@ -2882,7 +2902,9 @@ ${projectName || ''}`, okText: t('deleteProject'), showPreview: false });
       showDiscard: false
     });
   }
-  function enterPreviewFocus() { if (!state.current.id) return; state.previewFocus = true; document.body.classList.add('preview-focus'); }
+
+
+function enterPreviewFocus() { if (!state.current.id) return; state.previewFocus = true; document.body.classList.add('preview-focus'); }
   function exitPreviewFocus() { state.previewFocus = false; document.body.classList.remove('preview-focus'); window.setTimeout(() => { try { state.code.editor?.layout(); } catch (_) {} }, 0); }
 
   function setAdminMode(isAdmin) { state.isAdmin = isAdmin; els.saveBtn.disabled = !isAdmin; els.newPageBtn.disabled = !isAdmin; if (els.welcomeNewPageBtn) els.welcomeNewPageBtn.disabled = !isAdmin; els.deleteBtn.disabled = !isAdmin || !state.current.id; if (!isAdmin) { setCodeReadOnly(true); els.titleInput.readOnly = true; els.descriptionInput.readOnly = true; setStatus(t('readOnly')); } renderUpdateAppPanel(); }

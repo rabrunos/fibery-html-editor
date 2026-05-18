@@ -1,0 +1,20 @@
+<!-- Confirm modal -->
+  <div id="confirmModal" class="hidden fixed inset-0 z-[60] bg-black/25 p-6">
+    <div id="confirmBox" class="mx-auto mt-10 max-w-xl overflow-hidden rounded-xl bg-white shadow-2xl">
+      <div class="border-b border-gray-200 p-4">
+        <div id="confirmTitle" class="text-sm font-bold text-gray-900"></div>
+        <div id="confirmMessage" class="mt-1 text-sm text-gray-600 whitespace-pre-line"></div>
+      </div>
+      <div id="deletePreviewWrap" class="hidden border-b border-gray-200 bg-gray-50 p-3">
+        <div class="mb-2 flex items-center justify-between">
+          <span class="text-xs font-semibold text-gray-500" data-i18n="preview">Preview</span>
+          <button id="confirmOpenPreviewBtn" class="h-7 rounded border border-gray-300 bg-white px-2 text-xs text-gray-700 hover:bg-gray-50" data-i18n="openView">Preview</button>
+        </div>
+        <iframe id="deletePreviewFrame" class="h-48 w-full rounded border border-gray-200 bg-white"></iframe>
+      </div>
+      <div class="flex items-center justify-end gap-2 p-3">
+        <button id="confirmOkBtn" class="h-8 rounded border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 hover:bg-gray-50">OK</button>
+        <button id="confirmCancelBtn" class="h-8 rounded bg-blue-600 px-3 text-sm font-medium text-white hover:bg-blue-700" data-i18n="cancel">Cancel</button>
+      </div>
+    </div>
+  </div>

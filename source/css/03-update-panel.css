@@ -1,0 +1,16 @@
+.update-changelog-version-heading { display:flex; align-items:center; justify-content:space-between; gap:.75rem; border-radius:.75rem; border:1px solid rgb(229 231 235); background:rgb(249 250 251); padding:.5rem .625rem; }
+    .update-changelog-version-heading.latest { border-color:rgb(134 239 172); background:rgb(240 253 244); }
+    .update-changelog-version-heading.installed-current { border-color:rgb(134 239 172); background:rgb(240 253 244); }
+    .update-changelog-version-heading.installed-outdated { border-color:rgb(254 202 202); background:rgb(254 242 242); }
+    .update-changelog-version-heading.newer-than-installed { border-color:rgb(167 243 208); background:rgb(236 253 245); }
+    .update-changelog-version-badges { display:flex; align-items:center; flex-wrap:wrap; gap:.375rem; }
+    .update-changelog-badge { display:inline-flex; align-items:center; border-radius:999px; border:1px solid transparent; padding:.125rem .5rem; font-size:11px; font-weight:600; line-height:1.2; }
+    .update-changelog-badge.badge-latest { border-color:rgb(134 239 172); background:rgb(220 252 231); color:rgb(22 101 52); }
+    .update-changelog-badge.badge-installed { border-color:rgb(191 219 254); background:rgb(239 246 255); color:rgb(30 64 175); }
+    .update-changelog-badge.badge-current { border-color:rgb(134 239 172); background:rgb(220 252 231); color:rgb(22 101 52); }
+    .update-changelog-badge.badge-outdated { border-color:rgb(254 202 202); background:rgb(254 226 226); color:rgb(153 27 27); }
+    .update-changelog-badge.badge-newer { border-color:rgb(167 243 208); background:rgb(220 252 231); color:rgb(6 95 70); }
+    .update-changelog-list { margin-top:.5rem; margin-bottom:.75rem; padding-left:1rem; list-style:disc; color:rgb(55 65 81); }
+    .update-changelog-list-item { margin:.125rem 0; }
+    .update-changelog-section-title { margin-top:.625rem; margin-bottom:.25rem; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.02em; color:rgb(75 85 99); }
+    .update-changelog-paragraph { margin-top:.375rem; margin-bottom:.5rem; color:rgb(55 65 81); }

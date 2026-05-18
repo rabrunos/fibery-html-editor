@@ -1,3 +1,26 @@
+## [8.7.0] - 2026-05-18
+
+### Added
+
+* Added a complete modular source architecture under `source/` for HTML sections, CSS modules, JavaScript modules, and build manifest/version metadata.
+* Added a deterministic build script (`scripts/build.mjs`) to compile modular source into a single deployable `index.html`.
+* Added a dedicated build validation script (`scripts/validate-build.mjs`) with structural, version, placeholder, DOM ID, and inline JavaScript syntax checks.
+* Added a temporary build output flow (`.tmp/index.generated.html`) to validate generated output before replacing the final `index.html`.
+
+### Technical adjustments
+
+* Promoted `index.html` to generated artifact status while preserving Fibery single-file delivery.
+* Centralized version control through `source/config/manifest.json` and synchronized generated metadata fields and `APP_VERSION` assignments.
+* Preserved approved external dependencies (`tailwind.css` and Monaco CDN loader) in generated output.
+* Added npm script shortcuts in `package.json` for temporary build, validation, and final regeneration flows.
+* Added `.tmp/` to `.gitignore` to avoid committing temporary validation artifacts.
+* Updated `AGENTS.md` to document the modular workflow, artifact policy, build/validation requirements, and commit expectations.
+
+### Notes
+
+* Functional behavior from `8.6.0` is preserved; this release focuses on development architecture and build safety.
+* Fibery delivery remains a single `index.html` file.
+
 ## [8.6.0] - 2026-05-18
 
 ### Added

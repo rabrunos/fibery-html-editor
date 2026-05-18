@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fibery HTML Editor</title>
+  <meta name="fibery-html-editor-version" content="__APP_VERSION__" />
+  <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
+  <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
+  <link rel="stylesheet" href="tailwind.css" />
+  <style>
+__INLINE_CSS__
+  </style>
+</head>
+__BODY_OPEN_TAG__
+__BODY_CONTENT__
+<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
+<script>
+(() => {
+  'use strict';
+
+__INLINE_JS__
+})();
+</script>
+</body>
+</html>

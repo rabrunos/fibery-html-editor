@@ -1,0 +1,171 @@
+<div id="app" class="h-screen overflow-hidden flex bg-gray-50">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar-transition h-full shrink-0 border-r border-gray-200 bg-white flex flex-col overflow-hidden" style="width:288px;">
+      <div class="h-12 shrink-0 px-2 flex items-center justify-between border-b border-gray-100">
+        <button id="brandBtn" class="group h-10 min-w-0 flex items-center gap-2 rounded-lg px-2 py-0 text-left hover:bg-gray-100" title="Fibery HTML Editor">
+          <span id="brandLogo" class="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white ring-1 ring-gray-200">
+            <img src="/favicon.ico" alt="Fibery" class="h-5 w-5" />
+          </span>
+          <span id="brandOpenIcon" class="hidden h-7 w-7 shrink-0 items-center justify-center rounded-lg text-gray-600">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M9 5v14"/><path d="M6.5 8.5h.01M6.5 12h.01M6.5 15.5h.01" stroke-linecap="round"/></svg>
+          </span>
+          <span class="sidebar-label truncate text-sm font-semibold text-gray-900">Fibery HTML Editor</span>
+        </button>
+        <button id="toggleSidebarBtn" class="h-9 w-9 shrink-0 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 flex items-center justify-center" title="Toggle sidebar">
+          <svg id="sidebarCloseIcon" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
+          <svg id="sidebarOpenIcon" class="hidden h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5 15.75 12l-7.5 7.5"/></svg>
+        </button>
+      </div>
+
+      <nav class="shrink-0 p-2 space-y-1 border-b border-gray-100">
+        <button id="newPageBtn" class="group flex h-9 w-full items-center gap-2 rounded-lg px-2 text-sm text-gray-800 hover:bg-gray-100 disabled:opacity-40" data-i18n-title="newPage" title="New Page">
+          <span class="flex h-5 w-5 shrink-0 items-center justify-center text-gray-600">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+          </span>
+          <span class="sidebar-label truncate" data-i18n="newPage">New Page</span>
+        </button>
+        <button id="searchPagesBtn" class="group flex h-9 w-full items-center gap-2 rounded-lg px-2 text-sm text-gray-800 hover:bg-gray-100" data-i18n-title="searchPages" title="Search pages">
+          <span class="flex h-5 w-5 shrink-0 items-center justify-center text-gray-600">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
+          </span>
+          <span class="sidebar-label truncate" data-i18n="searchPagesShort">Search pages</span>
+        </button>
+      </nav>
+
+      <div id="sidebarScroll" class="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-2 py-2">
+        <div id="sidebarProjectsSection" class="sidebar-label mb-4">
+          <div class="mb-2 flex items-center justify-between px-2">
+            <h2 class="text-xs font-semibold uppercase tracking-wide text-gray-500" data-i18n="projects">Projects</h2>
+            <button id="newProjectBtn" class="h-7 w-7 rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-700 flex items-center justify-center" data-i18n-title="newProject" title="New project">
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+            </button>
+          </div>
+          <div id="sidebarProjectsList" class="space-y-1"></div>
+        </div>
+
+        <div class="sidebar-label mb-2 flex items-center justify-between px-2">
+          <h2 class="text-xs font-semibold uppercase tracking-wide text-gray-500" data-i18n="recentPages">Recent pages</h2>
+          <button id="refreshSidebarBtn" class="h-7 w-7 rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-700 flex items-center justify-center" title="Refresh list">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M21.015 4.356v4.992m0 0h-4.992m4.992 0-3.181-3.183a8.25 8.25 0 0 0-13.803 3.7"/></svg>
+          </button>
+        </div>
+        <div id="sidebarPagesList" class="space-y-1"></div>
+        <div id="sidebarLoadMoreWrap" class="sidebar-label mt-2 hidden px-2"><button id="sidebarLoadMoreBtn" class="h-8 w-full rounded-lg border border-gray-200 bg-white text-xs font-medium text-gray-600 hover:bg-gray-50" data-i18n="loadMore">Load more</button></div>
+      </div>
+
+      <div class="shrink-0 border-t border-gray-100 p-2">
+        <button id="sidebarSettingsBtn" class="flex h-9 w-full items-center gap-2 rounded-lg px-2 text-sm text-gray-700 hover:bg-gray-100">
+          <span class="flex h-5 w-5 shrink-0 items-center justify-center text-gray-500">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.184 1.104c.07.423.354.779.75.944l.11.046c.394.168.844.12 1.199-.121l.927-.626a1.125 1.125 0 0 1 1.45.12l1.832 1.833c.389.389.44.996.12 1.45l-.626.927c-.24.355-.289.805-.121 1.199l.046.11c.165.396.521.68.944.75l1.104.184c.542.09.94.56.94 1.11v2.593c0 .55-.398 1.02-.94 1.11l-1.104.184c-.423.07-.779.354-.944.75l-.046.11c-.168.394-.12.844.121 1.199l.626.927c.32.454.269 1.061-.12 1.45l-1.833 1.832a1.125 1.125 0 0 1-1.45.12l-.927-.626a1.35 1.35 0 0 0-1.199-.121l-.11.046c-.396.165-.68.521-.75.944l-.184 1.104c-.09.542-.56.94-1.11.94h-2.593c-.55 0-1.02-.398-1.11-.94l-.184-1.104a1.35 1.35 0 0 0-.75-.944l-.11-.046a1.35 1.35 0 0 0-1.199.121l-.927.626a1.125 1.125 0 0 1-1.45-.12l-1.832-1.833a1.125 1.125 0 0 1-.12-1.45l.626-.927c.24-.355.289-.805.121-1.199l-.046-.11a1.35 1.35 0 0 0-.944-.75l-1.104-.184A1.125 1.125 0 0 1 1.5 15.797v-2.593c0-.55.398-1.02.94-1.11l1.104-.184c.423-.07.779-.354.944-.75l.046-.11c.168-.394.12-.844-.121-1.199l-.626-.927a1.125 1.125 0 0 1 .12-1.45l1.833-1.832a1.125 1.125 0 0 1 1.45-.12l.927.626c.355.24.805.289 1.199.121l.11-.046c.396-.165.68-.521.75-.944l.184-1.104Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>
+          </span>
+          <span class="sidebar-label truncate" data-i18n="settings">Settings</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="min-w-0 flex-1 h-full overflow-hidden flex flex-col">
+      <header id="pageHeader" class="hidden h-14 shrink-0 border-b border-gray-200 bg-white px-3 flex items-center gap-3 shadow-sm">
+        <div class="min-w-0 flex-1 grid grid-cols-[minmax(220px,360px)_minmax(0,1fr)] gap-2 items-center">
+          <input id="titleInput" class="h-8 min-w-0 rounded border border-gray-200 bg-gray-50 px-2 text-sm font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500" placeholder="Untitled Page" />
+          <input id="descriptionInput" class="h-8 min-w-0 rounded border border-gray-200 bg-gray-50 px-2 text-xs text-gray-600 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500" placeholder="Description" />
+        </div>
+        <span id="dirtyBadge" class="hidden shrink-0 rounded-full bg-amber-100 px-2 py-1 text-[11px] font-semibold text-amber-700" data-i18n="unsaved">Unsaved</span>
+        <span id="statusText" class="hidden md:inline-block max-w-40 truncate text-xs text-gray-500">Ready</span>
+        <button id="saveBtn" class="h-8 px-3 rounded bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed" data-i18n="save">Save</button>
+        <button id="updateAppBtn" class="hidden h-8 rounded bg-yellow-400 px-3 text-sm font-semibold text-yellow-950 shadow-sm hover:bg-yellow-500" data-i18n="updateApp">Update App</button>
+        <div id="quickViewControls" class="hidden md:flex shrink-0 overflow-hidden rounded-lg border border-gray-300 bg-white">
+          <button id="quickBothBtn" class="flex h-8 w-8 items-center justify-center text-gray-600 hover:bg-gray-50" data-i18n-title="showBoth" title="Show both">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M12 5v14"/></svg>
+          </button>
+          <button id="quickEditorBtn" class="flex h-8 w-8 items-center justify-center border-l border-gray-200 text-gray-600 hover:bg-gray-50" data-i18n-title="onlyEditor" title="Only editor">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m8 9-3 3 3 3m8-6 3 3-3 3M13 6l-2 12"/></svg>
+          </button>
+          <button id="quickPreviewBtn" class="flex h-8 w-8 items-center justify-center border-l border-gray-200 text-gray-600 hover:bg-gray-50" data-i18n-title="onlyPreview" title="Only preview">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>
+          </button>
+        </div>
+        <div class="relative shrink-0">
+          <button id="moreBtn" class="h-8 w-8 rounded border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 flex items-center justify-center" title="More">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8.25a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM12 13.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM13.5 17.25a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z"/></svg>
+          </button>
+          <div id="moreMenu" class="hidden absolute right-0 top-10 z-50 w-56 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-xl">
+            <button id="historyBtn" class="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-40" data-i18n="history">History</button>
+            <button id="refreshBtn" class="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-gray-700 hover:bg-gray-50" data-i18n="refreshPreview">Refresh preview</button>
+            <button id="openViewMenuBtn" class="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-40" data-i18n="openView">Open preview</button>
+            <div class="my-1 border-t border-gray-100"></div>
+            <button id="deleteBtn" class="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-red-700 hover:bg-red-50 disabled:opacity-30 disabled:cursor-not-allowed" data-i18n="deletePage">Delete</button>
+          </div>
+        </div>
+      </header>
+
+      <section id="welcomeView" class="hidden min-h-0 flex-1 overflow-hidden bg-gray-50">
+        <div class="flex h-full items-center justify-center px-6">
+          <div class="w-full max-w-2xl text-center">
+            <div class="mb-4 flex justify-center">
+              <span class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200">
+                <img src="/favicon.ico" alt="Fibery" class="h-8 w-8" />
+              </span>
+            </div>
+            <h1 class="text-2xl font-semibold tracking-tight text-gray-900" data-i18n="welcomeTitle">Welcome</h1>
+            <p class="mt-2 text-sm text-gray-500" data-i18n="welcomeSubtitle">What are we creating today?</p>
+            <div class="relative mx-auto mt-10 flex max-w-xl items-center gap-2">
+              <button id="welcomeNewPageBtn" class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm hover:bg-blue-700 disabled:opacity-40" data-i18n-title="newPage" title="New Page">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+              </button>
+              <div class="relative min-w-0 flex-1">
+                <input id="welcomeSearchInput" class="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20" data-i18n-placeholder="welcomeSearch" placeholder="Search pages..." />
+                <div id="welcomeSearchResults" class="hidden absolute left-0 right-0 top-12 z-40 max-h-80 overflow-auto rounded-xl border border-gray-200 bg-white p-2 text-left shadow-2xl"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="splitArea" class="hidden min-h-0 flex-1 grid overflow-hidden" style="grid-template-columns:minmax(320px, 50%) 6px minmax(320px, 1fr);">
+        <section id="editorPane" class="min-w-0 min-h-0 flex flex-col border-r border-gray-200 bg-white">
+          <div class="h-8 shrink-0 border-b border-gray-200 bg-gray-50 px-3 flex items-center justify-between">
+            <span class="text-xs font-semibold text-gray-600" data-i18n="editor">Editor</span>
+            <div class="flex items-center gap-2">
+              <span id="charCount" class="text-[11px] text-gray-400">0</span>
+              <button id="copyHtmlBtn" class="panel-menu-btn" data-i18n-title="copyHtml" title="Copy HTML">
+                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16h8M8 12h8m-6 8h8a2 2 0 0 0 2-2V8.828a2 2 0 0 0-.586-1.414l-3.828-3.828A2 2 0 0 0 14.172 3H10a2 2 0 0 0-2 2v3"/><path stroke-linecap="round" stroke-linejoin="round" d="M4 8v11a2 2 0 0 0 2 2h9"/></svg>
+              </button>
+              <button id="editorPanelMenuBtn" class="panel-menu-btn" data-i18n-title="editorActions" title="Editor actions">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8.25a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM12 13.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM13.5 17.25a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z"/></svg>
+              </button>
+            </div>
+          </div>
+          <div id="codeEditor" class="min-h-0 flex-1 w-full overflow-hidden"></div>
+          <textarea id="codeEditorFallback" spellcheck="false" class="hidden min-h-0 flex-1 w-full resize-none border-0 bg-white p-3 font-mono text-[13px] leading-5 text-gray-900 outline-none focus:ring-0" placeholder="<!-- Select or create a page to start editing -->"></textarea>
+        </section>
+
+        <div id="splitter" class="bg-gray-200 hover:bg-blue-400 cursor-col-resize transition-colors" title="Drag to resize. Double-click to reset."></div>
+
+        <section id="previewPane" class="min-w-0 min-h-0 flex flex-col bg-gray-100">
+          <div class="h-8 shrink-0 border-b border-gray-200 bg-white px-3 flex items-center justify-between gap-2">
+            <span class="text-xs font-semibold text-gray-600" data-i18n="preview">Preview</span>
+            <div class="flex min-w-0 items-center gap-2">
+              <span id="previewStatus" class="truncate text-[11px] text-gray-400">—</span>
+              <button id="previewPanelMenuBtn" class="panel-menu-btn" data-i18n-title="previewActions" title="Preview actions">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8.25a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM12 13.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM13.5 17.25a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z"/></svg>
+              </button>
+              <button id="previewFocusBtn" class="panel-menu-btn" data-i18n-title="previewFocus" title="Preview focus mode">
+                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3m8 0h3a2 2 0 0 0 2-2v-3"/></svg>
+              </button>
+            </div>
+          </div>
+          <iframe id="previewFrame" class="min-h-0 flex-1 w-full bg-white" title="Preview"></iframe>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <div id="dragOverlay" class="hidden fixed inset-0 z-[9999] cursor-col-resize select-none"></div>
+  <div id="previewFocusExitZone" class="fixed left-0 right-0 top-0 z-[10000] h-14 items-start justify-center pointer-events-none pt-2">
+    <button id="previewFocusExitBtn" class="pointer-events-auto flex h-9 items-center justify-center rounded-full border border-gray-200 bg-white/90 px-4 text-xs font-semibold text-gray-700 shadow-xl backdrop-blur transition-colors hover:border-red-500 hover:bg-red-600 hover:text-white" data-i18n-title="exitPreviewFocus" title="Exit preview focus">
+      <span class="preview-focus-showing-label" data-i18n="showingPreview">Showing preview</span>
+      <span class="preview-focus-close-label" data-i18n="closePreview">Close preview</span>
+    </button>
+  </div>
+  <button id="reopenRecoveryBtn" class="hidden fixed bottom-4 right-4 z-[85] rounded-full border border-blue-200 bg-white px-3 py-1.5 text-xs font-semibold text-blue-700 shadow-lg hover:bg-blue-50" data-i18n="reopenRecoveryComparison">Reopen recovery comparison</button>

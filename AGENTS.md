@@ -1,4 +1,4 @@
-# AGENTS.md — Fibery HTML Editor
+﻿# AGENTS.md — Fibery HTML Editor
 
 ## Purpose
 
@@ -8,14 +8,17 @@ Respond to the user in **Portuguese (Brazil)**.
 
 Fibery HTML Editor is an internal operational editor for creating, editing, previewing, organizing, and maintaining HTML pages hosted by Fibery. It runs as a Custom HTML Page inside Fibery. It is not a generic public HTML editor and has no owned backend.
 
-## Read first
+## Read First
 
 Before changing code, read:
 
 * `AGENTS.md`
-* `index.html`
+* `source/config/manifest.json`
+* `source/template/index.template.html`
+* relevant files under `source/html/`, `source/css/`, `source/js/`
 * `CHANGELOG.md`
 * relevant GitHub Issues for the requested task
+* `index.html` (generated deploy artifact)
 * `docs/fibery-src/page-api.js`
 * `docs/fibery-src/editor.js`
 
@@ -23,7 +26,67 @@ If the task references an issue number, read that issue first. If the task touch
 
 `docs/roadmap.md` is not required. The roadmap is managed through GitHub Issues.
 
-## Roadmap through GitHub Issues
+## Delivery Model
+
+The app is still delivered to Fibery as a **single `index.html` file**.
+
+The repository now uses a modular development architecture:
+
+* source of truth for development: `source/`
+* final deploy artifact for Fibery: `index.html`
+* build is deterministic and local, with no required backend
+
+Never change this delivery model without explicit direction.
+
+## Modular Source Layout
+
+Canonical editing paths:
+
+* `source/template/index.template.html` — top-level HTML template and placeholders
+* `source/html/` — body/layout/modals/panels sections
+* `source/css/` — style modules
+* `source/js/` — JavaScript modules by functional area
+* `source/config/manifest.json` — version and deterministic assembly order
+
+`index.html` is generated from these files.
+
+## Build and Validation
+
+Primary commands:
+
+* `node scripts/build.mjs --out .tmp/index.generated.html`
+* `node scripts/validate-build.mjs .tmp/index.generated.html --baseline index.html`
+* `node scripts/build.mjs --out index.html`
+* `node scripts/validate-build.mjs index.html`
+
+Optional npm shortcuts (if using npm scripts):
+
+* `npm run build:tmp`
+* `npm run validate:tmp`
+* `npm run build`
+* `npm run validate`
+
+Rules:
+
+* run temporary generation + validation before replacing `index.html` when doing structural/build work;
+* build must fail on unresolved placeholders, empty critical blocks, version inconsistency, or invalid structure;
+* validation must include JS syntax check of generated inline script;
+* do not commit if build/validation fails.
+
+## `index.html` Editing Policy
+
+Default rule: **do not edit `index.html` directly**.
+
+Normal flow:
+
+1. edit modular source files in `source/`;
+2. build generated output;
+3. validate generated output;
+4. update `index.html` from build output.
+
+Direct edits to `index.html` are allowed only in strong/emergency cases, with explicit justification in the final response. Any direct edit must be reconciled back into `source/` immediately.
+
+## Roadmap Through GitHub Issues
 
 GitHub Issues are the project roadmap.
 
@@ -45,21 +108,7 @@ Rules:
 * if implementation reveals follow-up work, suggest a new issue instead of hiding scope creep;
 * bugs found during implementation should be reported separately when they are outside the requested scope.
 
-## Main HTML file
-
-`index.html` contains the app UI, state, sidebar, editor, preview, menus, local persistence and operational flows.
-
-When modifying it:
-
-* preserve the approved UX;
-* avoid large rewrites;
-* make the smallest safe patch;
-* keep compatibility with Fibery Custom HTML Page hosting;
-* do not add a backend;
-* do not require a framework migration or build pipeline;
-* do not remove approved features.
-
-## Fibery reference files
+## Fibery Reference Files
 
 Official/reference Fibery files live under:
 
@@ -75,7 +124,7 @@ Rules:
 * do not recreate official helpers for theoretical cleanliness;
 * if the current integration works, do not rewrite it just because it could look cleaner.
 
-## Architecture and persistence
+## Architecture and Persistence
 
 The app is a single browser frontend.
 
@@ -100,7 +149,7 @@ Use **localStorage** only for simple preferences:
 
 Do not move structured data into localStorage. Do not delete local data without a clear migration or explicit confirmation.
 
-## UX rules
+## UX Rules
 
 Critical rules:
 
@@ -118,7 +167,9 @@ Prefer small, reversible patches and previous-vs-next state comparisons.
 
 ## Versioning
 
-Every change to the main app in `index.html` must update:
+Version is centralized in `source/config/manifest.json`.
+
+Every build must propagate the same version to the final `index.html` in all required places:
 
 ```html
 <meta name="fibery-html-editor-version" content="x.y.z" />
@@ -129,8 +180,6 @@ const APP_VERSION = 'x.y.z';
 window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 document.documentElement.dataset.appVersion = APP_VERSION;
 ```
-
-Derive the next version from the current `index.html`, not from memory.
 
 Use:
 
@@ -151,13 +200,9 @@ Rules:
 * the file must start directly with the latest version entry;
 * add new entries at the top of the file;
 * every entry must use `## [x.y.z] - YYYY-MM-DD`;
-* if the next version is not known yet, do not add a placeholder section unless the user explicitly asks;
-* if `index.html` version changes, the top changelog entry must match that version;
-* summarize objectively what changed, including implementations, fixes, technical adjustments, relevant UX/visual changes, validation notes, and known limitations when useful;
-* keep entries concise and useful for a user deciding whether to update;
-* do not add noisy internal details unless they explain behavior, risk, migration, validation, or a known limitation;
-* do not add a changelog entry only because `CHANGELOG.md` itself was edited as part of recording another change;
-* issue-only roadmap planning does not require a changelog update unless repository files are changed or the prompt explicitly asks.
+* if generated `index.html` version changes, the top changelog entry must match that version;
+* summarize objectively what changed, including behavior, technical adjustments, validation notes, and known limitations when useful;
+* keep entries concise and useful for update decisions.
 
 Allowed section headings inside each version:
 
@@ -179,9 +224,7 @@ Allowed section headings inside each version:
 
 Use only the subsections that have content.
 
-When commit is allowed, include `CHANGELOG.md` in the same commit as the relevant implementation/fix. Do not commit if validation fails.
-
-## Current important product concepts
+## Current Important Product Concepts
 
 Preserve these concepts unless the task explicitly changes them:
 
@@ -200,11 +243,13 @@ Preserve these concepts unless the task explicitly changes them:
 
 Before finishing, validate what is possible locally:
 
+* build success (`scripts/build.mjs`);
+* generated HTML validation success (`scripts/validate-build.mjs`);
 * JavaScript syntax;
 * `getElementById` references;
 * event listeners;
 * i18n keys;
-* version metadata;
+* version metadata consistency;
 * changelog entry, when applicable;
 * IndexedDB/localStorage impact;
 * static sidebar/preview/menu regressions.
@@ -221,7 +266,7 @@ Some checks require real Fibery runtime and usually cannot be completed locally:
 
 Separate local validation from manual Fibery tests. Never claim Fibery runtime validation unless actually performed there.
 
-## Commit and push
+## Commit and Push
 
 Never commit or push unless the prompt explicitly allows it.
 
@@ -231,14 +276,15 @@ If commit/push is allowed:
 * do not commit or push if validation fails;
 * run `git status`;
 * include only relevant files;
-* include `CHANGELOG.md` when the change is implementation, correction, relevant UX/technical adjustment or documentation relevant to users/maintainers;
+* include `index.html` whenever modular source files changed;
+* include `CHANGELOG.md` when the change is implementation, correction, technical adjustment, UX adjustment, or documentation relevant to users/maintainers;
 * use a concise commit message;
 * never force-push;
 * report commit and push status.
 
 If commit/push is forbidden, leave changes uncommitted and provide commands the user can run later if requested.
 
-## Final response
+## Final Response
 
 Respond in Portuguese (Brazil). Focus on what changed for the user/frontend, not only code internals.
 

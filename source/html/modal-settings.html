@@ -1,0 +1,40 @@
+<!-- Settings modal -->
+  <div id="settingsModal" class="hidden fixed inset-0 z-50 bg-black/25 p-6">
+    <div class="mx-auto mt-10 w-full max-w-md overflow-hidden rounded-xl bg-white shadow-2xl">
+      <div class="border-b border-gray-200 p-3 flex items-center justify-between">
+        <div class="text-sm font-bold text-gray-900" data-i18n="settings">Settings</div>
+        <button id="closeSettingsBtn" class="h-8 w-8 rounded border border-gray-300 bg-white text-gray-600 hover:bg-gray-50">×</button>
+      </div>
+      <div class="p-4 space-y-4">
+        <label class="block text-sm text-gray-700">
+          <span>Language</span>
+          <select id="langSelect" class="mt-1 h-8 w-full rounded border border-gray-300 bg-white px-2 text-sm">
+            <option value="auto">Auto</option>
+            <option value="en">EN</option>
+            <option value="pt-BR">PT-BR</option>
+          </select>
+        </label>
+        <label class="flex items-center justify-between gap-3 text-sm text-gray-700">
+          <span data-i18n="openLast">Open last page on startup</span>
+          <input id="openLastToggle" type="checkbox" class="h-4 w-4 accent-blue-600" />
+        </label>
+        <label class="block text-sm text-gray-700">
+          <span data-i18n="manualHistoryLimit">Manual history limit</span>
+          <select id="versionLimitSelect" class="mt-1 h-8 w-full rounded border border-gray-300 bg-white px-2 text-sm">
+            <option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option><option value="0" data-i18n="unlimited">Unlimited</option>
+          </select>
+        </label>
+        <label class="block text-sm text-gray-700">
+          <span data-i18n="autosaveLimit">Autosave limit</span>
+          <select id="autosaveLimitSelect" class="mt-1 h-8 w-full rounded border border-gray-300 bg-white px-2 text-sm">
+            <option value="5">5</option><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="0" data-i18n="unlimited">Unlimited</option>
+          </select>
+        </label>
+        <button id="logToggleBtn" class="flex h-9 w-full items-center justify-between rounded border border-gray-200 bg-white px-3 text-left text-sm text-gray-700 hover:bg-gray-50">
+          <span id="logMenuText">Show log</span>
+          <span class="text-xs text-gray-400">Log</span>
+        </button>
+        <div class="rounded bg-amber-50 p-2 text-xs leading-5 text-amber-800" data-i18n="historyLocalNote">Version history is saved only in this browser.</div>
+      </div>
+    </div>
+  </div>

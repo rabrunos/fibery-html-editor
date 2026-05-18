@@ -1,0 +1,13 @@
+<!-- History modal -->
+  <div id="historyModal" class="hidden fixed inset-0 z-50 bg-black/25 p-6">
+    <div class="mx-auto flex h-full max-w-4xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+      <div class="shrink-0 border-b border-gray-200 p-3 flex items-center justify-between">
+        <div>
+          <div class="text-sm font-bold text-gray-900" data-i18n="history">History</div>
+          <div class="text-xs text-gray-500" data-i18n="historyLocalNote">Version history is saved only in this browser.</div>
+        </div>
+        <button id="closeHistoryBtn" class="h-8 w-8 rounded border border-gray-300 bg-white text-gray-600 hover:bg-gray-50">×</button>
+      </div>
+      <div id="historyList" class="min-h-0 flex-1 overflow-auto divide-y divide-gray-100"></div>
+    </div>
+  </div>

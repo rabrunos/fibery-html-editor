@@ -1,0 +1,12 @@
+﻿{
+  "name": "fibery-html-editor",
+  "version": "8.7.0",
+  "private": true,
+  "description": "Fibery HTML Editor modular source and single-file build",
+  "scripts": {
+    "build:tmp": "node scripts/build.mjs --out .tmp/index.generated.html",
+    "validate:tmp": "node scripts/validate-build.mjs .tmp/index.generated.html --baseline index.html",
+    "build": "node scripts/build.mjs --out index.html",
+    "validate": "node scripts/validate-build.mjs index.html"
+  }
+}

@@ -1,0 +1,20 @@
+<!-- Create project modal -->
+  <div id="createProjectModal" class="hidden fixed inset-0 z-[70] bg-black/25 p-6">
+    <div class="mx-auto mt-16 w-full max-w-lg overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
+      <div class="border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+        <div class="text-base font-semibold text-gray-900" data-i18n="createProjectTitle">Create project</div>
+        <button id="closeCreateProjectBtn" class="h-8 w-8 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 flex items-center justify-center">×</button>
+      </div>
+      <div class="p-4 space-y-4">
+        <label class="block text-sm text-gray-700">
+          <span data-i18n="projectNameLabel">Project name</span>
+          <input id="createProjectNameInput" class="mt-2 h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30" placeholder="My project" />
+        </label>
+        <div class="rounded-xl bg-gray-50 p-3 text-xs leading-5 text-gray-600" data-i18n="projectLocalNote">Projects are saved only in this browser.</div>
+      </div>
+      <div class="border-t border-gray-200 px-4 py-3 flex items-center justify-end gap-2">
+        <button id="cancelCreateProjectBtn" class="h-8 rounded border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 hover:bg-gray-50" data-i18n="cancel">Cancel</button>
+        <button id="confirmCreateProjectBtn" class="h-8 rounded bg-blue-600 px-3 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40" data-i18n="createProjectButton" disabled>Create project</button>
+      </div>
+    </div>
+  </div>
