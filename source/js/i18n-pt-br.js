@@ -156,5 +156,13 @@ Object.assign(I18N['pt-BR'], {
     externalSyncManualCheckStartedLog: 'Verificação manual de sync externo iniciada',
     externalSyncManualCheckCompletedLog: 'Verificação manual de sync externo concluída',
     externalSyncCheckSkippedLog: 'Verificação de sync externo ignorada',
-    externalSyncCheckErrorLog: 'Falha ao verificar alteração externa'
+    externalSyncCheckErrorLog: 'Falha ao verificar alteração externa',
+    apiUsageLast5Min: 'Últimos 5 min',
+    apiUsageFibery: 'API Fibery',
+    apiUsagePreview: 'loads de prévia',
+    apiUsageRemote: 'update remoto',
+    apiUsageLastCall: 'Última chamada',
+    apiUsageNoCalls: 'nenhuma chamada ainda',
+    apiUsageLogPrefix: 'Uso de API',
+    apiUsageAutomaticSkippedLog: 'Chamada automática ao Fibery ignorada'
   });

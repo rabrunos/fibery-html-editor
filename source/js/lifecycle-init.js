@@ -13,7 +13,7 @@ async function init() {
   await loadPageMetaCache();
   await loadProjectsCache();
   await loadDraftsCache();
-  try { setAdminMode(await API.checkIsAdmin()); } catch (_) { setAdminMode(false); }
+  try { setAdminMode(await API.checkIsAdmin({ source: 'init' })); } catch (_) { setAdminMode(false); }
   setSidebarOpen((localStorage.getItem(LS.sidebarOpen) ?? '1') === '1', false);
   const lastId = localStorage.getItem(LS.lastPageId);
   if (els.openLastToggle.checked && lastId) {

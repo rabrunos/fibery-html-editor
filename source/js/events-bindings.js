@@ -9,7 +9,7 @@ function bindEvents() {
   els.searchPagesBtn.addEventListener('click', openSearchModal);
   els.historyBtn.addEventListener('click', () => { els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); openHistoryModal(); });
   els.deleteBtn.addEventListener('click', () => { els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); deleteCurrentPage(); });
-  els.openViewMenuBtn.addEventListener('click', () => { els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); if (state.current.id) window.open(viewUrl(state.current.id), '_blank'); });
+  els.openViewMenuBtn.addEventListener('click', () => { els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); if (state.current.id) { recordPreviewUsage({ source: 'open-view-menu', pageId: state.current.id }); window.open(viewUrl(state.current.id), '_blank'); } });
   els.moreBtn.addEventListener('click', (e) => { e.stopPropagation(); closeContextMenus(); const opening = els.moreMenu.classList.contains('hidden'); els.moreMenu.classList.toggle('hidden', !opening); els.moreBtn.classList.toggle('menu-open', opening); });
   els.sidebarSettingsBtn.addEventListener('click', openSettings);
   els.quickBothBtn.addEventListener('click', () => setPanelMode('both'));
@@ -21,7 +21,7 @@ function bindEvents() {
   els.previewPanelMenuBtn.addEventListener('click', openPreviewPanelMenu);
   els.previewFocusBtn.addEventListener('click', enterPreviewFocus);
   els.previewFocusExitBtn.addEventListener('click', exitPreviewFocus);
-  els.clearLogBtn.addEventListener('click', () => { els.logBox.innerHTML = ''; });
+  els.clearLogBtn.addEventListener('click', () => { els.logBox.innerHTML = ''; clearApiUsageStats(); });
   els.toggleSidebarBtn.addEventListener('click', () => setSidebarOpen(!state.sidebar.open));
   els.brandBtn.addEventListener('click', async () => {
     if (!state.sidebar.open) {
@@ -32,8 +32,8 @@ function bindEvents() {
       showBlankPage();
     });
   });
-  els.refreshSidebarBtn.addEventListener('click', () => loadSidebarPages({ force: true, reset: false }));
-  els.sidebarLoadMoreBtn.addEventListener('click', () => loadSidebarPages({ force: true, append: true }));
+  els.refreshSidebarBtn.addEventListener('click', () => loadSidebarPages({ force: true, reset: false, source: 'sidebar-manual' }));
+  els.sidebarLoadMoreBtn.addEventListener('click', () => loadSidebarPages({ force: true, append: true, source: 'sidebar-load-more' }));
   els.newProjectBtn.addEventListener('click', () => openCreateProjectModal(''));
   els.sidebarProjectsList.addEventListener('click', async (e) => {
     const pageMenu = e.target.closest('.page-menu');
@@ -50,14 +50,14 @@ function bindEvents() {
     });
   });
   els.sidebarPagesList.addEventListener('click', async (e) => { const menu = e.target.closest('.page-menu'); if (menu) { openPageContextMenu(e, menu.dataset.pageId, menu.dataset.pageTitle || '', menu.dataset.projectId || ''); return; } const btn = e.target.closest('.page-open'); if (!btn) return; if (!state.blank && btn.dataset.id === state.current.id) return; await runWithUnsavedPageTransitionGuard(async () => { await loadPage(btn.dataset.id); }); });
-  els.globalSearchInput.addEventListener('input', () => { clearTimeout(state.search.debounce); state.search.query = els.globalSearchInput.value.trim(); state.search.debounce = setTimeout(loadSearchResults, 280); });
-  els.globalSearchResults.addEventListener('click', async (e) => { const menu = e.target.closest('.page-menu'); if (menu) { openPageContextMenu(e, menu.dataset.pageId, menu.dataset.pageTitle || '', menu.dataset.projectId || ''); return; } const btn = e.target.closest('.page-open'); if (!btn) return; if (!state.blank && btn.dataset.id === state.current.id) { closeSearchModal(); return; } await runWithUnsavedPageTransitionGuard(async () => { await loadPage(btn.dataset.id); closeSearchModal(); }); });
+  els.globalSearchInput.addEventListener('input', () => { clearTimeout(state.search.debounce); state.search.query = els.globalSearchInput.value.trim(); state.search.debounce = setTimeout(loadSearchResults, 480); });
+  els.globalSearchResults.addEventListener('click', async (e) => { const previewLink = e.target.closest('a[href*="/view"]'); if (previewLink) { const row = e.target.closest('[data-page-row-id]'); recordPreviewUsage({ source: 'search-global-link', pageId: row?.dataset.pageRowId || '' }); return; } const menu = e.target.closest('.page-menu'); if (menu) { openPageContextMenu(e, menu.dataset.pageId, menu.dataset.pageTitle || '', menu.dataset.projectId || ''); return; } const btn = e.target.closest('.page-open'); if (!btn) return; if (!state.blank && btn.dataset.id === state.current.id) { closeSearchModal(); return; } await runWithUnsavedPageTransitionGuard(async () => { await loadPage(btn.dataset.id); closeSearchModal(); }); });
   els.closeSearchBtn.addEventListener('click', closeSearchModal);
   els.searchModal.addEventListener('click', (e) => { if (e.target === els.searchModal) closeSearchModal(); });
   els.welcomeSearchInput.addEventListener('focus', openWelcomeSearch);
-  els.welcomeSearchInput.addEventListener('input', () => { clearTimeout(state.welcomeSearch.debounce); state.welcomeSearch.query = els.welcomeSearchInput.value.trim(); state.welcomeSearch.debounce = setTimeout(loadWelcomeSearchResults, 260); openWelcomeSearch(); });
-  els.welcomeSearchResults.addEventListener('click', async (e) => { const menu = e.target.closest('.page-menu'); if (menu) { openPageContextMenu(e, menu.dataset.pageId, menu.dataset.pageTitle || '', menu.dataset.projectId || ''); return; } const btn = e.target.closest('.page-open'); if (!btn) return; if (!state.blank && btn.dataset.id === state.current.id) { closeWelcomeSearch(); return; } await runWithUnsavedPageTransitionGuard(async () => { await loadPage(btn.dataset.id); closeWelcomeSearch(); }); });
-  els.confirmOpenPreviewBtn.addEventListener('click', () => { const id = els.confirmOpenPreviewBtn.dataset.previewId || state.current.id; if (id) window.open(viewUrl(id), '_blank'); });
+  els.welcomeSearchInput.addEventListener('input', () => { clearTimeout(state.welcomeSearch.debounce); state.welcomeSearch.query = els.welcomeSearchInput.value.trim(); state.welcomeSearch.debounce = setTimeout(loadWelcomeSearchResults, 480); openWelcomeSearch(); });
+  els.welcomeSearchResults.addEventListener('click', async (e) => { const previewLink = e.target.closest('a[href*="/view"]'); if (previewLink) { const row = e.target.closest('[data-page-row-id]'); recordPreviewUsage({ source: 'welcome-search-link', pageId: row?.dataset.pageRowId || '' }); return; } const menu = e.target.closest('.page-menu'); if (menu) { openPageContextMenu(e, menu.dataset.pageId, menu.dataset.pageTitle || '', menu.dataset.projectId || ''); return; } const btn = e.target.closest('.page-open'); if (!btn) return; if (!state.blank && btn.dataset.id === state.current.id) { closeWelcomeSearch(); return; } await runWithUnsavedPageTransitionGuard(async () => { await loadPage(btn.dataset.id); closeWelcomeSearch(); }); });
+  els.confirmOpenPreviewBtn.addEventListener('click', () => { const id = els.confirmOpenPreviewBtn.dataset.previewId || state.current.id; if (id) { recordPreviewUsage({ source: 'confirm-open-preview', pageId: id }); window.open(viewUrl(id), '_blank'); } });
   els.closeSettingsBtn.addEventListener('click', closeSettings);
   els.settingsModal.addEventListener('click', (e) => { if (e.target === els.settingsModal) closeSettings(); });
   els.closeUpdateAppBtn.addEventListener('click', closeUpdateAppModal);
@@ -83,7 +83,7 @@ function bindEvents() {
     if (action === 'move-to-project') { openMoveProjectMenu(actionBtn); return; }
     closeContextMenus();
     if (action === 'rename-page') startInlineRenameTitle(pageId);
-    if (action === 'open-preview' && pageId) window.open(viewUrl(pageId), '_blank');
+    if (action === 'open-preview' && pageId) { recordPreviewUsage({ source: 'page-context-open-preview', pageId }); window.open(viewUrl(pageId), '_blank'); }
     if (action === 'copy-page-link' && pageId) copyText(viewUrl(pageId), actionBtn, t('copiedPageLink'));
     if (action === 'pin-page') await togglePinPage(pageId);
     if (action === 'archive-page') await toggleArchivePage(pageId);
@@ -128,7 +128,7 @@ function bindEvents() {
     const action = btn.dataset.panelAction;
     closeContextMenus();
     if (action === 'copy-preview-link') copyText(state.current.id ? viewUrl(state.current.id) : '', btn, t('copiedPreviewLink'));
-    if (action === 'open-preview' && state.current.id) window.open(viewUrl(state.current.id), '_blank');
+    if (action === 'open-preview' && state.current.id) { recordPreviewUsage({ source: 'preview-panel-open-preview', pageId: state.current.id }); window.open(viewUrl(state.current.id), '_blank'); }
     if (action === 'refresh-preview') refreshPreview();
   });
   window.addEventListener('message', handleLocalPreviewMessage);
@@ -165,7 +165,7 @@ function bindEvents() {
       if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
       return;
     }
-    if (state.sidebar.open) loadSidebarPages({ force: true, reset: false });
+    if (state.sidebar.open) refreshSidebarFromLocalCache();
     if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
   });
   window.addEventListener('pagehide', () => {
@@ -175,5 +175,6 @@ function bindEvents() {
     if (typeof stopExternalSyncPolling === 'function') stopExternalSyncPolling();
   });
   syncBeforeUnloadWarningState();
+  renderApiUsageSummary();
   if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
 }

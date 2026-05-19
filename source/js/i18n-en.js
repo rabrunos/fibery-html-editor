@@ -156,5 +156,13 @@ Object.assign(I18N.en, {
     externalSyncManualCheckStartedLog: 'External sync manual check started',
     externalSyncManualCheckCompletedLog: 'External sync manual check completed',
     externalSyncCheckSkippedLog: 'External sync check skipped',
-    externalSyncCheckErrorLog: 'External change check failed'
+    externalSyncCheckErrorLog: 'External change check failed',
+    apiUsageLast5Min: 'Last 5 min',
+    apiUsageFibery: 'Fibery API',
+    apiUsagePreview: 'preview loads',
+    apiUsageRemote: 'remote update',
+    apiUsageLastCall: 'Last call',
+    apiUsageNoCalls: 'no calls yet',
+    apiUsageLogPrefix: 'API usage',
+    apiUsageAutomaticSkippedLog: 'Automatic Fibery API call skipped'
   });

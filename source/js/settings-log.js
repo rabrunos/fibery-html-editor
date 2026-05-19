@@ -3,6 +3,7 @@ function closeSettings() { els.settingsModal.classList.add('hidden'); }
 function toggleLog() {
   els.logPanel.classList.toggle('hidden');
   if (els.logMenuText) els.logMenuText.textContent = els.logPanel.classList.contains('hidden') ? t('showLog') : t('hideLog');
+  renderApiUsageSummary();
 }
 function setAdminMode(isAdmin) { state.isAdmin = isAdmin; els.saveBtn.disabled = !isAdmin; els.newPageBtn.disabled = !isAdmin; if (els.welcomeNewPageBtn) els.welcomeNewPageBtn.disabled = !isAdmin; els.deleteBtn.disabled = !isAdmin || !state.current.id; if (!isAdmin) { setCodeReadOnly(true); els.titleInput.readOnly = true; els.descriptionInput.readOnly = true; setStatus(t('readOnly')); } renderUpdateAppPanel(); }
 function applyI18n() {
@@ -22,5 +23,6 @@ function applyI18n() {
   renderSidebarPages();
   updateRecoveryReopenButton();
   if (typeof renderExternalSyncNotice === 'function') renderExternalSyncNotice();
+  renderApiUsageSummary();
   renderUpdateAppPanel();
 }

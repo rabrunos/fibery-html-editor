@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.10.1" />
+  <meta name="fibery-html-editor-version" content="8.10.2" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -554,6 +554,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
       <div class="text-xs font-bold uppercase tracking-wide text-gray-500">Log</div>
       <button id="clearLogBtn" class="text-xs text-gray-500 hover:text-gray-900">Clear</button>
     </div>
+    <div id="apiUsageSummaryBox" class="border-b border-gray-100 px-3 py-2 text-[11px] leading-4 text-gray-500">API usage: no calls yet</div>
     <div id="logBox" class="max-h-56 overflow-auto p-3 font-mono text-[11px] leading-5 text-gray-600"></div>
   </div>
 <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
@@ -561,7 +562,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 (() => {
   'use strict';
 
-const APP_VERSION = '8.10.1';
+const APP_VERSION = '8.10.2';
 window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 document.documentElement.dataset.appVersion = APP_VERSION;
 
@@ -758,7 +759,15 @@ Object.assign(I18N.en, {
     externalSyncManualCheckStartedLog: 'External sync manual check started',
     externalSyncManualCheckCompletedLog: 'External sync manual check completed',
     externalSyncCheckSkippedLog: 'External sync check skipped',
-    externalSyncCheckErrorLog: 'External change check failed'
+    externalSyncCheckErrorLog: 'External change check failed',
+    apiUsageLast5Min: 'Last 5 min',
+    apiUsageFibery: 'Fibery API',
+    apiUsagePreview: 'preview loads',
+    apiUsageRemote: 'remote update',
+    apiUsageLastCall: 'Last call',
+    apiUsageNoCalls: 'no calls yet',
+    apiUsageLogPrefix: 'API usage',
+    apiUsageAutomaticSkippedLog: 'Automatic Fibery API call skipped'
   });
 
 
@@ -920,7 +929,15 @@ Object.assign(I18N['pt-BR'], {
     externalSyncManualCheckStartedLog: 'Verificação manual de sync externo iniciada',
     externalSyncManualCheckCompletedLog: 'Verificação manual de sync externo concluída',
     externalSyncCheckSkippedLog: 'Verificação de sync externo ignorada',
-    externalSyncCheckErrorLog: 'Falha ao verificar alteração externa'
+    externalSyncCheckErrorLog: 'Falha ao verificar alteração externa',
+    apiUsageLast5Min: 'Últimos 5 min',
+    apiUsageFibery: 'API Fibery',
+    apiUsagePreview: 'loads de prévia',
+    apiUsageRemote: 'update remoto',
+    apiUsageLastCall: 'Última chamada',
+    apiUsageNoCalls: 'nenhuma chamada ainda',
+    apiUsageLogPrefix: 'Uso de API',
+    apiUsageAutomaticSkippedLog: 'Chamada automática ao Fibery ignorada'
   });
 
 
@@ -943,7 +960,7 @@ const els = {
   previewFrame: $('previewFrame'), previewStatus: $('previewStatus'), previewPanelMenuBtn: $('previewPanelMenuBtn'), previewFocusBtn: $('previewFocusBtn'), previewFocusExitBtn: $('previewFocusExitBtn'), splitter: $('splitter'), splitArea: $('splitArea'), editorPane: $('editorPane'), previewPane: $('previewPane'), dragOverlay: $('dragOverlay'),
   searchModal: $('searchModal'), closeSearchBtn: $('closeSearchBtn'), globalSearchInput: $('globalSearchInput'), globalSearchResults: $('globalSearchResults'),
   pageContextMenu: $('pageContextMenu'), moveProjectMenu: $('moveProjectMenu'), projectContextMenu: $('projectContextMenu'), editorPanelMenu: $('editorPanelMenu'), previewPanelMenu: $('previewPanelMenu'), createProjectModal: $('createProjectModal'), createProjectNameInput: $('createProjectNameInput'), closeCreateProjectBtn: $('closeCreateProjectBtn'), cancelCreateProjectBtn: $('cancelCreateProjectBtn'), confirmCreateProjectBtn: $('confirmCreateProjectBtn'),
-  historyModal: $('historyModal'), closeHistoryBtn: $('closeHistoryBtn'), historyList: $('historyList'), logPanel: $('logPanel'), logBox: $('logBox'), clearLogBtn: $('clearLogBtn'),
+  historyModal: $('historyModal'), closeHistoryBtn: $('closeHistoryBtn'), historyList: $('historyList'), logPanel: $('logPanel'), apiUsageSummaryBox: $('apiUsageSummaryBox'), logBox: $('logBox'), clearLogBtn: $('clearLogBtn'),
   confirmModal: $('confirmModal'), confirmBox: $('confirmBox'), confirmTitle: $('confirmTitle'), confirmMessage: $('confirmMessage'), confirmCancelBtn: $('confirmCancelBtn'), confirmOkBtn: $('confirmOkBtn'), deletePreviewWrap: $('deletePreviewWrap'), deletePreviewFrame: $('deletePreviewFrame'), confirmOpenPreviewBtn: $('confirmOpenPreviewBtn'),
   unsavedTransitionModal: $('unsavedTransitionModal'), unsavedTransitionSaveBtn: $('unsavedTransitionSaveBtn'), unsavedTransitionKeepDraftBtn: $('unsavedTransitionKeepDraftBtn'), unsavedTransitionDiscardBtn: $('unsavedTransitionDiscardBtn'), unsavedTransitionCancelBtn: $('unsavedTransitionCancelBtn'),
   draftRecoveryModal: $('draftRecoveryModal'), draftRecoveryTitle: $('draftRecoveryTitle'), draftRecoverySubtitle: $('draftRecoverySubtitle'), draftCurrentColumn: $('draftCurrentColumn'), draftLocalColumn: $('draftLocalColumn'), draftCodeDiffLegend: $('draftCodeDiffLegend'), draftCodeDiffMonaco: $('draftCodeDiffMonaco'), draftCodeDiffFallback: $('draftCodeDiffFallback'), draftFallbackCurrentPane: $('draftFallbackCurrentPane'), draftFallbackLocalPane: $('draftFallbackLocalPane'), closeDraftRecoveryBtn: $('closeDraftRecoveryBtn'), restoreDraftBtn: $('restoreDraftBtn'), keepCurrentVersionBtn: $('keepCurrentVersionBtn'), discardDraftBtn: $('discardDraftBtn'),
@@ -964,18 +981,151 @@ const LOCAL_PREVIEW_MESSAGE_SOURCE = 'fibery-html-editor/local-preview';
 const state = {
   isAdmin: false, lang: 'en', appPageId: detectCurrentAppPageId(), current: { id: '', title: '', description: '', html: '' }, currentBaseline: { id: '', title: '', description: '', html: '' }, blank: true, dirty: false, db: null, saving: false, loadingPage: false,
   code: { editor: null, suppress: false, fallback: false }, confirmResolver: null, unsavedTransitionResolver: null, unsavedTransitionBusy: false, unsavedBeforeUnloadWarningActive: false,
+  apiUsage: {
+    recentCalls: [], maxRecentCalls: 100, summaryWindowMs: 300000, automaticCooldownMs: 180000, slowCallThresholdMs: 4000, slowModeMs: 300000,
+    lastAutomaticFiberyCallAt: 0, slowModeUntil: 0, inFlight: {}
+  },
+  pageLoads: { inFlightById: {} },
   externalSync: {
-    enabled: true, checking: false, timer: null, intervalMs: 300000, minCooldownMs: 180000, lastCheckedAt: 0, lastErrorAt: 0, lastErrorMessage: '',
+    enabled: true, automaticEnabled: false, checking: false, timer: null, intervalMs: 600000, minCooldownMs: 600000, lastCheckedAt: 0, lastErrorAt: 0, lastErrorMessage: '',
     remoteCandidate: null, remoteSignature: '', baselineSignatureAtDetection: '', localBaselineSignature: '', dismissedSignature: '', lastNotifiedSignature: '', pageId: '', status: 'idle',
     lastSkipReason: '', lastSkipLoggedAt: 0
   },
   update: { checking: false, applying: false, rollbacking: false, status: 'idle', remoteVersion: '', remoteChangelog: '', changelogLoading: false, backupsLoading: false, backups: [] },
   preview: { mode: 'real', localObjectUrl: '', localStatusLabel: '', activeRequestId: '', debounceTimer: null, debounceMs: 500, lastLocalDocSignature: '', lastLocalHtmlSignature: '', lastLocalUsesTailwind: false, lastRealUrl: '' },
-  sidebar: { open: true, pages: [], loading: false, refreshTimer: null, hasMore: false, limit: 20, visibleLimit: 20, pageCache: {} },
+  sidebar: { open: true, pages: [], loading: false, refreshTimer: null, hasMore: false, limit: 20, visibleLimit: 20, pageCache: {}, lastRemoteLoadAt: 0, remoteCacheTtlMs: 300000, autoRefreshEnabled: false, autoRefreshIntervalMs: 600000 },
   projects: { rows: [], items: [], pageToProject: {}, itemsByProject: {} },
-  search: { debounce: null, query: '', pages: [] }, welcomeSearch: { debounce: null, query: '', pages: [] }, panelMode: 'both', previewFocus: false, pageMeta: {}, context: { pageId: '', pageTitle: '', projectId: '', createProjectTargetPageId: '' },
+  search: { debounce: null, query: '', pages: [], cache: {}, loading: false, remoteQuery: '' }, welcomeSearch: { debounce: null, query: '', pages: [], cache: {}, loading: false, remoteQuery: '' }, panelMode: 'both', previewFocus: false, pageMeta: {}, context: { pageId: '', pageTitle: '', projectId: '', createProjectTargetPageId: '' },
   drafts: { byKey: {}, autosaveTimer: null, autosaveIntervalMs: 60000, unsavedId: 'local-unsaved-main', lastAutosaveAtByKey: {}, promptToken: 0, diffEditor: null, diffOriginalModel: null, diffModifiedModel: null, fallbackSyncing: false, activeDraftKey: '', activeRecovery: null, reopenCandidate: null, dismissedMap: {} }
 };
+
+
+function apiUsageNow() { return Date.now(); }
+
+function apiUsageErrorText(error) {
+  return String(error?.message || error || '').slice(0, 140);
+}
+
+function apiUsageCallKey(entry = {}) {
+  return [entry.kind || 'unknown', entry.operation || 'unknown', entry.source || 'unknown', entry.pageId || ''].join(':');
+}
+
+function isApiUsageLogVisible() {
+  return !!els.logPanel && !els.logPanel.classList.contains('hidden');
+}
+
+function renderApiUsageSummary() {
+  if (!els.apiUsageSummaryBox) return;
+  const calls = state.apiUsage.recentCalls || [];
+  const now = apiUsageNow();
+  const windowMs = Number(state.apiUsage.summaryWindowMs || 300000);
+  const recent = calls.filter(call => now - Number(call.timestamp || 0) <= windowMs);
+  const fiberyCount = recent.filter(call => call.kind === 'fibery-api').length;
+  const previewCount = recent.filter(call => call.kind === 'fibery-preview').length;
+  const remoteCount = recent.filter(call => call.kind === 'github-remote').length;
+  const last = calls[calls.length - 1];
+  const lastText = last
+    ? `${last.kind}/${last.operation} (${last.source || '-'}) ${Number(last.durationMs || 0)}ms`
+    : t('apiUsageNoCalls');
+  els.apiUsageSummaryBox.textContent = `${t('apiUsageLast5Min')}: ${fiberyCount} ${t('apiUsageFibery')}, ${previewCount} ${t('apiUsagePreview')}, ${remoteCount} ${t('apiUsageRemote')}. ${t('apiUsageLastCall')}: ${lastText}`;
+}
+
+function recordApiUsage(entry = {}) {
+  const normalized = {
+    kind: String(entry.kind || 'unknown'),
+    operation: String(entry.operation || 'unknown'),
+    source: String(entry.source || 'unknown'),
+    pageId: String(entry.pageId || ''),
+    timestamp: Number(entry.timestamp || apiUsageNow()),
+    durationMs: Math.max(0, Math.round(Number(entry.durationMs || 0))),
+    success: entry.success !== false,
+    automatic: !!entry.automatic,
+    error: entry.error ? apiUsageErrorText(entry.error) : ''
+  };
+  state.apiUsage.recentCalls.push(normalized);
+  const maxCalls = Math.max(50, Number(state.apiUsage.maxRecentCalls || 100));
+  if (state.apiUsage.recentCalls.length > maxCalls) {
+    state.apiUsage.recentCalls.splice(0, state.apiUsage.recentCalls.length - maxCalls);
+  }
+  if (normalized.automatic && normalized.kind === 'fibery-api') {
+    state.apiUsage.lastAutomaticFiberyCallAt = normalized.timestamp;
+  }
+  if (normalized.kind === 'fibery-api' && (!normalized.success || normalized.durationMs >= Number(state.apiUsage.slowCallThresholdMs || 4000))) {
+    state.apiUsage.slowModeUntil = normalized.timestamp + Number(state.apiUsage.slowModeMs || 300000);
+  }
+  if (!normalized.success || isApiUsageLogVisible()) {
+    const status = normalized.success ? 'ok' : `fail ${normalized.error || ''}`.trim();
+    log(`${t('apiUsageLogPrefix')}: ${normalized.kind}/${normalized.operation} ${normalized.source} ${normalized.durationMs}ms ${status}`);
+  }
+  renderApiUsageSummary();
+  return normalized;
+}
+
+function clearApiUsageStats() {
+  state.apiUsage.recentCalls = [];
+  state.apiUsage.lastAutomaticFiberyCallAt = 0;
+  state.apiUsage.slowModeUntil = 0;
+  state.apiUsage.inFlight = {};
+  renderApiUsageSummary();
+}
+
+async function withApiUsage(meta = {}, task) {
+  const startedAt = apiUsageNow();
+  const key = apiUsageCallKey(meta);
+  state.apiUsage.inFlight[key] = Number(state.apiUsage.inFlight[key] || 0) + 1;
+  try {
+    const result = await task();
+    recordApiUsage({ ...meta, timestamp: startedAt, durationMs: apiUsageNow() - startedAt, success: true });
+    return result;
+  } catch (err) {
+    recordApiUsage({ ...meta, timestamp: startedAt, durationMs: apiUsageNow() - startedAt, success: false, error: err });
+    throw err;
+  } finally {
+    state.apiUsage.inFlight[key] = Math.max(0, Number(state.apiUsage.inFlight[key] || 1) - 1);
+    if (!state.apiUsage.inFlight[key]) delete state.apiUsage.inFlight[key];
+  }
+}
+
+function automaticFiberyCooldownRemaining(now = apiUsageNow()) {
+  const cooldownMs = Math.max(60000, Number(state.apiUsage.automaticCooldownMs || 180000));
+  const slowUntil = Number(state.apiUsage.slowModeUntil || 0);
+  if (slowUntil > now) return slowUntil - now;
+  const lastAt = Number(state.apiUsage.lastAutomaticFiberyCallAt || 0);
+  if (!lastAt) return 0;
+  return Math.max(0, cooldownMs - (now - lastAt));
+}
+
+function automaticFiberySkipReason(source = '') {
+  if (document.hidden) return 'document-hidden';
+  if (state.saving) return 'saving';
+  if (state.loadingPage) return 'loading-page';
+  if (state.sidebar.loading && source !== 'sidebar') return 'sidebar-loading';
+  if (state.update.checking || state.update.applying || state.update.rollbacking) return 'update-flow';
+  if (Number(automaticFiberyCooldownRemaining()) > 0) return 'automatic-cooldown';
+  return '';
+}
+
+function canRunAutomaticFiberyCall(source = '') {
+  return !automaticFiberySkipReason(source);
+}
+
+function logAutomaticFiberySkip(source = '', reason = automaticFiberySkipReason(source)) {
+  if (!reason || !isApiUsageLogVisible()) return;
+  log(`${t('apiUsageAutomaticSkippedLog')}: ${source || 'unknown'} (${reason})`);
+}
+
+function recordPreviewUsage({ operation = 'previewView', source = 'preview-real', pageId = '', automatic = false } = {}) {
+  recordApiUsage({
+    kind: 'fibery-preview',
+    operation,
+    source,
+    pageId,
+    automatic,
+    timestamp: apiUsageNow(),
+    durationMs: 0,
+    success: true
+  });
+}
 
 
 function preferredLang() { const saved = localStorage.getItem(LS.lang) || 'auto'; if (saved !== 'auto') return saved; return (navigator.language || '').toLowerCase().startsWith('pt') ? 'pt-BR' : 'en'; }
@@ -1063,11 +1213,47 @@ function setCurrentBaseline() {
 
 
 const API = {
-  async checkIsAdmin() { const r = await fetch('/api/ai-answer/pages/is-admin'); if (!r.ok) return false; const data = await r.json(); return !!data.isAdmin; },
-  async loadPages({ skip = 0, limit = 21, search = '' } = {}) { const params = new URLSearchParams(); params.set('skip', String(skip)); params.set('limit', String(limit)); if (search) params.set('search', search); const r = await fetch('/api/ai-answer/pages/?' + params.toString()); if (!r.ok) throw new Error('Failed to load pages'); return r.json(); },
-  async loadPage(id) { const r = await fetch('/api/ai-answer/pages/' + encodeURIComponent(id)); if (!r.ok) throw new Error('Failed to load page'); return r.json(); },
-  async savePage(page) { const isUpdate = !!page.id; const r = await fetch(isUpdate ? '/api/ai-answer/pages/' + encodeURIComponent(page.id) : '/api/ai-answer/pages/', { method: isUpdate ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(page) }); if (!r.ok) { let msg = 'Failed to save page'; try { msg += ': ' + JSON.stringify(await r.json()); } catch (_) {} throw new Error(msg); } return r.json(); },
-  async deletePage(id) { const r = await fetch('/api/ai-answer/pages/' + encodeURIComponent(id), { method: 'DELETE' }); if (!r.ok) throw new Error('Failed to delete page'); return { success: true }; }
+  async checkIsAdmin(options = {}) {
+    return withApiUsage({ kind: 'fibery-api', operation: 'checkIsAdmin', source: options.source || 'init', automatic: !!options.automatic }, async () => {
+      const r = await fetch('/api/ai-answer/pages/is-admin');
+      if (!r.ok) return false;
+      const data = await r.json();
+      return !!data.isAdmin;
+    });
+  },
+  async loadPages({ skip = 0, limit = 21, search = '', source = 'unknown', automatic = false } = {}) {
+    return withApiUsage({ kind: 'fibery-api', operation: 'loadPages', source, automatic }, async () => {
+      const params = new URLSearchParams();
+      params.set('skip', String(skip));
+      params.set('limit', String(limit));
+      if (search) params.set('search', search);
+      const r = await fetch('/api/ai-answer/pages/?' + params.toString());
+      if (!r.ok) throw new Error('Failed to load pages');
+      return r.json();
+    });
+  },
+  async loadPage(id, options = {}) {
+    return withApiUsage({ kind: 'fibery-api', operation: 'loadPage', source: options.source || 'unknown', pageId: id, automatic: !!options.automatic }, async () => {
+      const r = await fetch('/api/ai-answer/pages/' + encodeURIComponent(id));
+      if (!r.ok) throw new Error('Failed to load page');
+      return r.json();
+    });
+  },
+  async savePage(page, options = {}) {
+    return withApiUsage({ kind: 'fibery-api', operation: 'savePage', source: options.source || 'save-page', pageId: page?.id || '', automatic: !!options.automatic }, async () => {
+      const isUpdate = !!page.id;
+      const r = await fetch(isUpdate ? '/api/ai-answer/pages/' + encodeURIComponent(page.id) : '/api/ai-answer/pages/', { method: isUpdate ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(page) });
+      if (!r.ok) { let msg = 'Failed to save page'; try { msg += ': ' + JSON.stringify(await r.json()); } catch (_) {} throw new Error(msg); }
+      return r.json();
+    });
+  },
+  async deletePage(id, options = {}) {
+    return withApiUsage({ kind: 'fibery-api', operation: 'deletePage', source: options.source || 'delete-page', pageId: id, automatic: !!options.automatic }, async () => {
+      const r = await fetch('/api/ai-answer/pages/' + encodeURIComponent(id), { method: 'DELETE' });
+      if (!r.ok) throw new Error('Failed to delete page');
+      return { success: true };
+    });
+  }
 };
 
 
@@ -1077,10 +1263,12 @@ function extractRemoteVersionFromHtml(html = '') {
     || source.match(/<meta\b[^>]*content=["']([^"']+)["'][^>]*name=["']fibery-html-editor-version["'][^>]*>/i);
   return String(match?.[1] || '').trim();
 }
-async function fetchRemoteText(url) {
-  const response = await fetch(url, { cache: 'no-store' });
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  return response.text();
+async function fetchRemoteText(url, options = {}) {
+  return withApiUsage({ kind: 'github-remote', operation: options.operation || 'fetchRemoteText', source: options.source || 'update-app', automatic: !!options.automatic }, async () => {
+    const response = await fetch(url, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.text();
+  });
 }
 function updateStatusMessage() {
   if (state.update.rollbacking) return t('updateRollbackRestoring');
@@ -1101,8 +1289,8 @@ async function checkRemoteUpdateInfo() {
   state.update.changelogLoading = true;
   renderUpdateAppPanel();
   const [indexResult, changelogResult] = await Promise.allSettled([
-    fetchRemoteText(UPDATE_REMOTE.indexHtmlUrl),
-    fetchRemoteText(UPDATE_REMOTE.changelogUrl)
+    fetchRemoteText(UPDATE_REMOTE.indexHtmlUrl, { operation: 'updateIndex', source: 'update-app' }),
+    fetchRemoteText(UPDATE_REMOTE.changelogUrl, { operation: 'updateChangelog', source: 'update-app' })
   ]);
   if (indexResult.status === 'fulfilled') {
     const remoteVersionRaw = extractRemoteVersionFromHtml(indexResult.value);
@@ -1373,7 +1561,7 @@ async function applyRemoteUpdate() {
 
   try {
     setStatus(t('updateDownloading'));
-    const remoteHtml = await fetchRemoteText(UPDATE_REMOTE.indexHtmlUrl);
+    const remoteHtml = await fetchRemoteText(UPDATE_REMOTE.indexHtmlUrl, { operation: 'updateDownload', source: 'update-apply' });
     setStatus(t('updateValidating'));
     const validation = validateRemoteUpdateHtml(remoteHtml);
     if (!validation.ok) {
@@ -1418,7 +1606,7 @@ async function applyRemoteUpdate() {
       title: state.current.title,
       description: state.current.description,
       html: remoteHtml
-    });
+    }, { source: 'update-apply' });
 
     state.current = {
       id: saved.id || saved.data?.id || state.current.id,
@@ -1426,6 +1614,8 @@ async function applyRemoteUpdate() {
       description: saved.description || saved.data?.description || state.current.description,
       html: saved.html || saved.data?.html || remoteHtml
     };
+    cachePagesForSidebar([state.current]);
+    clearSearchCaches();
     localStorage.setItem(LS.lastPageId, state.current.id);
     const now = Date.now();
     await savePageMeta(state.current.id, { title: state.current.title, description: state.current.description, lastOpenedAt: now, lastSavedAt: now });
@@ -1434,7 +1624,7 @@ async function applyRemoteUpdate() {
     setCurrentBaseline();
     renderCurrent();
     syncPreviewMode({ immediate: true, forceRealReload: true });
-    if (state.sidebar.open) await loadSidebarPages({ force: true, reset: true });
+    refreshSidebarFromLocalCache({ reset: true });
 
     state.update.remoteVersion = validation.remoteVersion;
     state.update.status = 'latest';
@@ -1589,7 +1779,7 @@ async function restoreUpdateBackupByKey(key = '') {
       title: state.current.title,
       description: state.current.description,
       html: validation.backupHtml
-    });
+    }, { source: 'update-rollback' });
 
     state.current = {
       id: saved.id || saved.data?.id || state.current.id,
@@ -1597,6 +1787,8 @@ async function restoreUpdateBackupByKey(key = '') {
       description: saved.description || saved.data?.description || state.current.description,
       html: saved.html || saved.data?.html || validation.backupHtml
     };
+    cachePagesForSidebar([state.current]);
+    clearSearchCaches();
 
     localStorage.setItem(LS.lastPageId, state.current.id);
     const now = Date.now();
@@ -1611,7 +1803,7 @@ async function restoreUpdateBackupByKey(key = '') {
     setCurrentBaseline();
     renderCurrent();
     syncPreviewMode({ immediate: true, forceRealReload: true });
-    if (state.sidebar.open) await loadSidebarPages({ force: true, reset: true });
+    refreshSidebarFromLocalCache({ reset: true });
 
     await loadUpdateBackupList();
     setStatus(`${t('updateRollbackRestored')} ${t('updateRollbackReloadHint')}`);
@@ -2711,7 +2903,7 @@ function logExternalSyncDebug(message, options = {}) {
 }
 
 function externalSyncRemainingCooldownMs(now = Date.now()) {
-  const minCooldownMs = Math.max(120000, Number(state.externalSync.minCooldownMs || 180000));
+  const minCooldownMs = Math.max(300000, Number(state.externalSync.minCooldownMs || 600000));
   const lastCheckedAt = Number(state.externalSync.lastCheckedAt || 0);
   if (!lastCheckedAt) return 0;
   return Math.max(0, minCooldownMs - (now - lastCheckedAt));
@@ -2720,11 +2912,15 @@ function externalSyncRemainingCooldownMs(now = Date.now()) {
 function externalSyncSkipReason(options = {}) {
   const manual = !!options.manual;
   if (!state.externalSync.enabled) return 'disabled';
+  if (!manual && !state.externalSync.automaticEnabled) return 'automatic-disabled';
   if (state.blank || !state.current.id) return 'no-current-page';
   if (document.hidden) return 'document-hidden';
   if (state.saving) return 'saving';
   if (state.loadingPage) return 'loading-page';
   if (state.sidebar.loading) return 'sidebar-loading';
+  if (state.search.loading || state.welcomeSearch.loading) return 'search-loading';
+  if (!manual && hasRealUnsavedChangesForCurrentPage({ syncFromInputs: false })) return 'local-edits';
+  if (!manual && !canRunAutomaticFiberyCall('external-sync')) return automaticFiberySkipReason('external-sync') || 'api-budget';
   if (state.externalSync.checking) return 'already-checking';
   if (state.unsavedTransitionBusy || !!state.unsavedTransitionResolver) return 'unsaved-transition';
   if (state.update.checking || state.update.applying || state.update.rollbacking) return 'update-flow';
@@ -2745,7 +2941,7 @@ function logExternalSyncSkip(reason) {
 }
 
 function externalSyncNextDelayMs() {
-  const intervalMs = Math.max(120000, Number(state.externalSync.intervalMs || 300000));
+  const intervalMs = Math.max(600000, Number(state.externalSync.intervalMs || 600000));
   const cooldownMs = externalSyncRemainingCooldownMs();
   if (!cooldownMs) return intervalMs;
   return Math.max(intervalMs, cooldownMs);
@@ -2759,8 +2955,8 @@ function stopExternalSyncPolling() {
 
 function scheduleExternalSyncPolling(delayMs = externalSyncNextDelayMs()) {
   stopExternalSyncPolling();
-  if (!state.externalSync.enabled) return;
-  const safeDelay = Math.max(120000, Number(delayMs || externalSyncNextDelayMs()));
+  if (!state.externalSync.enabled || !state.externalSync.automaticEnabled) return;
+  const safeDelay = Math.max(600000, Number(delayMs || externalSyncNextDelayMs()));
   state.externalSync.timer = window.setTimeout(() => {
     state.externalSync.timer = null;
     void runExternalSyncPollingCycle();
@@ -2780,7 +2976,7 @@ async function checkExternalSyncNow(options = {}) {
   state.externalSync.checking = true;
   state.externalSync.status = 'checking';
   try {
-    const remotePage = await API.loadPage(pageId);
+    const remotePage = await API.loadPage(pageId, { source: manual ? 'external-sync-manual' : 'external-sync', automatic: !manual });
     if (state.blank || String(state.current.id || '') !== pageId) return false;
     captureExternalSyncRemoteCandidate(remotePage || {});
     state.externalSync.lastCheckedAt = Date.now();
@@ -2819,7 +3015,7 @@ async function runExternalSyncManualCheck() {
 
 function syncExternalSyncPollingState(options = {}) {
   const forceReschedule = !!options.forceReschedule;
-  if (!state.externalSync.enabled) {
+  if (!state.externalSync.enabled || !state.externalSync.automaticEnabled) {
     stopExternalSyncPolling();
     return;
   }
@@ -3170,9 +3366,12 @@ function renderRealPreview({ forceReload = false } = {}) {
   els.previewStatus.textContent = state.current.title || state.current.id;
   els.previewFrame.removeAttribute('srcdoc');
   if (forceReload && els.previewFrame.src === url) {
-    try { els.previewFrame.contentWindow.location.reload(); return; } catch (_) {}
+    try { recordPreviewUsage({ source: 'preview-real-reload', pageId: state.current.id }); els.previewFrame.contentWindow.location.reload(); return; } catch (_) {}
   }
-  if (els.previewFrame.src !== url || forceReload) els.previewFrame.src = url;
+  if (els.previewFrame.src !== url || forceReload) {
+    els.previewFrame.src = url;
+    recordPreviewUsage({ source: forceReload ? 'preview-real-force' : 'preview-real', pageId: state.current.id });
+  }
   state.preview.lastRealUrl = url;
 }
 function refreshPreview() { renderRealPreview({ forceReload: true }); }
@@ -3188,14 +3387,19 @@ function syncPreviewMode({ immediate = false, forceRealReload = false } = {}) {
 
 
 async function loadPage(id) {
-  state.loadingPage = true;
-  if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
-  try {
+  const pageId = String(id || '');
+  if (!pageId) return;
+  if (!state.blank && state.current.id === pageId && !state.loadingPage) return;
+  if (state.pageLoads.inFlightById[pageId]) return state.pageLoads.inFlightById[pageId];
+
+  const loadPromise = (async () => {
+    state.loadingPage = true;
     await flushDraftAutosaveNow();
     const promptToken = ++state.drafts.promptToken;
     setStatus(t('loading'));
-    const page = await API.loadPage(id);
-    state.current = { id: page.id || id, title: page.title || '', description: page.description || '', html: page.html || '' };
+    const page = await API.loadPage(pageId, { source: 'load-page' });
+    state.current = { id: page.id || pageId, title: page.title || '', description: page.description || '', html: page.html || '' };
+    cachePagesForSidebar([state.current]);
     if (typeof resetExternalSyncStateForCurrentPage === 'function') resetExternalSyncStateForCurrentPage(state.current.id);
     setCurrentBaseline();
     await savePageMeta(state.current.id, { title: state.current.title, description: state.current.description, lastOpenedAt: Date.now() });
@@ -3206,16 +3410,21 @@ async function loadPage(id) {
     setStatus(t('pageLoaded'));
     log(`${t('pageLoaded')}: ${state.current.title || state.current.id}`);
     void maybePromptDraftRecoveryForCurrentPage(promptToken);
+  })();
+
+  state.pageLoads.inFlightById[pageId] = loadPromise;
+  try {
+    return await loadPromise;
   } finally {
+    delete state.pageLoads.inFlightById[pageId];
     state.loadingPage = false;
-    if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
   }
 }
-async function confirmAction({ title, message, okText = 'OK', showPreview = false, previewId = '', openPreviewId = '' } = {}) { els.confirmTitle.textContent = title || ''; els.confirmMessage.textContent = message || ''; els.confirmOkBtn.textContent = okText; const previewTargetId = previewId || state.current.id; els.confirmOpenPreviewBtn.dataset.previewId = openPreviewId || previewTargetId || ''; els.deletePreviewWrap.classList.toggle('hidden', !showPreview); if (showPreview && previewTargetId) els.deletePreviewFrame.src = viewUrl(previewTargetId); else { els.deletePreviewFrame.removeAttribute('src'); els.confirmOpenPreviewBtn.dataset.previewId = ''; } els.confirmModal.classList.remove('hidden'); return new Promise(resolve => { state.confirmResolver = resolve; }); }
+async function confirmAction({ title, message, okText = 'OK', showPreview = false, previewId = '', openPreviewId = '' } = {}) { els.confirmTitle.textContent = title || ''; els.confirmMessage.textContent = message || ''; els.confirmOkBtn.textContent = okText; const previewTargetId = previewId || state.current.id; els.confirmOpenPreviewBtn.dataset.previewId = openPreviewId || previewTargetId || ''; els.deletePreviewWrap.classList.toggle('hidden', !showPreview); if (showPreview && previewTargetId) { els.deletePreviewFrame.src = viewUrl(previewTargetId); recordPreviewUsage({ source: 'confirm-preview', pageId: previewTargetId }); } else { els.deletePreviewFrame.removeAttribute('src'); els.confirmOpenPreviewBtn.dataset.previewId = ''; } els.confirmModal.classList.remove('hidden'); return new Promise(resolve => { state.confirmResolver = resolve; }); }
 function closeConfirm(result) { els.confirmModal.classList.add('hidden'); els.deletePreviewFrame.removeAttribute('src'); els.confirmOpenPreviewBtn.dataset.previewId = ''; const resolver = state.confirmResolver; state.confirmResolver = null; if (resolver) resolver(!!result); }
-async function newPage() { const ok = await confirmAction({ title: t('createPageTitle'), message: t('createPageMessage'), okText: t('create') }); if (!ok) return; await flushDraftAutosaveNow(); state.current = { id: '', title: 'Untitled Page', description: '', html: '' }; if (typeof resetExternalSyncStateForCurrentPage === 'function') resetExternalSyncStateForCurrentPage(''); setCurrentBaseline(); renderCurrent(); markDirty(true); syncPreviewMode({ immediate: true }); if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState(); setStatus(t('pageCreated')); els.titleInput.focus(); els.titleInput.select(); }
-async function deleteCurrentPage() { if (!state.current.id) return; const ok = await confirmAction({ title: t('deleteTitle'), message: t('deleteMessage'), okText: t('deleteConfirm'), showPreview: false }); if (!ok) return; try { const oldId = state.current.id; await API.deletePage(oldId); if (localStorage.getItem(LS.lastPageId) === oldId) localStorage.removeItem(LS.lastPageId); await deletePageMeta(oldId); showBlankPage(); await loadSidebarPages({ force: true, reset: true }); setStatus(t('deleted')); log(t('deleted')); } catch (err) { alert(err.message || String(err)); log(err.message || String(err)); } }
-async function deletePageFromList(id, title) { if (!id || !state.isAdmin) return; const ok = await confirmAction({ title: t('deleteTitle'), message: `${t('deleteMessage')}\n\n${title || id}`, okText: t('deleteConfirm'), showPreview: true, previewId: id, openPreviewId: id }); if (!ok) return; try { await API.deletePage(id); if (localStorage.getItem(LS.lastPageId) === id) localStorage.removeItem(LS.lastPageId); await deletePageMeta(id); if (state.current.id === id) showBlankPage(); await loadSidebarPages({ force: true, reset: true }); if (!els.searchModal.classList.contains('hidden')) await loadSearchResults(); if (!els.welcomeSearchResults.classList.contains('hidden')) await loadWelcomeSearchResults(); setStatus(t('deleted')); log(`${t('deleted')}: ${title || id}`); } catch (err) { alert(err.message || String(err)); log(err.message || String(err)); } }
+async function newPage() { const ok = await confirmAction({ title: t('createPageTitle'), message: t('createPageMessage'), okText: t('create') }); if (!ok) return; await flushDraftAutosaveNow(); state.current = { id: '', title: 'Untitled Page', description: '', html: '' }; if (typeof resetExternalSyncStateForCurrentPage === 'function') resetExternalSyncStateForCurrentPage(''); setCurrentBaseline(); renderCurrent(); markDirty(true); syncPreviewMode({ immediate: true }); setStatus(t('pageCreated')); els.titleInput.focus(); els.titleInput.select(); }
+async function deleteCurrentPage() { if (!state.current.id) return; const ok = await confirmAction({ title: t('deleteTitle'), message: t('deleteMessage'), okText: t('deleteConfirm'), showPreview: false }); if (!ok) return; try { const oldId = state.current.id; await API.deletePage(oldId, { source: 'delete-current-page' }); if (localStorage.getItem(LS.lastPageId) === oldId) localStorage.removeItem(LS.lastPageId); delete state.sidebar.pageCache[oldId]; clearSearchCaches(); await deletePageMeta(oldId); showBlankPage(); refreshSidebarFromLocalCache({ reset: true }); setStatus(t('deleted')); log(t('deleted')); } catch (err) { alert(err.message || String(err)); log(err.message || String(err)); } }
+async function deletePageFromList(id, title) { if (!id || !state.isAdmin) return; const ok = await confirmAction({ title: t('deleteTitle'), message: `${t('deleteMessage')}\n\n${title || id}`, okText: t('deleteConfirm'), showPreview: true, previewId: id, openPreviewId: id }); if (!ok) return; try { await API.deletePage(id, { source: 'delete-page-list' }); if (localStorage.getItem(LS.lastPageId) === id) localStorage.removeItem(LS.lastPageId); delete state.sidebar.pageCache[id]; clearSearchCaches(); await deletePageMeta(id); if (state.current.id === id) showBlankPage(); refreshSidebarFromLocalCache({ reset: true }); if (!els.searchModal.classList.contains('hidden')) await loadSearchResults({ localOnly: true }); if (!els.welcomeSearchResults.classList.contains('hidden')) await loadWelcomeSearchResults({ localOnly: true }); setStatus(t('deleted')); log(`${t('deleted')}: ${title || id}`); } catch (err) { alert(err.message || String(err)); log(err.message || String(err)); } }
 async function savePage(action = 'save') {
   if (state.saving) return false;
   const beforeSavePageId = state.current.id || '';
@@ -3226,8 +3435,10 @@ async function savePage(action = 'save') {
   els.saveBtn.disabled = true;
   setStatus(t('saving'));
   try {
-    const saved = await API.savePage(state.current);
+    const saved = await API.savePage(state.current, { source: 'save-page' });
     state.current = { id: saved.id || saved.data?.id || state.current.id, title: saved.title || saved.data?.title || state.current.title, description: saved.description || saved.data?.description || state.current.description, html: saved.html || saved.data?.html || state.current.html };
+    cachePagesForSidebar([state.current]);
+    clearSearchCaches();
     localStorage.setItem(LS.lastPageId, state.current.id);
     const now = Date.now();
     await savePageMeta(state.current.id, { title: state.current.title, description: state.current.description, lastOpenedAt: now, lastSavedAt: now });
@@ -3241,9 +3452,8 @@ async function savePage(action = 'save') {
     if (typeof clearExternalSyncCandidateForCurrentPage === 'function') clearExternalSyncCandidateForCurrentPage({ clearDismissed: true, clearNotified: true });
     renderCurrent();
     syncCurrentSnapshotBaselineAndDirty({ alignBaseline: true });
-    if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
     syncPreviewMode({ immediate: true, forceRealReload: true });
-    if (state.sidebar.open) await loadSidebarPages({ force: true, reset: true });
+    refreshSidebarFromLocalCache({ reset: true });
     setStatus(t('saved'));
     log(`${t('saved')}: ${state.current.title || state.current.id}`);
     return true;
@@ -3269,10 +3479,10 @@ async function renamePage(pageId, nextTitle) {
     previousBaselineSnapshot = currentBaselineSnapshot();
     page = { id: pageId, title, description: previousBaselineSnapshot.description, html: previousBaselineSnapshot.html };
   } else {
-    page = await API.loadPage(pageId);
+    page = await API.loadPage(pageId, { source: 'rename-page' });
     page.title = title;
   }
-  const saved = await API.savePage(page);
+  const saved = await API.savePage(page, { source: 'rename-page' });
   const newTitle = saved.title || saved.data?.title || title;
   const desc = saved.description || saved.data?.description || page.description || '';
   const html = saved.html || saved.data?.html || page.html || '';
@@ -3287,26 +3497,28 @@ async function renamePage(pageId, nextTitle) {
   }
   await savePageMeta(pageId, { title: newTitle, description: desc });
   state.sidebar.pageCache[pageId] = { ...(state.sidebar.pageCache[pageId] || {}), id: pageId, title: newTitle, description: desc };
+  clearSearchCaches();
   renderSidebarProjects();
-  await loadSidebarPages({ force: true, reset: false });
-  if (!els.searchModal.classList.contains('hidden')) await loadSearchResults();
-  if (!els.welcomeSearchResults.classList.contains('hidden')) await loadWelcomeSearchResults();
+  refreshSidebarFromLocalCache();
+  if (!els.searchModal.classList.contains('hidden')) await loadSearchResults({ localOnly: true });
+  if (!els.welcomeSearchResults.classList.contains('hidden')) await loadWelcomeSearchResults({ localOnly: true });
   setStatus(t('pageRenamed'));
 }
 async function togglePinPage(pageId) {
   const meta = getMetaMap()[pageId] || { id: pageId };
   await savePageMeta(pageId, { pinnedAt: meta.pinnedAt ? 0 : Date.now() });
-  await loadSidebarPages({ force: true, reset: false });
+  refreshSidebarFromLocalCache();
   renderSidebarProjects();
   setStatus(meta.pinnedAt ? t('unpinned') : t('pinned'));
 }
 async function toggleArchivePage(pageId) {
   const meta = getMetaMap()[pageId] || { id: pageId };
   await savePageMeta(pageId, { archivedAt: meta.archivedAt ? 0 : Date.now() });
-  await loadSidebarPages({ force: true, reset: false });
+  clearSearchCaches();
+  refreshSidebarFromLocalCache();
   renderSidebarProjects();
-  if (!els.searchModal.classList.contains('hidden')) await loadSearchResults();
-  if (!els.welcomeSearchResults.classList.contains('hidden')) await loadWelcomeSearchResults();
+  if (!els.searchModal.classList.contains('hidden')) await loadSearchResults({ localOnly: true });
+  if (!els.welcomeSearchResults.classList.contains('hidden')) await loadWelcomeSearchResults({ localOnly: true });
   setStatus(meta.archivedAt ? t('unarchived') : t('archived'));
 }
 
@@ -3363,7 +3575,7 @@ async function addCurrentPageToProject(projectId) {
   await txPut('projectItems', item);
   rebuildProjectMaps();
   renderSidebarProjects();
-  await loadSidebarPages({ force: true, reset: false });
+  refreshSidebarFromLocalCache();
   setStatus(t('addedToProject'));
 }
 async function removePageFromProject(projectId, pageId) {
@@ -3372,7 +3584,7 @@ async function removePageFromProject(projectId, pageId) {
   await txDelete('projectItems', key);
   rebuildProjectMaps();
   renderSidebarProjects();
-  await loadSidebarPages({ force: true, reset: false });
+  refreshSidebarFromLocalCache();
   setStatus(t('removedFromProject'));
 }
 async function movePageToProject(pageId, projectId) {
@@ -3390,7 +3602,7 @@ async function movePageToProject(pageId, projectId) {
   await txPut('projectItems', item);
   rebuildProjectMaps();
   renderSidebarProjects();
-  await loadSidebarPages({ force: true, reset: false });
+  refreshSidebarFromLocalCache();
   setStatus(t('pageMovedToProject'));
 }
 async function renameProject(projectId, nextName) {
@@ -3414,7 +3626,7 @@ async function deleteProject(projectId, projectName) {
   for (const item of itemsToDelete) await txDelete('projectItems', item.key);
   rebuildProjectMaps();
   renderSidebarProjects();
-  await loadSidebarPages({ force: true, reset: false });
+  refreshSidebarFromLocalCache();
 }
 async function loadProjectsCache() {
   if (!state.db) return;
@@ -3494,30 +3706,102 @@ function savedLocalPages() {
     })
     .map(meta => ({ id: meta.id, title: meta.title || 'Untitled', description: meta.description || '', __localSaved: true }));
 }
+
+function knownLocalPages() {
+  const byId = {};
+  for (const page of Object.values(state.sidebar.pageCache || {})) {
+    if (page?.id) byId[page.id] = { id: page.id, title: page.title || 'Untitled', description: page.description || '', ...page };
+  }
+  for (const page of savedLocalPages()) {
+    if (page?.id) byId[page.id] = { ...(byId[page.id] || {}), ...page };
+  }
+  if (!state.blank && state.current.id) {
+    byId[state.current.id] = {
+      ...(byId[state.current.id] || {}),
+      id: state.current.id,
+      title: state.current.title || 'Untitled',
+      description: state.current.description || ''
+    };
+  }
+  return Object.values(byId)
+    .filter(page => page.id && !getMetaMap()[page.id]?.archivedAt)
+    .sort((a, b) => pageTime(b) - pageTime(a));
+}
+
+function sidebarPagesFromCache() {
+  const projectIds = projectPageIds();
+  return knownLocalPages().filter(page => page.id && !projectIds.has(page.id));
+}
+
+function cachePagesForSidebar(rows = []) {
+  for (const page of normalizePageRows(rows)) {
+    if (page?.id) state.sidebar.pageCache[page.id] = page;
+  }
+}
+
+function refreshSidebarFromLocalCache(options = {}) {
+  if (!state.sidebar.open) return;
+  if (options.reset) state.sidebar.visibleLimit = state.sidebar.limit;
+  if (options.append) state.sidebar.visibleLimit += state.sidebar.limit;
+
+  const previous = state.sidebar.pages || [];
+  const combinedAll = sidebarPagesFromCache();
+  const nextPages = combinedAll.slice(0, state.sidebar.visibleLimit);
+  state.sidebar.hasMore = combinedAll.length > state.sidebar.visibleLimit;
+  state.sidebar.pages = nextPages;
+
+  if (!nextPages.length) {
+    renderSidebarPages();
+    return;
+  }
+  if (pageListSignature(previous) !== pageListSignature(nextPages) || previous.length !== nextPages.length) {
+    renderSidebarPages();
+  } else {
+    updateSidebarActiveState();
+    updateSidebarLoadMore();
+  }
+}
+
+function shouldUseRecentSidebarRemoteLoad(options = {}) {
+  if (options.force) return false;
+  const lastRemoteLoadAt = Number(state.sidebar.lastRemoteLoadAt || 0);
+  const ttl = Math.max(60000, Number(state.sidebar.remoteCacheTtlMs || 300000));
+  return !!lastRemoteLoadAt && (Date.now() - lastRemoteLoadAt) < ttl;
+}
+
 async function loadSidebarPages(options = {}) {
   const opts = typeof options === 'boolean' ? { force: options, reset: true } : (options || {});
   const force = !!opts.force;
   const append = !!opts.append;
   const reset = !!opts.reset;
+  const automatic = !!opts.automatic;
+  const source = opts.source || (automatic ? 'sidebar-auto' : 'sidebar-manual');
   if (!state.sidebar.open && !force) return;
   if (state.sidebar.loading) return;
+
+  refreshSidebarFromLocalCache({ reset, append });
+  if (!force && !opts.remote) return;
+  if (shouldUseRecentSidebarRemoteLoad({ force })) return;
+  if (automatic && !canRunAutomaticFiberyCall('sidebar')) {
+    logAutomaticFiberySkip('sidebar');
+    return;
+  }
+
   state.sidebar.loading = true;
   const previous = state.sidebar.pages;
-  if (reset) state.sidebar.visibleLimit = state.sidebar.limit;
-  if (append) state.sidebar.visibleLimit += state.sidebar.limit;
   if (!previous.length && !append) {
     els.sidebarPagesList.innerHTML = `<div class="sidebar-label p-4 text-center text-sm text-gray-400">${escapeHtml(t('loading'))}</div>`;
     els.sidebarLoadMoreWrap.classList.add('hidden');
   }
   try {
     const apiLimit = state.sidebar.visibleLimit + 1;
-    const rows = await API.loadPages({ skip: 0, limit: apiLimit, search: '' });
-    const apiRows = normalizePageRows(rows);
-    for (const page of apiRows) if (page?.id) state.sidebar.pageCache[page.id] = page;
-    for (const page of savedLocalPages()) if (page?.id && !state.sidebar.pageCache[page.id]) state.sidebar.pageCache[page.id] = page;
+    const rows = await API.loadPages({ skip: 0, limit: apiLimit, search: '', source, automatic });
+    cachePagesForSidebar(rows);
+    state.sidebar.lastRemoteLoadAt = Date.now();
     const projectIds = projectPageIds();
     const saved = savedLocalPages().filter(p => !projectIds.has(p.id));
     const savedIds = new Set(saved.map(x => x.id));
+    const apiRows = normalizePageRows(rows);
     const combinedAll = saved.concat(apiRows.filter(p => p.id && !savedIds.has(p.id) && !projectIds.has(p.id) && !getMetaMap()[p.id]?.archivedAt));
     const nextPages = combinedAll.slice(0, state.sidebar.visibleLimit);
     state.sidebar.hasMore = combinedAll.length > state.sidebar.visibleLimit || rows.length > state.sidebar.visibleLimit;
@@ -3530,11 +3814,13 @@ async function loadSidebarPages(options = {}) {
       updateSidebarLoadMore();
     }
   } catch (err) {
-    els.sidebarPagesList.innerHTML = `<div class="sidebar-label p-4 text-center text-sm text-red-500">${escapeHtml(err.message || err)}</div>`;
-    els.sidebarLoadMoreWrap.classList.add('hidden');
+    if (!state.sidebar.pages.length) {
+      els.sidebarPagesList.innerHTML = `<div class="sidebar-label p-4 text-center text-sm text-red-500">${escapeHtml(err.message || err)}</div>`;
+      els.sidebarLoadMoreWrap.classList.add('hidden');
+    }
+    log(err.message || String(err));
   } finally {
     state.sidebar.loading = false;
-    if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
   }
 }
 
@@ -3590,8 +3876,19 @@ function updateSidebarLoadMore() {
 }
 
 
-function startSidebarAutoRefresh() { stopSidebarAutoRefresh(); if (!state.sidebar.open) return; state.sidebar.refreshTimer = window.setInterval(() => { if (state.sidebar.open && !document.hidden) loadSidebarPages({ force: true, reset: false }); }, 60000); }
-function stopSidebarAutoRefresh() { if (state.sidebar.refreshTimer) { window.clearInterval(state.sidebar.refreshTimer); state.sidebar.refreshTimer = null; } }
+function startSidebarAutoRefresh() {
+  stopSidebarAutoRefresh();
+  if (!state.sidebar.open || !state.sidebar.autoRefreshEnabled) return;
+  const intervalMs = Math.max(600000, Number(state.sidebar.autoRefreshIntervalMs || 600000));
+  state.sidebar.refreshTimer = window.setTimeout(async () => {
+    state.sidebar.refreshTimer = null;
+    if (state.sidebar.open && !document.hidden && !state.dirty && !hasRealUnsavedChangesForCurrentPage({ syncFromInputs: false })) {
+      await loadSidebarPages({ force: true, reset: false, automatic: true, source: 'sidebar-auto' });
+    }
+    startSidebarAutoRefresh();
+  }, intervalMs);
+}
+function stopSidebarAutoRefresh() { if (state.sidebar.refreshTimer) { window.clearTimeout(state.sidebar.refreshTimer); state.sidebar.refreshTimer = null; } }
 function setSidebarOpen(open, persist = true) {
   state.sidebar.open = !!open;
   if (els.sidebarScroll) els.sidebarScroll.classList.remove('hidden');
@@ -3601,13 +3898,89 @@ function setSidebarOpen(open, persist = true) {
   els.sidebarCloseIcon.classList.toggle('hidden', !state.sidebar.open);
   els.sidebarOpenIcon.classList.toggle('hidden', state.sidebar.open);
   if (persist) localStorage.setItem(LS.sidebarOpen, state.sidebar.open ? '1' : '0');
-  if (state.sidebar.open) { loadSidebarPages({ force: true, reset: !state.sidebar.pages.length }); startSidebarAutoRefresh(); } else { stopSidebarAutoRefresh(); }
+  if (state.sidebar.open) {
+    refreshSidebarFromLocalCache({ reset: !state.sidebar.pages.length });
+    startSidebarAutoRefresh();
+  } else {
+    stopSidebarAutoRefresh();
+  }
 }
 
 
-function openSearchModal() { els.searchModal.classList.remove('hidden'); els.globalSearchInput.value = ''; state.search.query = ''; setTimeout(() => els.globalSearchInput.focus(), 0); loadSearchResults(); }
+function searchCacheEntry(searchState, query) {
+  const key = String(query || '').toLowerCase();
+  const cached = searchState.cache?.[key];
+  if (!cached) return null;
+  if (Date.now() - Number(cached.at || 0) > 120000) return null;
+  return cached;
+}
+
+function setSearchCacheEntry(searchState, query, pages) {
+  const key = String(query || '').toLowerCase();
+  searchState.cache[key] = { at: Date.now(), pages: normalizePageRows(pages) };
+}
+
+function clearSearchCaches() {
+  state.search.cache = {};
+  state.welcomeSearch.cache = {};
+}
+
+function localSearchRows(query = '', limit = 20) {
+  const normalizedQuery = String(query || '').trim().toLowerCase();
+  const rows = knownLocalPages();
+  if (!normalizedQuery) return rows.slice(0, limit);
+  return rows
+    .filter(page => `${page.title || ''}\n${page.description || ''}`.toLowerCase().includes(normalizedQuery))
+    .slice(0, limit);
+}
+
+function openSearchModal() {
+  els.searchModal.classList.remove('hidden');
+  els.globalSearchInput.value = '';
+  state.search.query = '';
+  setTimeout(() => els.globalSearchInput.focus(), 0);
+  loadSearchResults({ localOnly: true });
+}
 function closeSearchModal() { els.searchModal.classList.add('hidden'); }
-async function loadSearchResults() { els.globalSearchResults.innerHTML = `<div class="p-8 text-center text-sm text-gray-400">${escapeHtml(t('loading'))}</div>`; try { const rows = normalizePageRows(await API.loadPages({ skip: 0, limit: state.search.query ? 20 : 8, search: state.search.query })); state.search.pages = rows; renderSearchResults(rows); } catch (err) { els.globalSearchResults.innerHTML = `<div class="p-8 text-center text-sm text-red-500">${escapeHtml(err.message || err)}</div>`; } }
+
+async function loadSearchResults(options = {}) {
+  const query = String(state.search.query || '').trim();
+  const limit = query ? 20 : 8;
+  const localRows = localSearchRows(query, limit);
+  state.search.pages = localRows;
+  renderSearchResults(localRows);
+  if (!query || options.localOnly) return;
+
+  const cached = searchCacheEntry(state.search, query);
+  if (cached) {
+    state.search.pages = cached.pages;
+    renderSearchResults(cached.pages);
+    return;
+  }
+  if (state.search.loading && state.search.remoteQuery === query) return;
+
+  state.search.loading = true;
+  state.search.remoteQuery = query;
+  if (!localRows.length) els.globalSearchResults.innerHTML = `<div class="p-8 text-center text-sm text-gray-400">${escapeHtml(t('loading'))}</div>`;
+  try {
+    const rows = normalizePageRows(await API.loadPages({ skip: 0, limit, search: query, source: 'search-global' }));
+    cachePagesForSidebar(rows);
+    setSearchCacheEntry(state.search, query, rows);
+    if (state.search.query === query) {
+      state.search.pages = rows;
+      renderSearchResults(rows);
+    }
+  } catch (err) {
+    if (!localRows.length) els.globalSearchResults.innerHTML = `<div class="p-8 text-center text-sm text-red-500">${escapeHtml(err.message || err)}</div>`;
+    log(err.message || String(err));
+  } finally {
+    if (state.search.remoteQuery === query) {
+      state.search.loading = false;
+      state.search.remoteQuery = '';
+    }
+  }
+}
+
 function searchRowHtml(page, compact = false) {
   const projectId = state.projects.pageToProject[page.id] || '';
   const active = page.id === state.current.id && !state.blank;
@@ -3619,9 +3992,50 @@ function searchRowHtml(page, compact = false) {
 function renderSearchResults(rows) { if (!rows.length) { els.globalSearchResults.innerHTML = `<div class="p-8 text-center text-sm text-gray-400">${escapeHtml(t('noPages'))}</div>`; return; } let html = ''; if (!state.search.query) html += `<div class="px-4 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500">${escapeHtml(t('recentPages'))}</div>`; for (const [label, pages] of groupedPages(rows)) { if (state.search.query) html += `<div class="px-4 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">${escapeHtml(label)}</div>`; for (const page of pages) html += searchRowHtml(page); } els.globalSearchResults.innerHTML = html; }
 
 
-function openWelcomeSearch() { els.welcomeSearchResults.classList.remove('hidden'); if (!els.welcomeSearchResults.innerHTML.trim()) loadWelcomeSearchResults(); }
+function openWelcomeSearch() {
+  els.welcomeSearchResults.classList.remove('hidden');
+  if (!els.welcomeSearchResults.innerHTML.trim()) loadWelcomeSearchResults({ localOnly: true });
+}
 function closeWelcomeSearch() { els.welcomeSearchResults.classList.add('hidden'); }
-async function loadWelcomeSearchResults() { els.welcomeSearchResults.innerHTML = `<div class="p-4 text-center text-sm text-gray-400">${escapeHtml(t('loading'))}</div>`; try { const rows = normalizePageRows(await API.loadPages({ skip: 0, limit: state.welcomeSearch.query ? 20 : 8, search: state.welcomeSearch.query })); state.welcomeSearch.pages = rows; renderWelcomeSearchResults(rows); } catch (err) { els.welcomeSearchResults.innerHTML = `<div class="p-4 text-center text-sm text-red-500">${escapeHtml(err.message || err)}</div>`; } }
+
+async function loadWelcomeSearchResults(options = {}) {
+  const query = String(state.welcomeSearch.query || '').trim();
+  const limit = query ? 20 : 8;
+  const localRows = localSearchRows(query, limit);
+  state.welcomeSearch.pages = localRows;
+  renderWelcomeSearchResults(localRows);
+  if (!query || options.localOnly) return;
+
+  const cached = searchCacheEntry(state.welcomeSearch, query);
+  if (cached) {
+    state.welcomeSearch.pages = cached.pages;
+    renderWelcomeSearchResults(cached.pages);
+    return;
+  }
+  if (state.welcomeSearch.loading && state.welcomeSearch.remoteQuery === query) return;
+
+  state.welcomeSearch.loading = true;
+  state.welcomeSearch.remoteQuery = query;
+  if (!localRows.length) els.welcomeSearchResults.innerHTML = `<div class="p-4 text-center text-sm text-gray-400">${escapeHtml(t('loading'))}</div>`;
+  try {
+    const rows = normalizePageRows(await API.loadPages({ skip: 0, limit, search: query, source: 'welcome-search' }));
+    cachePagesForSidebar(rows);
+    setSearchCacheEntry(state.welcomeSearch, query, rows);
+    if (state.welcomeSearch.query === query) {
+      state.welcomeSearch.pages = rows;
+      renderWelcomeSearchResults(rows);
+    }
+  } catch (err) {
+    if (!localRows.length) els.welcomeSearchResults.innerHTML = `<div class="p-4 text-center text-sm text-red-500">${escapeHtml(err.message || err)}</div>`;
+    log(err.message || String(err));
+  } finally {
+    if (state.welcomeSearch.remoteQuery === query) {
+      state.welcomeSearch.loading = false;
+      state.welcomeSearch.remoteQuery = '';
+    }
+  }
+}
+
 function renderWelcomeSearchResults(rows) { if (!rows.length) { els.welcomeSearchResults.innerHTML = `<div class="p-4 text-center text-sm text-gray-400">${escapeHtml(t('noPages'))}</div>`; return; } let html = ''; if (!state.welcomeSearch.query) html += `<div class="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500">${escapeHtml(t('recentPages'))}</div>`; for (const [label, pages] of groupedPages(rows)) { if (state.welcomeSearch.query) html += `<div class="px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">${escapeHtml(label)}</div>`; for (const page of pages) html += searchRowHtml(page, true); } els.welcomeSearchResults.innerHTML = html; }
 
 
@@ -3811,6 +4225,7 @@ function closeSettings() { els.settingsModal.classList.add('hidden'); }
 function toggleLog() {
   els.logPanel.classList.toggle('hidden');
   if (els.logMenuText) els.logMenuText.textContent = els.logPanel.classList.contains('hidden') ? t('showLog') : t('hideLog');
+  renderApiUsageSummary();
 }
 function setAdminMode(isAdmin) { state.isAdmin = isAdmin; els.saveBtn.disabled = !isAdmin; els.newPageBtn.disabled = !isAdmin; if (els.welcomeNewPageBtn) els.welcomeNewPageBtn.disabled = !isAdmin; els.deleteBtn.disabled = !isAdmin || !state.current.id; if (!isAdmin) { setCodeReadOnly(true); els.titleInput.readOnly = true; els.descriptionInput.readOnly = true; setStatus(t('readOnly')); } renderUpdateAppPanel(); }
 function applyI18n() {
@@ -3830,6 +4245,7 @@ function applyI18n() {
   renderSidebarPages();
   updateRecoveryReopenButton();
   if (typeof renderExternalSyncNotice === 'function') renderExternalSyncNotice();
+  renderApiUsageSummary();
   renderUpdateAppPanel();
 }
 
@@ -3845,7 +4261,7 @@ function bindEvents() {
   els.searchPagesBtn.addEventListener('click', openSearchModal);
   els.historyBtn.addEventListener('click', () => { els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); openHistoryModal(); });
   els.deleteBtn.addEventListener('click', () => { els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); deleteCurrentPage(); });
-  els.openViewMenuBtn.addEventListener('click', () => { els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); if (state.current.id) window.open(viewUrl(state.current.id), '_blank'); });
+  els.openViewMenuBtn.addEventListener('click', () => { els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); if (state.current.id) { recordPreviewUsage({ source: 'open-view-menu', pageId: state.current.id }); window.open(viewUrl(state.current.id), '_blank'); } });
   els.moreBtn.addEventListener('click', (e) => { e.stopPropagation(); closeContextMenus(); const opening = els.moreMenu.classList.contains('hidden'); els.moreMenu.classList.toggle('hidden', !opening); els.moreBtn.classList.toggle('menu-open', opening); });
   els.sidebarSettingsBtn.addEventListener('click', openSettings);
   els.quickBothBtn.addEventListener('click', () => setPanelMode('both'));
@@ -3857,7 +4273,7 @@ function bindEvents() {
   els.previewPanelMenuBtn.addEventListener('click', openPreviewPanelMenu);
   els.previewFocusBtn.addEventListener('click', enterPreviewFocus);
   els.previewFocusExitBtn.addEventListener('click', exitPreviewFocus);
-  els.clearLogBtn.addEventListener('click', () => { els.logBox.innerHTML = ''; });
+  els.clearLogBtn.addEventListener('click', () => { els.logBox.innerHTML = ''; clearApiUsageStats(); });
   els.toggleSidebarBtn.addEventListener('click', () => setSidebarOpen(!state.sidebar.open));
   els.brandBtn.addEventListener('click', async () => {
     if (!state.sidebar.open) {
@@ -3868,8 +4284,8 @@ function bindEvents() {
       showBlankPage();
     });
   });
-  els.refreshSidebarBtn.addEventListener('click', () => loadSidebarPages({ force: true, reset: false }));
-  els.sidebarLoadMoreBtn.addEventListener('click', () => loadSidebarPages({ force: true, append: true }));
+  els.refreshSidebarBtn.addEventListener('click', () => loadSidebarPages({ force: true, reset: false, source: 'sidebar-manual' }));
+  els.sidebarLoadMoreBtn.addEventListener('click', () => loadSidebarPages({ force: true, append: true, source: 'sidebar-load-more' }));
   els.newProjectBtn.addEventListener('click', () => openCreateProjectModal(''));
   els.sidebarProjectsList.addEventListener('click', async (e) => {
     const pageMenu = e.target.closest('.page-menu');
@@ -3886,14 +4302,14 @@ function bindEvents() {
     });
   });
   els.sidebarPagesList.addEventListener('click', async (e) => { const menu = e.target.closest('.page-menu'); if (menu) { openPageContextMenu(e, menu.dataset.pageId, menu.dataset.pageTitle || '', menu.dataset.projectId || ''); return; } const btn = e.target.closest('.page-open'); if (!btn) return; if (!state.blank && btn.dataset.id === state.current.id) return; await runWithUnsavedPageTransitionGuard(async () => { await loadPage(btn.dataset.id); }); });
-  els.globalSearchInput.addEventListener('input', () => { clearTimeout(state.search.debounce); state.search.query = els.globalSearchInput.value.trim(); state.search.debounce = setTimeout(loadSearchResults, 280); });
-  els.globalSearchResults.addEventListener('click', async (e) => { const menu = e.target.closest('.page-menu'); if (menu) { openPageContextMenu(e, menu.dataset.pageId, menu.dataset.pageTitle || '', menu.dataset.projectId || ''); return; } const btn = e.target.closest('.page-open'); if (!btn) return; if (!state.blank && btn.dataset.id === state.current.id) { closeSearchModal(); return; } await runWithUnsavedPageTransitionGuard(async () => { await loadPage(btn.dataset.id); closeSearchModal(); }); });
+  els.globalSearchInput.addEventListener('input', () => { clearTimeout(state.search.debounce); state.search.query = els.globalSearchInput.value.trim(); state.search.debounce = setTimeout(loadSearchResults, 480); });
+  els.globalSearchResults.addEventListener('click', async (e) => { const previewLink = e.target.closest('a[href*="/view"]'); if (previewLink) { const row = e.target.closest('[data-page-row-id]'); recordPreviewUsage({ source: 'search-global-link', pageId: row?.dataset.pageRowId || '' }); return; } const menu = e.target.closest('.page-menu'); if (menu) { openPageContextMenu(e, menu.dataset.pageId, menu.dataset.pageTitle || '', menu.dataset.projectId || ''); return; } const btn = e.target.closest('.page-open'); if (!btn) return; if (!state.blank && btn.dataset.id === state.current.id) { closeSearchModal(); return; } await runWithUnsavedPageTransitionGuard(async () => { await loadPage(btn.dataset.id); closeSearchModal(); }); });
   els.closeSearchBtn.addEventListener('click', closeSearchModal);
   els.searchModal.addEventListener('click', (e) => { if (e.target === els.searchModal) closeSearchModal(); });
   els.welcomeSearchInput.addEventListener('focus', openWelcomeSearch);
-  els.welcomeSearchInput.addEventListener('input', () => { clearTimeout(state.welcomeSearch.debounce); state.welcomeSearch.query = els.welcomeSearchInput.value.trim(); state.welcomeSearch.debounce = setTimeout(loadWelcomeSearchResults, 260); openWelcomeSearch(); });
-  els.welcomeSearchResults.addEventListener('click', async (e) => { const menu = e.target.closest('.page-menu'); if (menu) { openPageContextMenu(e, menu.dataset.pageId, menu.dataset.pageTitle || '', menu.dataset.projectId || ''); return; } const btn = e.target.closest('.page-open'); if (!btn) return; if (!state.blank && btn.dataset.id === state.current.id) { closeWelcomeSearch(); return; } await runWithUnsavedPageTransitionGuard(async () => { await loadPage(btn.dataset.id); closeWelcomeSearch(); }); });
-  els.confirmOpenPreviewBtn.addEventListener('click', () => { const id = els.confirmOpenPreviewBtn.dataset.previewId || state.current.id; if (id) window.open(viewUrl(id), '_blank'); });
+  els.welcomeSearchInput.addEventListener('input', () => { clearTimeout(state.welcomeSearch.debounce); state.welcomeSearch.query = els.welcomeSearchInput.value.trim(); state.welcomeSearch.debounce = setTimeout(loadWelcomeSearchResults, 480); openWelcomeSearch(); });
+  els.welcomeSearchResults.addEventListener('click', async (e) => { const previewLink = e.target.closest('a[href*="/view"]'); if (previewLink) { const row = e.target.closest('[data-page-row-id]'); recordPreviewUsage({ source: 'welcome-search-link', pageId: row?.dataset.pageRowId || '' }); return; } const menu = e.target.closest('.page-menu'); if (menu) { openPageContextMenu(e, menu.dataset.pageId, menu.dataset.pageTitle || '', menu.dataset.projectId || ''); return; } const btn = e.target.closest('.page-open'); if (!btn) return; if (!state.blank && btn.dataset.id === state.current.id) { closeWelcomeSearch(); return; } await runWithUnsavedPageTransitionGuard(async () => { await loadPage(btn.dataset.id); closeWelcomeSearch(); }); });
+  els.confirmOpenPreviewBtn.addEventListener('click', () => { const id = els.confirmOpenPreviewBtn.dataset.previewId || state.current.id; if (id) { recordPreviewUsage({ source: 'confirm-open-preview', pageId: id }); window.open(viewUrl(id), '_blank'); } });
   els.closeSettingsBtn.addEventListener('click', closeSettings);
   els.settingsModal.addEventListener('click', (e) => { if (e.target === els.settingsModal) closeSettings(); });
   els.closeUpdateAppBtn.addEventListener('click', closeUpdateAppModal);
@@ -3919,7 +4335,7 @@ function bindEvents() {
     if (action === 'move-to-project') { openMoveProjectMenu(actionBtn); return; }
     closeContextMenus();
     if (action === 'rename-page') startInlineRenameTitle(pageId);
-    if (action === 'open-preview' && pageId) window.open(viewUrl(pageId), '_blank');
+    if (action === 'open-preview' && pageId) { recordPreviewUsage({ source: 'page-context-open-preview', pageId }); window.open(viewUrl(pageId), '_blank'); }
     if (action === 'copy-page-link' && pageId) copyText(viewUrl(pageId), actionBtn, t('copiedPageLink'));
     if (action === 'pin-page') await togglePinPage(pageId);
     if (action === 'archive-page') await toggleArchivePage(pageId);
@@ -3964,7 +4380,7 @@ function bindEvents() {
     const action = btn.dataset.panelAction;
     closeContextMenus();
     if (action === 'copy-preview-link') copyText(state.current.id ? viewUrl(state.current.id) : '', btn, t('copiedPreviewLink'));
-    if (action === 'open-preview' && state.current.id) window.open(viewUrl(state.current.id), '_blank');
+    if (action === 'open-preview' && state.current.id) { recordPreviewUsage({ source: 'preview-panel-open-preview', pageId: state.current.id }); window.open(viewUrl(state.current.id), '_blank'); }
     if (action === 'refresh-preview') refreshPreview();
   });
   window.addEventListener('message', handleLocalPreviewMessage);
@@ -4001,7 +4417,7 @@ function bindEvents() {
       if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
       return;
     }
-    if (state.sidebar.open) loadSidebarPages({ force: true, reset: false });
+    if (state.sidebar.open) refreshSidebarFromLocalCache();
     if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
   });
   window.addEventListener('pagehide', () => {
@@ -4011,6 +4427,7 @@ function bindEvents() {
     if (typeof stopExternalSyncPolling === 'function') stopExternalSyncPolling();
   });
   syncBeforeUnloadWarningState();
+  renderApiUsageSummary();
   if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
 }
 
@@ -4030,7 +4447,7 @@ async function init() {
   await loadPageMetaCache();
   await loadProjectsCache();
   await loadDraftsCache();
-  try { setAdminMode(await API.checkIsAdmin()); } catch (_) { setAdminMode(false); }
+  try { setAdminMode(await API.checkIsAdmin({ source: 'init' })); } catch (_) { setAdminMode(false); }
   setSidebarOpen((localStorage.getItem(LS.sidebarOpen) ?? '1') === '1', false);
   const lastId = localStorage.getItem(LS.lastPageId);
   if (els.openLastToggle.checked && lastId) {

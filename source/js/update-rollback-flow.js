@@ -132,7 +132,7 @@ async function restoreUpdateBackupByKey(key = '') {
       title: state.current.title,
       description: state.current.description,
       html: validation.backupHtml
-    });
+    }, { source: 'update-rollback' });
 
     state.current = {
       id: saved.id || saved.data?.id || state.current.id,
@@ -140,6 +140,8 @@ async function restoreUpdateBackupByKey(key = '') {
       description: saved.description || saved.data?.description || state.current.description,
       html: saved.html || saved.data?.html || validation.backupHtml
     };
+    cachePagesForSidebar([state.current]);
+    clearSearchCaches();
 
     localStorage.setItem(LS.lastPageId, state.current.id);
     const now = Date.now();
@@ -154,7 +156,7 @@ async function restoreUpdateBackupByKey(key = '') {
     setCurrentBaseline();
     renderCurrent();
     syncPreviewMode({ immediate: true, forceRealReload: true });
-    if (state.sidebar.open) await loadSidebarPages({ force: true, reset: true });
+    refreshSidebarFromLocalCache({ reset: true });
 
     await loadUpdateBackupList();
     setStatus(`${t('updateRollbackRestored')} ${t('updateRollbackReloadHint')}`);

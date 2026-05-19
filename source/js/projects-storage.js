@@ -50,7 +50,7 @@ async function addCurrentPageToProject(projectId) {
   await txPut('projectItems', item);
   rebuildProjectMaps();
   renderSidebarProjects();
-  await loadSidebarPages({ force: true, reset: false });
+  refreshSidebarFromLocalCache();
   setStatus(t('addedToProject'));
 }
 async function removePageFromProject(projectId, pageId) {
@@ -59,7 +59,7 @@ async function removePageFromProject(projectId, pageId) {
   await txDelete('projectItems', key);
   rebuildProjectMaps();
   renderSidebarProjects();
-  await loadSidebarPages({ force: true, reset: false });
+  refreshSidebarFromLocalCache();
   setStatus(t('removedFromProject'));
 }
 async function movePageToProject(pageId, projectId) {
@@ -77,7 +77,7 @@ async function movePageToProject(pageId, projectId) {
   await txPut('projectItems', item);
   rebuildProjectMaps();
   renderSidebarProjects();
-  await loadSidebarPages({ force: true, reset: false });
+  refreshSidebarFromLocalCache();
   setStatus(t('pageMovedToProject'));
 }
 async function renameProject(projectId, nextName) {
@@ -101,7 +101,7 @@ async function deleteProject(projectId, projectName) {
   for (const item of itemsToDelete) await txDelete('projectItems', item.key);
   rebuildProjectMaps();
   renderSidebarProjects();
-  await loadSidebarPages({ force: true, reset: false });
+  refreshSidebarFromLocalCache();
 }
 async function loadProjectsCache() {
   if (!state.db) return;

@@ -24,7 +24,7 @@ async function applyRemoteUpdate() {
 
   try {
     setStatus(t('updateDownloading'));
-    const remoteHtml = await fetchRemoteText(UPDATE_REMOTE.indexHtmlUrl);
+    const remoteHtml = await fetchRemoteText(UPDATE_REMOTE.indexHtmlUrl, { operation: 'updateDownload', source: 'update-apply' });
     setStatus(t('updateValidating'));
     const validation = validateRemoteUpdateHtml(remoteHtml);
     if (!validation.ok) {
@@ -69,7 +69,7 @@ async function applyRemoteUpdate() {
       title: state.current.title,
       description: state.current.description,
       html: remoteHtml
-    });
+    }, { source: 'update-apply' });
 
     state.current = {
       id: saved.id || saved.data?.id || state.current.id,
@@ -77,6 +77,8 @@ async function applyRemoteUpdate() {
       description: saved.description || saved.data?.description || state.current.description,
       html: saved.html || saved.data?.html || remoteHtml
     };
+    cachePagesForSidebar([state.current]);
+    clearSearchCaches();
     localStorage.setItem(LS.lastPageId, state.current.id);
     const now = Date.now();
     await savePageMeta(state.current.id, { title: state.current.title, description: state.current.description, lastOpenedAt: now, lastSavedAt: now });
@@ -85,7 +87,7 @@ async function applyRemoteUpdate() {
     setCurrentBaseline();
     renderCurrent();
     syncPreviewMode({ immediate: true, forceRealReload: true });
-    if (state.sidebar.open) await loadSidebarPages({ force: true, reset: true });
+    refreshSidebarFromLocalCache({ reset: true });
 
     state.update.remoteVersion = validation.remoteVersion;
     state.update.status = 'latest';

@@ -1,6 +1,77 @@
-function openSearchModal() { els.searchModal.classList.remove('hidden'); els.globalSearchInput.value = ''; state.search.query = ''; setTimeout(() => els.globalSearchInput.focus(), 0); loadSearchResults(); }
+function searchCacheEntry(searchState, query) {
+  const key = String(query || '').toLowerCase();
+  const cached = searchState.cache?.[key];
+  if (!cached) return null;
+  if (Date.now() - Number(cached.at || 0) > 120000) return null;
+  return cached;
+}
+
+function setSearchCacheEntry(searchState, query, pages) {
+  const key = String(query || '').toLowerCase();
+  searchState.cache[key] = { at: Date.now(), pages: normalizePageRows(pages) };
+}
+
+function clearSearchCaches() {
+  state.search.cache = {};
+  state.welcomeSearch.cache = {};
+}
+
+function localSearchRows(query = '', limit = 20) {
+  const normalizedQuery = String(query || '').trim().toLowerCase();
+  const rows = knownLocalPages();
+  if (!normalizedQuery) return rows.slice(0, limit);
+  return rows
+    .filter(page => `${page.title || ''}\n${page.description || ''}`.toLowerCase().includes(normalizedQuery))
+    .slice(0, limit);
+}
+
+function openSearchModal() {
+  els.searchModal.classList.remove('hidden');
+  els.globalSearchInput.value = '';
+  state.search.query = '';
+  setTimeout(() => els.globalSearchInput.focus(), 0);
+  loadSearchResults({ localOnly: true });
+}
 function closeSearchModal() { els.searchModal.classList.add('hidden'); }
-async function loadSearchResults() { els.globalSearchResults.innerHTML = `<div class="p-8 text-center text-sm text-gray-400">${escapeHtml(t('loading'))}</div>`; try { const rows = normalizePageRows(await API.loadPages({ skip: 0, limit: state.search.query ? 20 : 8, search: state.search.query })); state.search.pages = rows; renderSearchResults(rows); } catch (err) { els.globalSearchResults.innerHTML = `<div class="p-8 text-center text-sm text-red-500">${escapeHtml(err.message || err)}</div>`; } }
+
+async function loadSearchResults(options = {}) {
+  const query = String(state.search.query || '').trim();
+  const limit = query ? 20 : 8;
+  const localRows = localSearchRows(query, limit);
+  state.search.pages = localRows;
+  renderSearchResults(localRows);
+  if (!query || options.localOnly) return;
+
+  const cached = searchCacheEntry(state.search, query);
+  if (cached) {
+    state.search.pages = cached.pages;
+    renderSearchResults(cached.pages);
+    return;
+  }
+  if (state.search.loading && state.search.remoteQuery === query) return;
+
+  state.search.loading = true;
+  state.search.remoteQuery = query;
+  if (!localRows.length) els.globalSearchResults.innerHTML = `<div class="p-8 text-center text-sm text-gray-400">${escapeHtml(t('loading'))}</div>`;
+  try {
+    const rows = normalizePageRows(await API.loadPages({ skip: 0, limit, search: query, source: 'search-global' }));
+    cachePagesForSidebar(rows);
+    setSearchCacheEntry(state.search, query, rows);
+    if (state.search.query === query) {
+      state.search.pages = rows;
+      renderSearchResults(rows);
+    }
+  } catch (err) {
+    if (!localRows.length) els.globalSearchResults.innerHTML = `<div class="p-8 text-center text-sm text-red-500">${escapeHtml(err.message || err)}</div>`;
+    log(err.message || String(err));
+  } finally {
+    if (state.search.remoteQuery === query) {
+      state.search.loading = false;
+      state.search.remoteQuery = '';
+    }
+  }
+}
+
 function searchRowHtml(page, compact = false) {
   const projectId = state.projects.pageToProject[page.id] || '';
   const active = page.id === state.current.id && !state.blank;

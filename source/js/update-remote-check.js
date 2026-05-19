@@ -4,10 +4,12 @@ function extractRemoteVersionFromHtml(html = '') {
     || source.match(/<meta\b[^>]*content=["']([^"']+)["'][^>]*name=["']fibery-html-editor-version["'][^>]*>/i);
   return String(match?.[1] || '').trim();
 }
-async function fetchRemoteText(url) {
-  const response = await fetch(url, { cache: 'no-store' });
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  return response.text();
+async function fetchRemoteText(url, options = {}) {
+  return withApiUsage({ kind: 'github-remote', operation: options.operation || 'fetchRemoteText', source: options.source || 'update-app', automatic: !!options.automatic }, async () => {
+    const response = await fetch(url, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.text();
+  });
 }
 function updateStatusMessage() {
   if (state.update.rollbacking) return t('updateRollbackRestoring');
@@ -28,8 +30,8 @@ async function checkRemoteUpdateInfo() {
   state.update.changelogLoading = true;
   renderUpdateAppPanel();
   const [indexResult, changelogResult] = await Promise.allSettled([
-    fetchRemoteText(UPDATE_REMOTE.indexHtmlUrl),
-    fetchRemoteText(UPDATE_REMOTE.changelogUrl)
+    fetchRemoteText(UPDATE_REMOTE.indexHtmlUrl, { operation: 'updateIndex', source: 'update-app' }),
+    fetchRemoteText(UPDATE_REMOTE.changelogUrl, { operation: 'updateChangelog', source: 'update-app' })
   ]);
   if (indexResult.status === 'fulfilled') {
     const remoteVersionRaw = extractRemoteVersionFromHtml(indexResult.value);

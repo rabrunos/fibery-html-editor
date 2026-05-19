@@ -18,9 +18,12 @@ function renderRealPreview({ forceReload = false } = {}) {
   els.previewStatus.textContent = state.current.title || state.current.id;
   els.previewFrame.removeAttribute('srcdoc');
   if (forceReload && els.previewFrame.src === url) {
-    try { els.previewFrame.contentWindow.location.reload(); return; } catch (_) {}
+    try { recordPreviewUsage({ source: 'preview-real-reload', pageId: state.current.id }); els.previewFrame.contentWindow.location.reload(); return; } catch (_) {}
   }
-  if (els.previewFrame.src !== url || forceReload) els.previewFrame.src = url;
+  if (els.previewFrame.src !== url || forceReload) {
+    els.previewFrame.src = url;
+    recordPreviewUsage({ source: forceReload ? 'preview-real-force' : 'preview-real', pageId: state.current.id });
+  }
   state.preview.lastRealUrl = url;
 }
 function refreshPreview() { renderRealPreview({ forceReload: true }); }

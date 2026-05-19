@@ -1,3 +1,24 @@
+## [8.10.2] - 2026-05-19
+
+### Fixed
+
+* Reduced automatic Fibery API pressure across sidebar, search, external sync, and post-save flows.
+* Disabled automatic external-sync polling by default for this hotfix while keeping the manual "Check now" action available.
+* Stopped sidebar remote auto-refresh from running every 60 seconds; sidebar now renders from local cache unless the user manually refreshes.
+* Avoided remote sidebar refresh cascades after save, rename, pin, archive, project moves, update apply, and rollback when local cache can be updated directly.
+* Prevented duplicate page loads when the same page is already open or an identical load is already in flight.
+
+### Technical adjustments
+
+* Added lightweight in-memory API usage diagnostics for Fibery API calls, Fibery preview loads, and GitHub update fetches.
+* Added a simple global cooldown/slow-mode budget for automatic Fibery calls.
+* Search modals now render empty queries from local cache and cache non-empty remote query results briefly.
+* Preview real iframe loads are recorded and continue to avoid reloading when the URL is unchanged.
+
+### Validation
+
+* Local build and validation pass for temporary and final generated artifacts.
+
 ## [8.10.1] - 2026-05-19
 
 ### Fixed

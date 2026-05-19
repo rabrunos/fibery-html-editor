@@ -1,5 +1,5 @@
 {
-  "version": "8.10.1",
+  "version": "8.10.2",
   "bodyOpenTag": "<body class=\"h-screen overflow-hidden bg-gray-50 text-gray-900 antialiased\">",
   "template": "source/template/index.template.html",
   "html": [
@@ -31,6 +31,7 @@
     "source/js/storage-keys.js",
     "source/js/dom-refs.js",
     "source/js/app-state.js",
+    "source/js/api-usage-monitor.js",
     "source/js/utils-core.js",
     "source/js/semver-utils.js",
     "source/js/snapshot-utils.js",

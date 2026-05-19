@@ -17,7 +17,7 @@ function logExternalSyncDebug(message, options = {}) {
 }
 
 function externalSyncRemainingCooldownMs(now = Date.now()) {
-  const minCooldownMs = Math.max(120000, Number(state.externalSync.minCooldownMs || 180000));
+  const minCooldownMs = Math.max(300000, Number(state.externalSync.minCooldownMs || 600000));
   const lastCheckedAt = Number(state.externalSync.lastCheckedAt || 0);
   if (!lastCheckedAt) return 0;
   return Math.max(0, minCooldownMs - (now - lastCheckedAt));
@@ -26,11 +26,15 @@ function externalSyncRemainingCooldownMs(now = Date.now()) {
 function externalSyncSkipReason(options = {}) {
   const manual = !!options.manual;
   if (!state.externalSync.enabled) return 'disabled';
+  if (!manual && !state.externalSync.automaticEnabled) return 'automatic-disabled';
   if (state.blank || !state.current.id) return 'no-current-page';
   if (document.hidden) return 'document-hidden';
   if (state.saving) return 'saving';
   if (state.loadingPage) return 'loading-page';
   if (state.sidebar.loading) return 'sidebar-loading';
+  if (state.search.loading || state.welcomeSearch.loading) return 'search-loading';
+  if (!manual && hasRealUnsavedChangesForCurrentPage({ syncFromInputs: false })) return 'local-edits';
+  if (!manual && !canRunAutomaticFiberyCall('external-sync')) return automaticFiberySkipReason('external-sync') || 'api-budget';
   if (state.externalSync.checking) return 'already-checking';
   if (state.unsavedTransitionBusy || !!state.unsavedTransitionResolver) return 'unsaved-transition';
   if (state.update.checking || state.update.applying || state.update.rollbacking) return 'update-flow';
@@ -51,7 +55,7 @@ function logExternalSyncSkip(reason) {
 }
 
 function externalSyncNextDelayMs() {
-  const intervalMs = Math.max(120000, Number(state.externalSync.intervalMs || 300000));
+  const intervalMs = Math.max(600000, Number(state.externalSync.intervalMs || 600000));
   const cooldownMs = externalSyncRemainingCooldownMs();
   if (!cooldownMs) return intervalMs;
   return Math.max(intervalMs, cooldownMs);
@@ -65,8 +69,8 @@ function stopExternalSyncPolling() {
 
 function scheduleExternalSyncPolling(delayMs = externalSyncNextDelayMs()) {
   stopExternalSyncPolling();
-  if (!state.externalSync.enabled) return;
-  const safeDelay = Math.max(120000, Number(delayMs || externalSyncNextDelayMs()));
+  if (!state.externalSync.enabled || !state.externalSync.automaticEnabled) return;
+  const safeDelay = Math.max(600000, Number(delayMs || externalSyncNextDelayMs()));
   state.externalSync.timer = window.setTimeout(() => {
     state.externalSync.timer = null;
     void runExternalSyncPollingCycle();
@@ -86,7 +90,7 @@ async function checkExternalSyncNow(options = {}) {
   state.externalSync.checking = true;
   state.externalSync.status = 'checking';
   try {
-    const remotePage = await API.loadPage(pageId);
+    const remotePage = await API.loadPage(pageId, { source: manual ? 'external-sync-manual' : 'external-sync', automatic: !manual });
     if (state.blank || String(state.current.id || '') !== pageId) return false;
     captureExternalSyncRemoteCandidate(remotePage || {});
     state.externalSync.lastCheckedAt = Date.now();
@@ -125,7 +129,7 @@ async function runExternalSyncManualCheck() {
 
 function syncExternalSyncPollingState(options = {}) {
   const forceReschedule = !!options.forceReschedule;
-  if (!state.externalSync.enabled) {
+  if (!state.externalSync.enabled || !state.externalSync.automaticEnabled) {
     stopExternalSyncPolling();
     return;
   }
