@@ -21,5 +21,6 @@ function applyI18n() {
   renderSidebarProjects();
   renderSidebarPages();
   updateRecoveryReopenButton();
+  if (typeof renderExternalSyncNotice === 'function') renderExternalSyncNotice();
   renderUpdateAppPanel();
 }

@@ -44,6 +44,7 @@ function syncBeforeUnloadWarningState() {
 function openUnsavedTransitionModal() {
   if (!els.unsavedTransitionModal) return Promise.resolve('cancel');
   els.unsavedTransitionModal.classList.remove('hidden');
+  if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
   return new Promise(resolve => {
     state.unsavedTransitionResolver = resolve;
   });
@@ -53,6 +54,7 @@ function closeUnsavedTransitionModal(choice = 'cancel') {
   if (els.unsavedTransitionModal) els.unsavedTransitionModal.classList.add('hidden');
   const resolver = state.unsavedTransitionResolver;
   state.unsavedTransitionResolver = null;
+  if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState({ immediate: true });
   if (resolver) resolver(choice);
 }
 
@@ -78,6 +80,8 @@ async function discardCurrentUnsavedChanges() {
   state.current.html = baseline.html;
   renderCurrent();
   syncCurrentSnapshotBaselineAndDirty({ alignBaseline: true });
+  if (typeof clearExternalSyncCandidateForCurrentPage === 'function') clearExternalSyncCandidateForCurrentPage({ clearDismissed: true, clearNotified: true });
+  if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState({ immediate: true });
   syncPreviewMode({ immediate: true });
 }
 
@@ -122,5 +126,6 @@ async function runWithUnsavedPageTransitionGuard(proceed) {
     return false;
   } finally {
     state.unsavedTransitionBusy = false;
+    if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState({ immediate: true });
   }
 }

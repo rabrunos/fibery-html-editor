@@ -143,5 +143,12 @@ Object.assign(I18N.en, {
     unsavedTransitionKeepDraft: 'Keep local draft',
     unsavedTransitionDiscard: 'Discard changes',
     unsavedTransitionCancel: 'Cancel',
-    unsavedTransitionSaveFailed: 'Save failed. Staying on the current page.'
+    unsavedTransitionSaveFailed: 'Save failed. Staying on the current page.',
+    externalSyncDetectedTitle: 'External change detected',
+    externalSyncMessageNoLocalEdits: 'The version saved in Fibery changed since you opened this page.',
+    externalSyncMessageWithLocalEdits: 'The page changed in Fibery while you still have local unsaved edits.',
+    externalSyncDismiss: 'Dismiss',
+    externalSyncDetectedLog: 'External change detected for current page',
+    externalSyncDetectedWithLocalEditsLog: 'External change detected while local unsaved edits exist',
+    externalSyncCheckErrorLog: 'External change check failed'
   });

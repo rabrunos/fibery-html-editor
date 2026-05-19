@@ -71,6 +71,15 @@
           <input id="descriptionInput" class="h-8 min-w-0 rounded border border-gray-200 bg-gray-50 px-2 text-xs text-gray-600 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500" placeholder="Description" />
         </div>
         <span id="dirtyBadge" class="hidden shrink-0 rounded-full bg-amber-100 px-2 py-1 text-[11px] font-semibold text-amber-700" data-i18n="unsaved">Unsaved</span>
+        <div id="externalSyncNotice" class="hidden min-w-0 max-w-[320px] shrink rounded-lg border border-amber-200 bg-amber-50 px-2 py-1">
+          <div class="flex items-start gap-2">
+            <div class="min-w-0 flex-1">
+              <div id="externalSyncNoticeTitle" class="truncate text-[11px] font-semibold text-amber-800" data-i18n="externalSyncDetectedTitle">External change detected</div>
+              <div id="externalSyncNoticeMessage" class="truncate text-[10px] text-amber-700">The version saved in Fibery changed since you opened this page.</div>
+            </div>
+            <button id="externalSyncDismissBtn" class="h-6 shrink-0 rounded border border-amber-300 bg-white px-2 text-[10px] font-semibold text-amber-800 hover:bg-amber-100" data-i18n="externalSyncDismiss">Dismiss</button>
+          </div>
+        </div>
         <span id="statusText" class="hidden md:inline-block max-w-40 truncate text-xs text-gray-500">Ready</span>
         <button id="saveBtn" class="h-8 px-3 rounded bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed" data-i18n="save">Save</button>
         <button id="updateAppBtn" class="hidden h-8 rounded bg-yellow-400 px-3 text-sm font-semibold text-yellow-950 shadow-sm hover:bg-yellow-500" data-i18n="updateApp">Update App</button>

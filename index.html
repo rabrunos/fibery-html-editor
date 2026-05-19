@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.9.1" />
+  <meta name="fibery-html-editor-version" content="8.10.0" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -214,6 +214,15 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
           <input id="descriptionInput" class="h-8 min-w-0 rounded border border-gray-200 bg-gray-50 px-2 text-xs text-gray-600 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500" placeholder="Description" />
         </div>
         <span id="dirtyBadge" class="hidden shrink-0 rounded-full bg-amber-100 px-2 py-1 text-[11px] font-semibold text-amber-700" data-i18n="unsaved">Unsaved</span>
+        <div id="externalSyncNotice" class="hidden min-w-0 max-w-[320px] shrink rounded-lg border border-amber-200 bg-amber-50 px-2 py-1">
+          <div class="flex items-start gap-2">
+            <div class="min-w-0 flex-1">
+              <div id="externalSyncNoticeTitle" class="truncate text-[11px] font-semibold text-amber-800" data-i18n="externalSyncDetectedTitle">External change detected</div>
+              <div id="externalSyncNoticeMessage" class="truncate text-[10px] text-amber-700">The version saved in Fibery changed since you opened this page.</div>
+            </div>
+            <button id="externalSyncDismissBtn" class="h-6 shrink-0 rounded border border-amber-300 bg-white px-2 text-[10px] font-semibold text-amber-800 hover:bg-amber-100" data-i18n="externalSyncDismiss">Dismiss</button>
+          </div>
+        </div>
         <span id="statusText" class="hidden md:inline-block max-w-40 truncate text-xs text-gray-500">Ready</span>
         <button id="saveBtn" class="h-8 px-3 rounded bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed" data-i18n="save">Save</button>
         <button id="updateAppBtn" class="hidden h-8 rounded bg-yellow-400 px-3 text-sm font-semibold text-yellow-950 shadow-sm hover:bg-yellow-500" data-i18n="updateApp">Update App</button>
@@ -551,7 +560,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 (() => {
   'use strict';
 
-const APP_VERSION = '8.9.1';
+const APP_VERSION = '8.10.0';
 window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 document.documentElement.dataset.appVersion = APP_VERSION;
 
@@ -735,7 +744,14 @@ Object.assign(I18N.en, {
     unsavedTransitionKeepDraft: 'Keep local draft',
     unsavedTransitionDiscard: 'Discard changes',
     unsavedTransitionCancel: 'Cancel',
-    unsavedTransitionSaveFailed: 'Save failed. Staying on the current page.'
+    unsavedTransitionSaveFailed: 'Save failed. Staying on the current page.',
+    externalSyncDetectedTitle: 'External change detected',
+    externalSyncMessageNoLocalEdits: 'The version saved in Fibery changed since you opened this page.',
+    externalSyncMessageWithLocalEdits: 'The page changed in Fibery while you still have local unsaved edits.',
+    externalSyncDismiss: 'Dismiss',
+    externalSyncDetectedLog: 'External change detected for current page',
+    externalSyncDetectedWithLocalEditsLog: 'External change detected while local unsaved edits exist',
+    externalSyncCheckErrorLog: 'External change check failed'
   });
 
 
@@ -884,7 +900,14 @@ Object.assign(I18N['pt-BR'], {
     unsavedTransitionKeepDraft: 'Manter rascunho local',
     unsavedTransitionDiscard: 'Descartar edições',
     unsavedTransitionCancel: 'Cancelar',
-    unsavedTransitionSaveFailed: 'Falha ao salvar. Você continua na página atual.'
+    unsavedTransitionSaveFailed: 'Falha ao salvar. Você continua na página atual.',
+    externalSyncDetectedTitle: 'Alteração externa detectada',
+    externalSyncMessageNoLocalEdits: 'A versão salva no Fibery mudou desde que você abriu esta página.',
+    externalSyncMessageWithLocalEdits: 'Esta página mudou no Fibery enquanto você ainda tem edições locais não salvas.',
+    externalSyncDismiss: 'Dispensar',
+    externalSyncDetectedLog: 'Alteração externa detectada para a página atual',
+    externalSyncDetectedWithLocalEditsLog: 'Alteração externa detectada enquanto existem edições locais não salvas',
+    externalSyncCheckErrorLog: 'Falha ao verificar alteração externa'
   });
 
 
@@ -900,7 +923,7 @@ const els = {
   pageHeader: $('pageHeader'), welcomeView: $('welcomeView'), welcomeNewPageBtn: $('welcomeNewPageBtn'), welcomeSearchInput: $('welcomeSearchInput'), welcomeSearchResults: $('welcomeSearchResults'),
   saveBtn: $('saveBtn'), updateAppBtn: $('updateAppBtn'), refreshBtn: $('refreshBtn'), openViewMenuBtn: $('openViewMenuBtn'), newPageBtn: $('newPageBtn'), historyBtn: $('historyBtn'), deleteBtn: $('deleteBtn'), moreBtn: $('moreBtn'), moreMenu: $('moreMenu'),
   quickBothBtn: $('quickBothBtn'), quickEditorBtn: $('quickEditorBtn'), quickPreviewBtn: $('quickPreviewBtn'),
-  titleInput: $('titleInput'), descriptionInput: $('descriptionInput'), dirtyBadge: $('dirtyBadge'), statusText: $('statusText'),
+  titleInput: $('titleInput'), descriptionInput: $('descriptionInput'), dirtyBadge: $('dirtyBadge'), externalSyncNotice: $('externalSyncNotice'), externalSyncNoticeTitle: $('externalSyncNoticeTitle'), externalSyncNoticeMessage: $('externalSyncNoticeMessage'), externalSyncDismissBtn: $('externalSyncDismissBtn'), statusText: $('statusText'),
   logToggleBtn: $('logToggleBtn'), logMenuText: $('logMenuText'), settingsModal: $('settingsModal'), closeSettingsBtn: $('closeSettingsBtn'), langSelect: $('langSelect'),
   updateAppModal: $('updateAppModal'), closeUpdateAppBtn: $('closeUpdateAppBtn'), updateInstalledVersionValue: $('updateInstalledVersionValue'), updateAvailableVersionValue: $('updateAvailableVersionValue'), updateCheckStatusText: $('updateCheckStatusText'), updateVerifyAgainBtn: $('updateVerifyAgainBtn'), updateApplyBtn: $('updateApplyBtn'), updateBackupsBox: $('updateBackupsBox'), updateChangelogBox: $('updateChangelogBox'), updateCloseBtn: $('updateCloseBtn'),
   openLastToggle: $('openLastToggle'), versionLimitSelect: $('versionLimitSelect'), autosaveLimitSelect: $('autosaveLimitSelect'), codeEditor: $('codeEditor'), codeEditorFallback: $('codeEditorFallback'), charCount: $('charCount'), copyHtmlBtn: $('copyHtmlBtn'), editorPanelMenuBtn: $('editorPanelMenuBtn'),
@@ -926,8 +949,12 @@ function detectCurrentAppPageId() {
 const LOCAL_PREVIEW_MESSAGE_SOURCE = 'fibery-html-editor/local-preview';
 
 const state = {
-  isAdmin: false, lang: 'en', appPageId: detectCurrentAppPageId(), current: { id: '', title: '', description: '', html: '' }, currentBaseline: { id: '', title: '', description: '', html: '' }, blank: true, dirty: false, db: null, saving: false,
+  isAdmin: false, lang: 'en', appPageId: detectCurrentAppPageId(), current: { id: '', title: '', description: '', html: '' }, currentBaseline: { id: '', title: '', description: '', html: '' }, blank: true, dirty: false, db: null, saving: false, loadingPage: false,
   code: { editor: null, suppress: false, fallback: false }, confirmResolver: null, unsavedTransitionResolver: null, unsavedTransitionBusy: false, unsavedBeforeUnloadWarningActive: false,
+  externalSync: {
+    enabled: true, checking: false, timer: null, intervalMs: 60000, lastCheckedAt: 0, lastErrorAt: 0, lastErrorMessage: '',
+    remoteCandidate: null, remoteSignature: '', baselineSignatureAtDetection: '', localBaselineSignature: '', dismissedSignature: '', lastNotifiedSignature: '', pageId: '', status: 'idle'
+  },
   update: { checking: false, applying: false, rollbacking: false, status: 'idle', remoteVersion: '', remoteChangelog: '', changelogLoading: false, backupsLoading: false, backups: [] },
   preview: { mode: 'real', localObjectUrl: '', localStatusLabel: '', activeRequestId: '', debounceTimer: null, debounceMs: 500, lastLocalDocSignature: '', lastLocalHtmlSignature: '', lastLocalUsesTailwind: false, lastRealUrl: '' },
   sidebar: { open: true, pages: [], loading: false, refreshTimer: null, hasMore: false, limit: 20, visibleLimit: 20, pageCache: {} },
@@ -1016,6 +1043,7 @@ function setCurrentBaseline() {
     description: String(state.current.description || ''),
     html: String(state.current.html || '')
   };
+  if (typeof syncExternalSyncBaselineState === 'function') syncExternalSyncBaselineState();
   if (typeof syncBeforeUnloadWarningState === 'function') syncBeforeUnloadWarningState();
 }
 
@@ -2426,6 +2454,7 @@ function syncBeforeUnloadWarningState() {
 function openUnsavedTransitionModal() {
   if (!els.unsavedTransitionModal) return Promise.resolve('cancel');
   els.unsavedTransitionModal.classList.remove('hidden');
+  if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
   return new Promise(resolve => {
     state.unsavedTransitionResolver = resolve;
   });
@@ -2435,6 +2464,7 @@ function closeUnsavedTransitionModal(choice = 'cancel') {
   if (els.unsavedTransitionModal) els.unsavedTransitionModal.classList.add('hidden');
   const resolver = state.unsavedTransitionResolver;
   state.unsavedTransitionResolver = null;
+  if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState({ immediate: true });
   if (resolver) resolver(choice);
 }
 
@@ -2460,6 +2490,8 @@ async function discardCurrentUnsavedChanges() {
   state.current.html = baseline.html;
   renderCurrent();
   syncCurrentSnapshotBaselineAndDirty({ alignBaseline: true });
+  if (typeof clearExternalSyncCandidateForCurrentPage === 'function') clearExternalSyncCandidateForCurrentPage({ clearDismissed: true, clearNotified: true });
+  if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState({ immediate: true });
   syncPreviewMode({ immediate: true });
 }
 
@@ -2504,7 +2536,233 @@ async function runWithUnsavedPageTransitionGuard(proceed) {
     return false;
   } finally {
     state.unsavedTransitionBusy = false;
+    if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState({ immediate: true });
   }
+}
+
+
+function externalSyncSnapshotFromPage(page = {}) {
+  return {
+    id: String(page?.id || ''),
+    title: String(page?.title || ''),
+    description: String(page?.description || ''),
+    html: String(page?.html || '')
+  };
+}
+
+function clearExternalSyncCandidateForCurrentPage(options = {}) {
+  state.externalSync.remoteCandidate = null;
+  state.externalSync.remoteSignature = '';
+  state.externalSync.baselineSignatureAtDetection = '';
+  state.externalSync.status = 'idle';
+  if (options.clearDismissed) state.externalSync.dismissedSignature = '';
+  if (options.clearNotified) state.externalSync.lastNotifiedSignature = '';
+  if (typeof renderExternalSyncNotice === 'function') renderExternalSyncNotice();
+}
+
+function resetExternalSyncStateForCurrentPage(pageId = '') {
+  state.externalSync.pageId = String(pageId || '');
+  state.externalSync.checking = false;
+  state.externalSync.lastCheckedAt = 0;
+  state.externalSync.lastErrorAt = 0;
+  state.externalSync.lastErrorMessage = '';
+  state.externalSync.localBaselineSignature = '';
+  state.externalSync.dismissedSignature = '';
+  state.externalSync.lastNotifiedSignature = '';
+  clearExternalSyncCandidateForCurrentPage({ clearDismissed: true, clearNotified: true });
+  if (!state.externalSync.pageId && typeof stopExternalSyncPolling === 'function') stopExternalSyncPolling();
+}
+
+function syncExternalSyncBaselineState() {
+  const pageId = state.blank ? '' : String(state.current.id || '');
+  if (pageId !== state.externalSync.pageId) resetExternalSyncStateForCurrentPage(pageId);
+  if (!pageId) {
+    if (typeof renderExternalSyncNotice === 'function') renderExternalSyncNotice();
+    if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
+    return;
+  }
+
+  const baselineSignature = snapshotSignature(currentBaselineSnapshot());
+  state.externalSync.localBaselineSignature = baselineSignature;
+  if (state.externalSync.remoteSignature && state.externalSync.remoteSignature === baselineSignature) {
+    clearExternalSyncCandidateForCurrentPage({ clearDismissed: true, clearNotified: true });
+  }
+  if (state.externalSync.dismissedSignature && state.externalSync.dismissedSignature === baselineSignature) {
+    state.externalSync.dismissedSignature = '';
+  }
+  if (typeof renderExternalSyncNotice === 'function') renderExternalSyncNotice();
+  if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
+}
+
+function captureExternalSyncRemoteCandidate(remotePage = {}) {
+  if (state.blank || !state.current.id) return false;
+  if (String(remotePage?.id || state.current.id) !== String(state.current.id || '')) return false;
+
+  const remoteSnapshot = externalSyncSnapshotFromPage(remotePage);
+  const remoteSignature = snapshotSignature(remoteSnapshot);
+  const baselineSignature = snapshotSignature(currentBaselineSnapshot());
+  state.externalSync.localBaselineSignature = baselineSignature;
+
+  if (remoteSignature === baselineSignature) {
+    clearExternalSyncCandidateForCurrentPage({ clearDismissed: true, clearNotified: true });
+    if (typeof renderExternalSyncNotice === 'function') renderExternalSyncNotice();
+    return false;
+  }
+
+  const previousSignature = state.externalSync.remoteSignature;
+  state.externalSync.remoteCandidate = {
+    id: state.current.id,
+    title: remoteSnapshot.title,
+    description: remoteSnapshot.description,
+    html: remoteSnapshot.html,
+    signature: remoteSignature,
+    detectedAt: Date.now()
+  };
+  state.externalSync.remoteSignature = remoteSignature;
+  state.externalSync.baselineSignatureAtDetection = baselineSignature;
+  state.externalSync.status = 'changed';
+  if (previousSignature !== remoteSignature && state.externalSync.dismissedSignature && state.externalSync.dismissedSignature !== remoteSignature) {
+    state.externalSync.dismissedSignature = '';
+  }
+  if (previousSignature !== remoteSignature && state.externalSync.dismissedSignature !== remoteSignature && state.externalSync.lastNotifiedSignature !== remoteSignature) {
+    state.externalSync.lastNotifiedSignature = remoteSignature;
+    const logKey = hasRealUnsavedChangesForCurrentPage({ syncFromInputs: false })
+      ? 'externalSyncDetectedWithLocalEditsLog'
+      : 'externalSyncDetectedLog';
+    log(t(logKey));
+  }
+  if (typeof renderExternalSyncNotice === 'function') renderExternalSyncNotice();
+  return true;
+}
+
+
+function hasVisibleExternalSyncNotice() {
+  if (!state.externalSync.enabled) return false;
+  if (state.blank || !state.current.id) return false;
+  if (!state.externalSync.remoteCandidate || !state.externalSync.remoteSignature) return false;
+  if (state.externalSync.pageId && state.externalSync.pageId !== state.current.id) return false;
+  const baselineSignature = snapshotSignature(currentBaselineSnapshot());
+  if (state.externalSync.remoteSignature === baselineSignature) return false;
+  if (state.externalSync.dismissedSignature && state.externalSync.dismissedSignature === state.externalSync.remoteSignature) return false;
+  return true;
+}
+
+function externalSyncNoticeMessageKey() {
+  return hasRealUnsavedChangesForCurrentPage({ syncFromInputs: false })
+    ? 'externalSyncMessageWithLocalEdits'
+    : 'externalSyncMessageNoLocalEdits';
+}
+
+function renderExternalSyncNotice() {
+  if (!els.externalSyncNotice || !els.externalSyncNoticeTitle || !els.externalSyncNoticeMessage) return;
+  if (!hasVisibleExternalSyncNotice()) {
+    els.externalSyncNotice.classList.add('hidden');
+    return;
+  }
+
+  els.externalSyncNoticeTitle.textContent = t('externalSyncDetectedTitle');
+  els.externalSyncNoticeMessage.textContent = t(externalSyncNoticeMessageKey());
+  if (els.externalSyncDismissBtn) {
+    els.externalSyncDismissBtn.textContent = t('externalSyncDismiss');
+    els.externalSyncDismissBtn.title = t('externalSyncDismiss');
+  }
+  els.externalSyncNotice.classList.remove('hidden');
+}
+
+function dismissExternalSyncNotice() {
+  if (!state.externalSync.remoteSignature) return;
+  state.externalSync.dismissedSignature = state.externalSync.remoteSignature;
+  renderExternalSyncNotice();
+}
+
+
+function hasOpenExternalSyncBlockingModal() {
+  if (!els.unsavedTransitionModal || !els.confirmModal || !els.draftRecoveryModal) return false;
+  if (!els.unsavedTransitionModal.classList.contains('hidden')) return true;
+  if (!els.confirmModal.classList.contains('hidden')) return true;
+  if (!els.draftRecoveryModal.classList.contains('hidden')) return true;
+  return false;
+}
+
+function shouldPauseExternalSyncPolling() {
+  if (!state.externalSync.enabled) return true;
+  if (state.blank || !state.current.id) return true;
+  if (document.hidden) return true;
+  if (state.saving || state.loadingPage) return true;
+  if (state.externalSync.checking) return true;
+  if (state.unsavedTransitionBusy || !!state.unsavedTransitionResolver) return true;
+  if (state.update.checking || state.update.applying || state.update.rollbacking) return true;
+  if (hasOpenExternalSyncBlockingModal()) return true;
+  return false;
+}
+
+function stopExternalSyncPolling() {
+  if (!state.externalSync.timer) return;
+  window.clearTimeout(state.externalSync.timer);
+  state.externalSync.timer = null;
+}
+
+function scheduleExternalSyncPolling(delayMs = state.externalSync.intervalMs) {
+  stopExternalSyncPolling();
+  if (!state.externalSync.enabled) return;
+  const safeDelay = Math.max(1000, Number(delayMs || state.externalSync.intervalMs || 60000));
+  state.externalSync.timer = window.setTimeout(() => {
+    state.externalSync.timer = null;
+    void runExternalSyncPollingCycle();
+  }, safeDelay);
+}
+
+async function checkExternalSyncNow() {
+  if (shouldPauseExternalSyncPolling()) return false;
+  const pageId = String(state.current.id || '');
+  if (!pageId) return false;
+  state.externalSync.checking = true;
+  state.externalSync.status = 'checking';
+  try {
+    const remotePage = await API.loadPage(pageId);
+    if (state.blank || String(state.current.id || '') !== pageId) return false;
+    captureExternalSyncRemoteCandidate(remotePage || {});
+    state.externalSync.lastCheckedAt = Date.now();
+    state.externalSync.lastErrorAt = 0;
+    state.externalSync.lastErrorMessage = '';
+    return true;
+  } catch (err) {
+    state.externalSync.lastErrorAt = Date.now();
+    state.externalSync.lastErrorMessage = String(err?.message || err || '');
+    state.externalSync.status = 'error';
+    log(`${t('externalSyncCheckErrorLog')}: ${state.externalSync.lastErrorMessage}`);
+    return false;
+  } finally {
+    state.externalSync.checking = false;
+  }
+}
+
+async function runExternalSyncPollingCycle(options = {}) {
+  if (!state.externalSync.enabled) return;
+  if (!options.force && shouldPauseExternalSyncPolling()) {
+    stopExternalSyncPolling();
+    return;
+  }
+  await checkExternalSyncNow();
+  if (shouldPauseExternalSyncPolling()) {
+    stopExternalSyncPolling();
+    return;
+  }
+  scheduleExternalSyncPolling(state.externalSync.intervalMs);
+}
+
+function syncExternalSyncPollingState(options = {}) {
+  const immediate = !!options.immediate;
+  if (!state.externalSync.enabled) {
+    stopExternalSyncPolling();
+    return;
+  }
+  if (shouldPauseExternalSyncPolling()) {
+    stopExternalSyncPolling();
+    return;
+  }
+  if (!immediate && state.externalSync.timer) return;
+  scheduleExternalSyncPolling(immediate ? 1200 : state.externalSync.intervalMs);
 }
 
 
@@ -2627,6 +2885,7 @@ function markDirty(value = true) {
   els.dirtyBadge.classList.toggle('hidden', !state.dirty);
   if (state.dirty) scheduleDraftAutosave();
   else clearDraftAutosaveTimer();
+  if (typeof renderExternalSyncNotice === 'function') renderExternalSyncNotice();
   if (typeof syncBeforeUnloadWarningState === 'function') syncBeforeUnloadWarningState();
 }
 function updateCharCount() { els.charCount.textContent = String(getCodeValue().length) + ' chars'; }
@@ -2644,6 +2903,7 @@ function showBlankPage() {
   state.blank = true;
   state.current = { id: '', title: '', description: '', html: '' };
   setCurrentBaseline();
+  if (typeof resetExternalSyncStateForCurrentPage === 'function') resetExternalSyncStateForCurrentPage('');
   markDirty(false);
   setCodeValue('');
   els.pageHeader.classList.add('hidden');
@@ -2655,6 +2915,7 @@ function showBlankPage() {
   els.previewFrame.removeAttribute('src');
   els.previewFrame.srcdoc = '';
   setStatus(t('noPage'));
+  if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
   updateSidebarActiveState();
   renderSidebarProjects();
   updateRecoveryReopenButton();
@@ -2857,24 +3118,32 @@ function syncPreviewMode({ immediate = false, forceRealReload = false } = {}) {
 
 
 async function loadPage(id) {
-  await flushDraftAutosaveNow();
-  const promptToken = ++state.drafts.promptToken;
-  setStatus(t('loading'));
-  const page = await API.loadPage(id);
-  state.current = { id: page.id || id, title: page.title || '', description: page.description || '', html: page.html || '' };
-  setCurrentBaseline();
-  await savePageMeta(state.current.id, { title: state.current.title, description: state.current.description, lastOpenedAt: Date.now() });
-  renderCurrent();
-  syncCurrentSnapshotBaselineAndDirty({ alignBaseline: true });
-  localStorage.setItem(LS.lastPageId, state.current.id);
-  syncPreviewMode({ immediate: true });
-  setStatus(t('pageLoaded'));
-  log(`${t('pageLoaded')}: ${state.current.title || state.current.id}`);
-  void maybePromptDraftRecoveryForCurrentPage(promptToken);
+  state.loadingPage = true;
+  if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
+  try {
+    await flushDraftAutosaveNow();
+    const promptToken = ++state.drafts.promptToken;
+    setStatus(t('loading'));
+    const page = await API.loadPage(id);
+    state.current = { id: page.id || id, title: page.title || '', description: page.description || '', html: page.html || '' };
+    if (typeof resetExternalSyncStateForCurrentPage === 'function') resetExternalSyncStateForCurrentPage(state.current.id);
+    setCurrentBaseline();
+    await savePageMeta(state.current.id, { title: state.current.title, description: state.current.description, lastOpenedAt: Date.now() });
+    renderCurrent();
+    syncCurrentSnapshotBaselineAndDirty({ alignBaseline: true });
+    localStorage.setItem(LS.lastPageId, state.current.id);
+    syncPreviewMode({ immediate: true });
+    setStatus(t('pageLoaded'));
+    log(`${t('pageLoaded')}: ${state.current.title || state.current.id}`);
+    void maybePromptDraftRecoveryForCurrentPage(promptToken);
+  } finally {
+    state.loadingPage = false;
+    if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState({ immediate: true });
+  }
 }
 async function confirmAction({ title, message, okText = 'OK', showPreview = false, previewId = '', openPreviewId = '' } = {}) { els.confirmTitle.textContent = title || ''; els.confirmMessage.textContent = message || ''; els.confirmOkBtn.textContent = okText; const previewTargetId = previewId || state.current.id; els.confirmOpenPreviewBtn.dataset.previewId = openPreviewId || previewTargetId || ''; els.deletePreviewWrap.classList.toggle('hidden', !showPreview); if (showPreview && previewTargetId) els.deletePreviewFrame.src = viewUrl(previewTargetId); else { els.deletePreviewFrame.removeAttribute('src'); els.confirmOpenPreviewBtn.dataset.previewId = ''; } els.confirmModal.classList.remove('hidden'); return new Promise(resolve => { state.confirmResolver = resolve; }); }
 function closeConfirm(result) { els.confirmModal.classList.add('hidden'); els.deletePreviewFrame.removeAttribute('src'); els.confirmOpenPreviewBtn.dataset.previewId = ''; const resolver = state.confirmResolver; state.confirmResolver = null; if (resolver) resolver(!!result); }
-async function newPage() { const ok = await confirmAction({ title: t('createPageTitle'), message: t('createPageMessage'), okText: t('create') }); if (!ok) return; await flushDraftAutosaveNow(); state.current = { id: '', title: 'Untitled Page', description: '', html: '' }; setCurrentBaseline(); renderCurrent(); markDirty(true); syncPreviewMode({ immediate: true }); setStatus(t('pageCreated')); els.titleInput.focus(); els.titleInput.select(); }
+async function newPage() { const ok = await confirmAction({ title: t('createPageTitle'), message: t('createPageMessage'), okText: t('create') }); if (!ok) return; await flushDraftAutosaveNow(); state.current = { id: '', title: 'Untitled Page', description: '', html: '' }; if (typeof resetExternalSyncStateForCurrentPage === 'function') resetExternalSyncStateForCurrentPage(''); setCurrentBaseline(); renderCurrent(); markDirty(true); syncPreviewMode({ immediate: true }); if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState(); setStatus(t('pageCreated')); els.titleInput.focus(); els.titleInput.select(); }
 async function deleteCurrentPage() { if (!state.current.id) return; const ok = await confirmAction({ title: t('deleteTitle'), message: t('deleteMessage'), okText: t('deleteConfirm'), showPreview: false }); if (!ok) return; try { const oldId = state.current.id; await API.deletePage(oldId); if (localStorage.getItem(LS.lastPageId) === oldId) localStorage.removeItem(LS.lastPageId); await deletePageMeta(oldId); showBlankPage(); await loadSidebarPages({ force: true, reset: true }); setStatus(t('deleted')); log(t('deleted')); } catch (err) { alert(err.message || String(err)); log(err.message || String(err)); } }
 async function deletePageFromList(id, title) { if (!id || !state.isAdmin) return; const ok = await confirmAction({ title: t('deleteTitle'), message: `${t('deleteMessage')}\n\n${title || id}`, okText: t('deleteConfirm'), showPreview: true, previewId: id, openPreviewId: id }); if (!ok) return; try { await API.deletePage(id); if (localStorage.getItem(LS.lastPageId) === id) localStorage.removeItem(LS.lastPageId); await deletePageMeta(id); if (state.current.id === id) showBlankPage(); await loadSidebarPages({ force: true, reset: true }); if (!els.searchModal.classList.contains('hidden')) await loadSearchResults(); if (!els.welcomeSearchResults.classList.contains('hidden')) await loadWelcomeSearchResults(); setStatus(t('deleted')); log(`${t('deleted')}: ${title || id}`); } catch (err) { alert(err.message || String(err)); log(err.message || String(err)); } }
 async function savePage(action = 'save') {
@@ -2899,8 +3168,10 @@ async function savePage(action = 'save') {
     await clearAutosaveHistoryBySignature(state.current.id, snapshotSignature(state.current));
     await saveHistory(action);
     setCurrentBaseline();
+    if (typeof clearExternalSyncCandidateForCurrentPage === 'function') clearExternalSyncCandidateForCurrentPage({ clearDismissed: true, clearNotified: true });
     renderCurrent();
     syncCurrentSnapshotBaselineAndDirty({ alignBaseline: true });
+    if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState({ immediate: true });
     syncPreviewMode({ immediate: true, forceRealReload: true });
     if (state.sidebar.open) await loadSidebarPages({ force: true, reset: true });
     setStatus(t('saved'));
@@ -3487,6 +3758,7 @@ function applyI18n() {
   renderSidebarProjects();
   renderSidebarPages();
   updateRecoveryReopenButton();
+  if (typeof renderExternalSyncNotice === 'function') renderExternalSyncNotice();
   renderUpdateAppPanel();
 }
 
@@ -3634,6 +3906,7 @@ function bindEvents() {
   els.restoreDraftBtn.addEventListener('click', () => restoreDraftFromModal());
   els.keepCurrentVersionBtn.addEventListener('click', () => keepCurrentVersionFromDraft());
   els.discardDraftBtn.addEventListener('click', () => discardDraftFromModal());
+  if (els.externalSyncDismissBtn) els.externalSyncDismissBtn.addEventListener('click', () => dismissExternalSyncNotice());
   els.closeDraftRecoveryBtn.addEventListener('click', () => keepCurrentVersionFromDraft());
   els.draftRecoveryModal.addEventListener('click', (e) => { if (e.target === els.draftRecoveryModal) keepCurrentVersionFromDraft(); });
   els.reopenRecoveryBtn.addEventListener('click', () => openRecoveryFromButton());
@@ -3653,16 +3926,20 @@ function bindEvents() {
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       void flushDraftAutosaveNow();
+      if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
       return;
     }
     if (state.sidebar.open) loadSidebarPages({ force: true, reset: false });
+    if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState({ immediate: true });
   });
   window.addEventListener('pagehide', () => {
     stopSidebarAutoRefresh();
     clearPreviewDebounce();
     revokeLocalPreviewObjectUrl();
+    if (typeof stopExternalSyncPolling === 'function') stopExternalSyncPolling();
   });
   syncBeforeUnloadWarningState();
+  if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState({ immediate: true });
 }
 
 

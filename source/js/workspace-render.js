@@ -3,6 +3,7 @@ function markDirty(value = true) {
   els.dirtyBadge.classList.toggle('hidden', !state.dirty);
   if (state.dirty) scheduleDraftAutosave();
   else clearDraftAutosaveTimer();
+  if (typeof renderExternalSyncNotice === 'function') renderExternalSyncNotice();
   if (typeof syncBeforeUnloadWarningState === 'function') syncBeforeUnloadWarningState();
 }
 function updateCharCount() { els.charCount.textContent = String(getCodeValue().length) + ' chars'; }
@@ -20,6 +21,7 @@ function showBlankPage() {
   state.blank = true;
   state.current = { id: '', title: '', description: '', html: '' };
   setCurrentBaseline();
+  if (typeof resetExternalSyncStateForCurrentPage === 'function') resetExternalSyncStateForCurrentPage('');
   markDirty(false);
   setCodeValue('');
   els.pageHeader.classList.add('hidden');
@@ -31,6 +33,7 @@ function showBlankPage() {
   els.previewFrame.removeAttribute('src');
   els.previewFrame.srcdoc = '';
   setStatus(t('noPage'));
+  if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
   updateSidebarActiveState();
   renderSidebarProjects();
   updateRecoveryReopenButton();

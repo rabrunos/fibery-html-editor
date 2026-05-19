@@ -36,5 +36,6 @@ function setCurrentBaseline() {
     description: String(state.current.description || ''),
     html: String(state.current.html || '')
   };
+  if (typeof syncExternalSyncBaselineState === 'function') syncExternalSyncBaselineState();
   if (typeof syncBeforeUnloadWarningState === 'function') syncBeforeUnloadWarningState();
 }

@@ -1,3 +1,26 @@
+## [8.10.0] - 2026-05-19
+
+### Added
+
+* Added periodic external-change detection for the current Fibery page using content signatures from title, description, and HTML.
+* Added local external-sync state to keep the detected remote candidate snapshot/signature ready for upcoming conflict/compare flows.
+* Added a discreet in-header external-change notice with signature-scoped dismiss action.
+
+### Fixed
+
+* Prevented repeated external-change warnings for the same remote signature after detection or dismiss.
+* Prevented stale external warnings from leaking across page changes, baseline resets, save, discard, or blank/welcome transitions.
+
+### Technical adjustments
+
+* Added safe polling with recurring `setTimeout` (60s) and pause conditions for hidden tab, page loading, saving, unsaved-transition modal, update operations, and active modal blocking states.
+* Compared remote page snapshots only against the local baseline signature, without relying on remote timestamp/revision metadata.
+* Kept detection non-destructive: no automatic editor overwrite, no automatic Fibery save, no manual history writes, no modal spam.
+
+### Validation
+
+* Local build and validation pass for temporary and final generated artifacts.
+
 ## [8.9.1] - 2026-05-19
 
 ### Fixed

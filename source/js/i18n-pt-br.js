@@ -143,5 +143,12 @@ Object.assign(I18N['pt-BR'], {
     unsavedTransitionKeepDraft: 'Manter rascunho local',
     unsavedTransitionDiscard: 'Descartar edições',
     unsavedTransitionCancel: 'Cancelar',
-    unsavedTransitionSaveFailed: 'Falha ao salvar. Você continua na página atual.'
+    unsavedTransitionSaveFailed: 'Falha ao salvar. Você continua na página atual.',
+    externalSyncDetectedTitle: 'Alteração externa detectada',
+    externalSyncMessageNoLocalEdits: 'A versão salva no Fibery mudou desde que você abriu esta página.',
+    externalSyncMessageWithLocalEdits: 'Esta página mudou no Fibery enquanto você ainda tem edições locais não salvas.',
+    externalSyncDismiss: 'Dispensar',
+    externalSyncDetectedLog: 'Alteração externa detectada para a página atual',
+    externalSyncDetectedWithLocalEditsLog: 'Alteração externa detectada enquanto existem edições locais não salvas',
+    externalSyncCheckErrorLog: 'Falha ao verificar alteração externa'
   });

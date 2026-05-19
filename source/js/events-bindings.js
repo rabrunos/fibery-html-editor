@@ -141,6 +141,7 @@ function bindEvents() {
   els.restoreDraftBtn.addEventListener('click', () => restoreDraftFromModal());
   els.keepCurrentVersionBtn.addEventListener('click', () => keepCurrentVersionFromDraft());
   els.discardDraftBtn.addEventListener('click', () => discardDraftFromModal());
+  if (els.externalSyncDismissBtn) els.externalSyncDismissBtn.addEventListener('click', () => dismissExternalSyncNotice());
   els.closeDraftRecoveryBtn.addEventListener('click', () => keepCurrentVersionFromDraft());
   els.draftRecoveryModal.addEventListener('click', (e) => { if (e.target === els.draftRecoveryModal) keepCurrentVersionFromDraft(); });
   els.reopenRecoveryBtn.addEventListener('click', () => openRecoveryFromButton());
@@ -160,14 +161,18 @@ function bindEvents() {
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       void flushDraftAutosaveNow();
+      if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
       return;
     }
     if (state.sidebar.open) loadSidebarPages({ force: true, reset: false });
+    if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState({ immediate: true });
   });
   window.addEventListener('pagehide', () => {
     stopSidebarAutoRefresh();
     clearPreviewDebounce();
     revokeLocalPreviewObjectUrl();
+    if (typeof stopExternalSyncPolling === 'function') stopExternalSyncPolling();
   });
   syncBeforeUnloadWarningState();
+  if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState({ immediate: true });
 }

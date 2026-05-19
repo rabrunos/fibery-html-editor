@@ -1,22 +1,30 @@
 async function loadPage(id) {
-  await flushDraftAutosaveNow();
-  const promptToken = ++state.drafts.promptToken;
-  setStatus(t('loading'));
-  const page = await API.loadPage(id);
-  state.current = { id: page.id || id, title: page.title || '', description: page.description || '', html: page.html || '' };
-  setCurrentBaseline();
-  await savePageMeta(state.current.id, { title: state.current.title, description: state.current.description, lastOpenedAt: Date.now() });
-  renderCurrent();
-  syncCurrentSnapshotBaselineAndDirty({ alignBaseline: true });
-  localStorage.setItem(LS.lastPageId, state.current.id);
-  syncPreviewMode({ immediate: true });
-  setStatus(t('pageLoaded'));
-  log(`${t('pageLoaded')}: ${state.current.title || state.current.id}`);
-  void maybePromptDraftRecoveryForCurrentPage(promptToken);
+  state.loadingPage = true;
+  if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
+  try {
+    await flushDraftAutosaveNow();
+    const promptToken = ++state.drafts.promptToken;
+    setStatus(t('loading'));
+    const page = await API.loadPage(id);
+    state.current = { id: page.id || id, title: page.title || '', description: page.description || '', html: page.html || '' };
+    if (typeof resetExternalSyncStateForCurrentPage === 'function') resetExternalSyncStateForCurrentPage(state.current.id);
+    setCurrentBaseline();
+    await savePageMeta(state.current.id, { title: state.current.title, description: state.current.description, lastOpenedAt: Date.now() });
+    renderCurrent();
+    syncCurrentSnapshotBaselineAndDirty({ alignBaseline: true });
+    localStorage.setItem(LS.lastPageId, state.current.id);
+    syncPreviewMode({ immediate: true });
+    setStatus(t('pageLoaded'));
+    log(`${t('pageLoaded')}: ${state.current.title || state.current.id}`);
+    void maybePromptDraftRecoveryForCurrentPage(promptToken);
+  } finally {
+    state.loadingPage = false;
+    if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState({ immediate: true });
+  }
 }
 async function confirmAction({ title, message, okText = 'OK', showPreview = false, previewId = '', openPreviewId = '' } = {}) { els.confirmTitle.textContent = title || ''; els.confirmMessage.textContent = message || ''; els.confirmOkBtn.textContent = okText; const previewTargetId = previewId || state.current.id; els.confirmOpenPreviewBtn.dataset.previewId = openPreviewId || previewTargetId || ''; els.deletePreviewWrap.classList.toggle('hidden', !showPreview); if (showPreview && previewTargetId) els.deletePreviewFrame.src = viewUrl(previewTargetId); else { els.deletePreviewFrame.removeAttribute('src'); els.confirmOpenPreviewBtn.dataset.previewId = ''; } els.confirmModal.classList.remove('hidden'); return new Promise(resolve => { state.confirmResolver = resolve; }); }
 function closeConfirm(result) { els.confirmModal.classList.add('hidden'); els.deletePreviewFrame.removeAttribute('src'); els.confirmOpenPreviewBtn.dataset.previewId = ''; const resolver = state.confirmResolver; state.confirmResolver = null; if (resolver) resolver(!!result); }
-async function newPage() { const ok = await confirmAction({ title: t('createPageTitle'), message: t('createPageMessage'), okText: t('create') }); if (!ok) return; await flushDraftAutosaveNow(); state.current = { id: '', title: 'Untitled Page', description: '', html: '' }; setCurrentBaseline(); renderCurrent(); markDirty(true); syncPreviewMode({ immediate: true }); setStatus(t('pageCreated')); els.titleInput.focus(); els.titleInput.select(); }
+async function newPage() { const ok = await confirmAction({ title: t('createPageTitle'), message: t('createPageMessage'), okText: t('create') }); if (!ok) return; await flushDraftAutosaveNow(); state.current = { id: '', title: 'Untitled Page', description: '', html: '' }; if (typeof resetExternalSyncStateForCurrentPage === 'function') resetExternalSyncStateForCurrentPage(''); setCurrentBaseline(); renderCurrent(); markDirty(true); syncPreviewMode({ immediate: true }); if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState(); setStatus(t('pageCreated')); els.titleInput.focus(); els.titleInput.select(); }
 async function deleteCurrentPage() { if (!state.current.id) return; const ok = await confirmAction({ title: t('deleteTitle'), message: t('deleteMessage'), okText: t('deleteConfirm'), showPreview: false }); if (!ok) return; try { const oldId = state.current.id; await API.deletePage(oldId); if (localStorage.getItem(LS.lastPageId) === oldId) localStorage.removeItem(LS.lastPageId); await deletePageMeta(oldId); showBlankPage(); await loadSidebarPages({ force: true, reset: true }); setStatus(t('deleted')); log(t('deleted')); } catch (err) { alert(err.message || String(err)); log(err.message || String(err)); } }
 async function deletePageFromList(id, title) { if (!id || !state.isAdmin) return; const ok = await confirmAction({ title: t('deleteTitle'), message: `${t('deleteMessage')}\n\n${title || id}`, okText: t('deleteConfirm'), showPreview: true, previewId: id, openPreviewId: id }); if (!ok) return; try { await API.deletePage(id); if (localStorage.getItem(LS.lastPageId) === id) localStorage.removeItem(LS.lastPageId); await deletePageMeta(id); if (state.current.id === id) showBlankPage(); await loadSidebarPages({ force: true, reset: true }); if (!els.searchModal.classList.contains('hidden')) await loadSearchResults(); if (!els.welcomeSearchResults.classList.contains('hidden')) await loadWelcomeSearchResults(); setStatus(t('deleted')); log(`${t('deleted')}: ${title || id}`); } catch (err) { alert(err.message || String(err)); log(err.message || String(err)); } }
 async function savePage(action = 'save') {
@@ -41,8 +49,10 @@ async function savePage(action = 'save') {
     await clearAutosaveHistoryBySignature(state.current.id, snapshotSignature(state.current));
     await saveHistory(action);
     setCurrentBaseline();
+    if (typeof clearExternalSyncCandidateForCurrentPage === 'function') clearExternalSyncCandidateForCurrentPage({ clearDismissed: true, clearNotified: true });
     renderCurrent();
     syncCurrentSnapshotBaselineAndDirty({ alignBaseline: true });
+    if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState({ immediate: true });
     syncPreviewMode({ immediate: true, forceRealReload: true });
     if (state.sidebar.open) await loadSidebarPages({ force: true, reset: true });
     setStatus(t('saved'));
