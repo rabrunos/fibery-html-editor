@@ -1,3 +1,24 @@
+## [8.9.1] - 2026-05-19
+
+### Fixed
+
+* Fixed false-positive unsaved-transition prompts after choosing "Discard changes" and navigating to another page without new edits.
+* Fixed post-discard state consistency so discarded content does not reappear as pending unsaved work when switching back and forth between pages.
+
+### Added
+
+* Added a native browser unload warning (`beforeunload`) when there are real local unsaved changes in the current page.
+
+### Technical adjustments
+
+* Centralized unsaved-change detection in a shared real-snapshot check used by both transition guard and unload warning logic.
+* Normalized snapshot comparisons for line-ending differences to avoid unsaved false positives caused by editor normalization.
+* Synced current snapshot, baseline, and dirty state after load/save/discard transition points to prevent stale transition state leakage.
+
+### Validation
+
+* Local build and validation pass for temporary and final generated artifacts.
+
 ## [8.9.0] - 2026-05-19
 
 ### Added

@@ -164,5 +164,10 @@ function bindEvents() {
     }
     if (state.sidebar.open) loadSidebarPages({ force: true, reset: false });
   });
-  window.addEventListener('beforeunload', () => { stopSidebarAutoRefresh(); clearPreviewDebounce(); revokeLocalPreviewObjectUrl(); void flushDraftAutosaveNow(); });
+  window.addEventListener('pagehide', () => {
+    stopSidebarAutoRefresh();
+    clearPreviewDebounce();
+    revokeLocalPreviewObjectUrl();
+  });
+  syncBeforeUnloadWarningState();
 }

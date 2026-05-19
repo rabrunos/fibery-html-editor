@@ -3,6 +3,7 @@ function markDirty(value = true) {
   els.dirtyBadge.classList.toggle('hidden', !state.dirty);
   if (state.dirty) scheduleDraftAutosave();
   else clearDraftAutosaveTimer();
+  if (typeof syncBeforeUnloadWarningState === 'function') syncBeforeUnloadWarningState();
 }
 function updateCharCount() { els.charCount.textContent = String(getCodeValue().length) + ' chars'; }
 function updateCurrentFromInputs() { state.current.title = els.titleInput.value; state.current.description = els.descriptionInput.value; state.current.html = getCodeValue(); }

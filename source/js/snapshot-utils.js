@@ -7,10 +7,13 @@ function snapshotSignature(snapshot) {
   }
   return `${raw.length}:${(hash >>> 0).toString(16)}`;
 }
+function normalizeSnapshotText(value) {
+  return String(value || '').replace(/\r\n?/g, '\n');
+}
 function sameSnapshot(a, b) {
-  return String(a?.title || '') === String(b?.title || '')
-    && String(a?.description || '') === String(b?.description || '')
-    && String(a?.html || '') === String(b?.html || '');
+  return normalizeSnapshotText(a?.title) === normalizeSnapshotText(b?.title)
+    && normalizeSnapshotText(a?.description) === normalizeSnapshotText(b?.description)
+    && normalizeSnapshotText(a?.html) === normalizeSnapshotText(b?.html);
 }
 function currentSnapshotFromState() {
   return {
@@ -33,4 +36,5 @@ function setCurrentBaseline() {
     description: String(state.current.description || ''),
     html: String(state.current.html || '')
   };
+  if (typeof syncBeforeUnloadWarningState === 'function') syncBeforeUnloadWarningState();
 }

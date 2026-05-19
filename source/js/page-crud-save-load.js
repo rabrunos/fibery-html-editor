@@ -7,6 +7,7 @@ async function loadPage(id) {
   setCurrentBaseline();
   await savePageMeta(state.current.id, { title: state.current.title, description: state.current.description, lastOpenedAt: Date.now() });
   renderCurrent();
+  syncCurrentSnapshotBaselineAndDirty({ alignBaseline: true });
   localStorage.setItem(LS.lastPageId, state.current.id);
   syncPreviewMode({ immediate: true });
   setStatus(t('pageLoaded'));
@@ -41,6 +42,7 @@ async function savePage(action = 'save') {
     await saveHistory(action);
     setCurrentBaseline();
     renderCurrent();
+    syncCurrentSnapshotBaselineAndDirty({ alignBaseline: true });
     syncPreviewMode({ immediate: true, forceRealReload: true });
     if (state.sidebar.open) await loadSidebarPages({ force: true, reset: true });
     setStatus(t('saved'));

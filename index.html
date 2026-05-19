@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.9.0" />
+  <meta name="fibery-html-editor-version" content="8.9.1" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -551,7 +551,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 (() => {
   'use strict';
 
-const APP_VERSION = '8.9.0';
+const APP_VERSION = '8.9.1';
 window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 document.documentElement.dataset.appVersion = APP_VERSION;
 
@@ -927,7 +927,7 @@ const LOCAL_PREVIEW_MESSAGE_SOURCE = 'fibery-html-editor/local-preview';
 
 const state = {
   isAdmin: false, lang: 'en', appPageId: detectCurrentAppPageId(), current: { id: '', title: '', description: '', html: '' }, currentBaseline: { id: '', title: '', description: '', html: '' }, blank: true, dirty: false, db: null, saving: false,
-  code: { editor: null, suppress: false, fallback: false }, confirmResolver: null, unsavedTransitionResolver: null, unsavedTransitionBusy: false,
+  code: { editor: null, suppress: false, fallback: false }, confirmResolver: null, unsavedTransitionResolver: null, unsavedTransitionBusy: false, unsavedBeforeUnloadWarningActive: false,
   update: { checking: false, applying: false, rollbacking: false, status: 'idle', remoteVersion: '', remoteChangelog: '', changelogLoading: false, backupsLoading: false, backups: [] },
   preview: { mode: 'real', localObjectUrl: '', localStatusLabel: '', activeRequestId: '', debounceTimer: null, debounceMs: 500, lastLocalDocSignature: '', lastLocalHtmlSignature: '', lastLocalUsesTailwind: false, lastRealUrl: '' },
   sidebar: { open: true, pages: [], loading: false, refreshTimer: null, hasMore: false, limit: 20, visibleLimit: 20, pageCache: {} },
@@ -987,10 +987,13 @@ function snapshotSignature(snapshot) {
   }
   return `${raw.length}:${(hash >>> 0).toString(16)}`;
 }
+function normalizeSnapshotText(value) {
+  return String(value || '').replace(/\r\n?/g, '\n');
+}
 function sameSnapshot(a, b) {
-  return String(a?.title || '') === String(b?.title || '')
-    && String(a?.description || '') === String(b?.description || '')
-    && String(a?.html || '') === String(b?.html || '');
+  return normalizeSnapshotText(a?.title) === normalizeSnapshotText(b?.title)
+    && normalizeSnapshotText(a?.description) === normalizeSnapshotText(b?.description)
+    && normalizeSnapshotText(a?.html) === normalizeSnapshotText(b?.html);
 }
 function currentSnapshotFromState() {
   return {
@@ -1013,6 +1016,7 @@ function setCurrentBaseline() {
     description: String(state.current.description || ''),
     html: String(state.current.html || '')
   };
+  if (typeof syncBeforeUnloadWarningState === 'function') syncBeforeUnloadWarningState();
 }
 
 
@@ -2376,12 +2380,47 @@ function openRecoveryFromButton() {
 }
 
 
-function hasUnsavedPageChangesForTransition() {
+function hasRealUnsavedChangesForCurrentPage(options = {}) {
   if (state.blank) return false;
-  updateCurrentFromInputs();
+  if (options.syncFromInputs !== false) updateCurrentFromInputs();
   const currentSnapshot = currentSnapshotFromState();
   const baselineSnapshot = currentBaselineSnapshot();
   return !sameSnapshot(currentSnapshot, baselineSnapshot);
+}
+
+function hasUnsavedPageChangesForTransition() {
+  return hasRealUnsavedChangesForCurrentPage({ syncFromInputs: true });
+}
+
+function syncCurrentSnapshotBaselineAndDirty(options = {}) {
+  if (state.blank) {
+    markDirty(false);
+    syncBeforeUnloadWarningState();
+    return;
+  }
+  updateCurrentFromInputs();
+  if (options.alignBaseline) setCurrentBaseline();
+  syncDirtyWithBaseline();
+}
+
+function handleBeforeUnloadWarning(event) {
+  if (!hasRealUnsavedChangesForCurrentPage({ syncFromInputs: true })) return;
+  event.preventDefault();
+  event.returnValue = true;
+  return true;
+}
+
+function syncBeforeUnloadWarningState() {
+  const shouldWarn = hasRealUnsavedChangesForCurrentPage({ syncFromInputs: false });
+  if (shouldWarn && !state.unsavedBeforeUnloadWarningActive) {
+    window.addEventListener('beforeunload', handleBeforeUnloadWarning);
+    state.unsavedBeforeUnloadWarningActive = true;
+    return;
+  }
+  if (!shouldWarn && state.unsavedBeforeUnloadWarningActive) {
+    window.removeEventListener('beforeunload', handleBeforeUnloadWarning);
+    state.unsavedBeforeUnloadWarningActive = false;
+  }
 }
 
 function openUnsavedTransitionModal() {
@@ -2404,6 +2443,7 @@ async function keepDraftBeforeTransition() {
   updateCurrentFromInputs();
   syncDirtyWithBaseline();
   await saveCurrentDraftNow({ force: true });
+  syncBeforeUnloadWarningState();
 }
 
 async function discardCurrentUnsavedChanges() {
@@ -2419,7 +2459,7 @@ async function discardCurrentUnsavedChanges() {
   state.current.description = baseline.description;
   state.current.html = baseline.html;
   renderCurrent();
-  syncDirtyWithBaseline();
+  syncCurrentSnapshotBaselineAndDirty({ alignBaseline: true });
   syncPreviewMode({ immediate: true });
 }
 
@@ -2587,6 +2627,7 @@ function markDirty(value = true) {
   els.dirtyBadge.classList.toggle('hidden', !state.dirty);
   if (state.dirty) scheduleDraftAutosave();
   else clearDraftAutosaveTimer();
+  if (typeof syncBeforeUnloadWarningState === 'function') syncBeforeUnloadWarningState();
 }
 function updateCharCount() { els.charCount.textContent = String(getCodeValue().length) + ' chars'; }
 function updateCurrentFromInputs() { state.current.title = els.titleInput.value; state.current.description = els.descriptionInput.value; state.current.html = getCodeValue(); }
@@ -2824,6 +2865,7 @@ async function loadPage(id) {
   setCurrentBaseline();
   await savePageMeta(state.current.id, { title: state.current.title, description: state.current.description, lastOpenedAt: Date.now() });
   renderCurrent();
+  syncCurrentSnapshotBaselineAndDirty({ alignBaseline: true });
   localStorage.setItem(LS.lastPageId, state.current.id);
   syncPreviewMode({ immediate: true });
   setStatus(t('pageLoaded'));
@@ -2858,6 +2900,7 @@ async function savePage(action = 'save') {
     await saveHistory(action);
     setCurrentBaseline();
     renderCurrent();
+    syncCurrentSnapshotBaselineAndDirty({ alignBaseline: true });
     syncPreviewMode({ immediate: true, forceRealReload: true });
     if (state.sidebar.open) await loadSidebarPages({ force: true, reset: true });
     setStatus(t('saved'));
@@ -3614,7 +3657,12 @@ function bindEvents() {
     }
     if (state.sidebar.open) loadSidebarPages({ force: true, reset: false });
   });
-  window.addEventListener('beforeunload', () => { stopSidebarAutoRefresh(); clearPreviewDebounce(); revokeLocalPreviewObjectUrl(); void flushDraftAutosaveNow(); });
+  window.addEventListener('pagehide', () => {
+    stopSidebarAutoRefresh();
+    clearPreviewDebounce();
+    revokeLocalPreviewObjectUrl();
+  });
+  syncBeforeUnloadWarningState();
 }
 
 

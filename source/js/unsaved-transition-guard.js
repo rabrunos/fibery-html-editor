@@ -1,9 +1,44 @@
-function hasUnsavedPageChangesForTransition() {
+function hasRealUnsavedChangesForCurrentPage(options = {}) {
   if (state.blank) return false;
-  updateCurrentFromInputs();
+  if (options.syncFromInputs !== false) updateCurrentFromInputs();
   const currentSnapshot = currentSnapshotFromState();
   const baselineSnapshot = currentBaselineSnapshot();
   return !sameSnapshot(currentSnapshot, baselineSnapshot);
+}
+
+function hasUnsavedPageChangesForTransition() {
+  return hasRealUnsavedChangesForCurrentPage({ syncFromInputs: true });
+}
+
+function syncCurrentSnapshotBaselineAndDirty(options = {}) {
+  if (state.blank) {
+    markDirty(false);
+    syncBeforeUnloadWarningState();
+    return;
+  }
+  updateCurrentFromInputs();
+  if (options.alignBaseline) setCurrentBaseline();
+  syncDirtyWithBaseline();
+}
+
+function handleBeforeUnloadWarning(event) {
+  if (!hasRealUnsavedChangesForCurrentPage({ syncFromInputs: true })) return;
+  event.preventDefault();
+  event.returnValue = true;
+  return true;
+}
+
+function syncBeforeUnloadWarningState() {
+  const shouldWarn = hasRealUnsavedChangesForCurrentPage({ syncFromInputs: false });
+  if (shouldWarn && !state.unsavedBeforeUnloadWarningActive) {
+    window.addEventListener('beforeunload', handleBeforeUnloadWarning);
+    state.unsavedBeforeUnloadWarningActive = true;
+    return;
+  }
+  if (!shouldWarn && state.unsavedBeforeUnloadWarningActive) {
+    window.removeEventListener('beforeunload', handleBeforeUnloadWarning);
+    state.unsavedBeforeUnloadWarningActive = false;
+  }
 }
 
 function openUnsavedTransitionModal() {
@@ -26,6 +61,7 @@ async function keepDraftBeforeTransition() {
   updateCurrentFromInputs();
   syncDirtyWithBaseline();
   await saveCurrentDraftNow({ force: true });
+  syncBeforeUnloadWarningState();
 }
 
 async function discardCurrentUnsavedChanges() {
@@ -41,7 +77,7 @@ async function discardCurrentUnsavedChanges() {
   state.current.description = baseline.description;
   state.current.html = baseline.html;
   renderCurrent();
-  syncDirtyWithBaseline();
+  syncCurrentSnapshotBaselineAndDirty({ alignBaseline: true });
   syncPreviewMode({ immediate: true });
 }
 
