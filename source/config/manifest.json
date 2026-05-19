@@ -1,5 +1,5 @@
 {
-  "version": "8.8.0",
+  "version": "8.9.0",
   "bodyOpenTag": "<body class=\"h-screen overflow-hidden bg-gray-50 text-gray-900 antialiased\">",
   "template": "source/template/index.template.html",
   "html": [
@@ -12,6 +12,7 @@
     "source/html/modal-update-app.html",
     "source/html/modal-history.html",
     "source/html/modal-confirm.html",
+    "source/html/modal-unsaved-transition.html",
     "source/html/panel-log.html"
   ],
   "css": [
@@ -48,6 +49,7 @@
     "source/js/drafts-diff-utils.js",
     "source/js/drafts-diff-render.js",
     "source/js/drafts-recovery-modal.js",
+    "source/js/unsaved-transition-guard.js",
     "source/js/history-storage.js",
     "source/js/history-render.js",
     "source/js/editor-monaco.js",

@@ -1,3 +1,29 @@
+## [8.9.0] - 2026-05-19
+
+### Added
+
+* Added a centralized unsaved-transition guard to protect page/context switches when local editor content differs from the current baseline snapshot.
+* Added an explicit 4-action modal for unsaved transitions with: Save and open, Keep local draft, Discard changes, and Cancel.
+* Added protected navigation wiring for sidebar page open, project page open, global search open, welcome search open, New page, and brand/home transitions.
+
+### Fixed
+
+* Prevented accidental context switches with unsaved local edits by requiring an explicit decision before leaving the current page.
+* Ensured "Keep local draft" flushes/persists the local draft before switching without saving to Fibery.
+* Ensured "Discard changes" removes the related local draft and clears matching autosave history signature to prevent recovery from reappearing for discarded content.
+* Ensured "Save and open" only proceeds when the existing Fibery save flow succeeds; on save failure, the user stays on the current page.
+* Ensured cancel keeps the user on the current page without forcing navigation or preview reset.
+
+### Technical adjustments
+
+* Added `source/js/unsaved-transition-guard.js` and `source/html/modal-unsaved-transition.html`.
+* Updated `savePage` to return explicit success/failure so guarded transitions can decide whether navigation may continue.
+* Updated manifest assembly order and version metadata propagation to `8.9.0`.
+
+### Validation
+
+* Local build and validation pass for temporary and final generated artifacts.
+
 ## [8.8.0] - 2026-05-19
 
 ### Added

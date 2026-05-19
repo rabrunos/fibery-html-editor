@@ -1,0 +1,15 @@
+<!-- Unsaved transition modal -->
+  <div id="unsavedTransitionModal" class="hidden fixed inset-0 z-[75] bg-black/25 p-6">
+    <div class="mx-auto mt-10 w-full max-w-xl overflow-hidden rounded-xl bg-white shadow-2xl">
+      <div class="border-b border-gray-200 p-4">
+        <div class="text-sm font-bold text-gray-900" data-i18n="unsavedTransitionTitle">Unsaved changes</div>
+        <div class="mt-1 text-sm text-gray-600" data-i18n="unsavedTransitionMessage">You have local changes that have not been saved to Fibery yet. What would you like to do before opening another page?</div>
+      </div>
+      <div class="flex flex-wrap items-center justify-end gap-2 p-3">
+        <button id="unsavedTransitionCancelBtn" class="h-8 rounded border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 hover:bg-gray-50" data-i18n="unsavedTransitionCancel">Cancel</button>
+        <button id="unsavedTransitionDiscardBtn" class="h-8 rounded border border-red-200 bg-white px-3 text-sm font-medium text-red-700 hover:bg-red-50" data-i18n="unsavedTransitionDiscard">Discard changes</button>
+        <button id="unsavedTransitionKeepDraftBtn" class="h-8 rounded border border-blue-200 bg-white px-3 text-sm font-medium text-blue-700 hover:bg-blue-50" data-i18n="unsavedTransitionKeepDraft">Keep local draft</button>
+        <button id="unsavedTransitionSaveBtn" class="h-8 rounded bg-blue-600 px-3 text-sm font-medium text-white hover:bg-blue-700" data-i18n="unsavedTransitionSaveOpen">Save and open</button>
+      </div>
+    </div>
+  </div>

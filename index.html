@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.8.0" />
+  <meta name="fibery-html-editor-version" content="8.9.0" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -521,6 +521,23 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
   </div>
 
 
+<!-- Unsaved transition modal -->
+  <div id="unsavedTransitionModal" class="hidden fixed inset-0 z-[75] bg-black/25 p-6">
+    <div class="mx-auto mt-10 w-full max-w-xl overflow-hidden rounded-xl bg-white shadow-2xl">
+      <div class="border-b border-gray-200 p-4">
+        <div class="text-sm font-bold text-gray-900" data-i18n="unsavedTransitionTitle">Unsaved changes</div>
+        <div class="mt-1 text-sm text-gray-600" data-i18n="unsavedTransitionMessage">You have local changes that have not been saved to Fibery yet. What would you like to do before opening another page?</div>
+      </div>
+      <div class="flex flex-wrap items-center justify-end gap-2 p-3">
+        <button id="unsavedTransitionCancelBtn" class="h-8 rounded border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 hover:bg-gray-50" data-i18n="unsavedTransitionCancel">Cancel</button>
+        <button id="unsavedTransitionDiscardBtn" class="h-8 rounded border border-red-200 bg-white px-3 text-sm font-medium text-red-700 hover:bg-red-50" data-i18n="unsavedTransitionDiscard">Discard changes</button>
+        <button id="unsavedTransitionKeepDraftBtn" class="h-8 rounded border border-blue-200 bg-white px-3 text-sm font-medium text-blue-700 hover:bg-blue-50" data-i18n="unsavedTransitionKeepDraft">Keep local draft</button>
+        <button id="unsavedTransitionSaveBtn" class="h-8 rounded bg-blue-600 px-3 text-sm font-medium text-white hover:bg-blue-700" data-i18n="unsavedTransitionSaveOpen">Save and open</button>
+      </div>
+    </div>
+  </div>
+
+
 <!-- Log panel -->
   <div id="logPanel" class="hidden fixed bottom-3 right-3 z-40 w-[520px] max-w-[calc(100vw-24px)] rounded-lg border border-gray-200 bg-white shadow-xl">
     <div class="border-b border-gray-200 px-3 py-2 flex items-center justify-between">
@@ -534,7 +551,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 (() => {
   'use strict';
 
-const APP_VERSION = '8.8.0';
+const APP_VERSION = '8.9.0';
 window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 document.documentElement.dataset.appVersion = APP_VERSION;
 
@@ -711,7 +728,14 @@ Object.assign(I18N.en, {
     updateRollbackRestored: 'Backup restored successfully.',
     updateRollbackReloadHint: 'Reload this page to run the restored version.',
     updateRollbackCanceled: 'Rollback canceled.',
-    updateRollbackFailed: 'Failed to restore backup.'
+    updateRollbackFailed: 'Failed to restore backup.',
+    unsavedTransitionTitle: 'Unsaved changes',
+    unsavedTransitionMessage: 'You have local changes that have not been saved to Fibery yet. What would you like to do before opening another page?',
+    unsavedTransitionSaveOpen: 'Save and open',
+    unsavedTransitionKeepDraft: 'Keep local draft',
+    unsavedTransitionDiscard: 'Discard changes',
+    unsavedTransitionCancel: 'Cancel',
+    unsavedTransitionSaveFailed: 'Save failed. Staying on the current page.'
   });
 
 
@@ -853,7 +877,14 @@ Object.assign(I18N['pt-BR'], {
     updateRollbackRestored: 'Backup restaurado com sucesso.',
     updateRollbackReloadHint: 'Recarregue esta página para usar a versão restaurada.',
     updateRollbackCanceled: 'Rollback cancelado.',
-    updateRollbackFailed: 'Falha ao restaurar backup.'
+    updateRollbackFailed: 'Falha ao restaurar backup.',
+    unsavedTransitionTitle: 'Edições não salvas',
+    unsavedTransitionMessage: 'Você tem alterações locais que ainda não foram salvas no Fibery. O que deseja fazer antes de abrir outra página?',
+    unsavedTransitionSaveOpen: 'Salvar e abrir',
+    unsavedTransitionKeepDraft: 'Manter rascunho local',
+    unsavedTransitionDiscard: 'Descartar edições',
+    unsavedTransitionCancel: 'Cancelar',
+    unsavedTransitionSaveFailed: 'Falha ao salvar. Você continua na página atual.'
   });
 
 
@@ -878,6 +909,7 @@ const els = {
   pageContextMenu: $('pageContextMenu'), moveProjectMenu: $('moveProjectMenu'), projectContextMenu: $('projectContextMenu'), editorPanelMenu: $('editorPanelMenu'), previewPanelMenu: $('previewPanelMenu'), createProjectModal: $('createProjectModal'), createProjectNameInput: $('createProjectNameInput'), closeCreateProjectBtn: $('closeCreateProjectBtn'), cancelCreateProjectBtn: $('cancelCreateProjectBtn'), confirmCreateProjectBtn: $('confirmCreateProjectBtn'),
   historyModal: $('historyModal'), closeHistoryBtn: $('closeHistoryBtn'), historyList: $('historyList'), logPanel: $('logPanel'), logBox: $('logBox'), clearLogBtn: $('clearLogBtn'),
   confirmModal: $('confirmModal'), confirmBox: $('confirmBox'), confirmTitle: $('confirmTitle'), confirmMessage: $('confirmMessage'), confirmCancelBtn: $('confirmCancelBtn'), confirmOkBtn: $('confirmOkBtn'), deletePreviewWrap: $('deletePreviewWrap'), deletePreviewFrame: $('deletePreviewFrame'), confirmOpenPreviewBtn: $('confirmOpenPreviewBtn'),
+  unsavedTransitionModal: $('unsavedTransitionModal'), unsavedTransitionSaveBtn: $('unsavedTransitionSaveBtn'), unsavedTransitionKeepDraftBtn: $('unsavedTransitionKeepDraftBtn'), unsavedTransitionDiscardBtn: $('unsavedTransitionDiscardBtn'), unsavedTransitionCancelBtn: $('unsavedTransitionCancelBtn'),
   draftRecoveryModal: $('draftRecoveryModal'), draftRecoveryTitle: $('draftRecoveryTitle'), draftRecoverySubtitle: $('draftRecoverySubtitle'), draftCurrentColumn: $('draftCurrentColumn'), draftLocalColumn: $('draftLocalColumn'), draftCodeDiffLegend: $('draftCodeDiffLegend'), draftCodeDiffMonaco: $('draftCodeDiffMonaco'), draftCodeDiffFallback: $('draftCodeDiffFallback'), draftFallbackCurrentPane: $('draftFallbackCurrentPane'), draftFallbackLocalPane: $('draftFallbackLocalPane'), closeDraftRecoveryBtn: $('closeDraftRecoveryBtn'), restoreDraftBtn: $('restoreDraftBtn'), keepCurrentVersionBtn: $('keepCurrentVersionBtn'), discardDraftBtn: $('discardDraftBtn'),
   reopenRecoveryBtn: $('reopenRecoveryBtn')
 };
@@ -895,7 +927,7 @@ const LOCAL_PREVIEW_MESSAGE_SOURCE = 'fibery-html-editor/local-preview';
 
 const state = {
   isAdmin: false, lang: 'en', appPageId: detectCurrentAppPageId(), current: { id: '', title: '', description: '', html: '' }, currentBaseline: { id: '', title: '', description: '', html: '' }, blank: true, dirty: false, db: null, saving: false,
-  code: { editor: null, suppress: false, fallback: false }, confirmResolver: null,
+  code: { editor: null, suppress: false, fallback: false }, confirmResolver: null, unsavedTransitionResolver: null, unsavedTransitionBusy: false,
   update: { checking: false, applying: false, rollbacking: false, status: 'idle', remoteVersion: '', remoteChangelog: '', changelogLoading: false, backupsLoading: false, backups: [] },
   preview: { mode: 'real', localObjectUrl: '', localStatusLabel: '', activeRequestId: '', debounceTimer: null, debounceMs: 500, lastLocalDocSignature: '', lastLocalHtmlSignature: '', lastLocalUsesTailwind: false, lastRealUrl: '' },
   sidebar: { open: true, pages: [], loading: false, refreshTimer: null, hasMore: false, limit: 20, visibleLimit: 20, pageCache: {} },
@@ -2344,6 +2376,98 @@ function openRecoveryFromButton() {
 }
 
 
+function hasUnsavedPageChangesForTransition() {
+  if (state.blank) return false;
+  updateCurrentFromInputs();
+  const currentSnapshot = currentSnapshotFromState();
+  const baselineSnapshot = currentBaselineSnapshot();
+  return !sameSnapshot(currentSnapshot, baselineSnapshot);
+}
+
+function openUnsavedTransitionModal() {
+  if (!els.unsavedTransitionModal) return Promise.resolve('cancel');
+  els.unsavedTransitionModal.classList.remove('hidden');
+  return new Promise(resolve => {
+    state.unsavedTransitionResolver = resolve;
+  });
+}
+
+function closeUnsavedTransitionModal(choice = 'cancel') {
+  if (els.unsavedTransitionModal) els.unsavedTransitionModal.classList.add('hidden');
+  const resolver = state.unsavedTransitionResolver;
+  state.unsavedTransitionResolver = null;
+  if (resolver) resolver(choice);
+}
+
+async function keepDraftBeforeTransition() {
+  if (state.blank) return;
+  updateCurrentFromInputs();
+  syncDirtyWithBaseline();
+  await saveCurrentDraftNow({ force: true });
+}
+
+async function discardCurrentUnsavedChanges() {
+  if (state.blank) return;
+  updateCurrentFromInputs();
+  const discardedSignature = snapshotSignature(currentSnapshotFromState());
+  const draftKey = draftKeyForPage(state.current.id || '');
+  await deleteDraftByKey(draftKey);
+  if (state.current.id) await clearAutosaveHistoryBySignature(state.current.id, discardedSignature);
+
+  const baseline = currentBaselineSnapshot();
+  state.current.title = baseline.title;
+  state.current.description = baseline.description;
+  state.current.html = baseline.html;
+  renderCurrent();
+  syncDirtyWithBaseline();
+  syncPreviewMode({ immediate: true });
+}
+
+async function runWithUnsavedPageTransitionGuard(proceed) {
+  if (typeof proceed !== 'function') return false;
+  if (state.unsavedTransitionBusy) return false;
+  state.unsavedTransitionBusy = true;
+  try {
+    if (!hasUnsavedPageChangesForTransition()) {
+      await proceed();
+      return true;
+    }
+
+    const choice = await openUnsavedTransitionModal();
+    if (choice === 'cancel') return false;
+
+    if (choice === 'save-open') {
+      const saved = await savePage('save');
+      if (!saved) {
+        setStatus(t('unsavedTransitionSaveFailed'));
+        return false;
+      }
+      await proceed();
+      return true;
+    }
+
+    if (choice === 'keep-draft') {
+      await keepDraftBeforeTransition();
+      await proceed();
+      return true;
+    }
+
+    if (choice === 'discard') {
+      await discardCurrentUnsavedChanges();
+      await proceed();
+      return true;
+    }
+
+    return false;
+  } catch (err) {
+    log(err?.message || String(err));
+    return false;
+  } finally {
+    state.unsavedTransitionBusy = false;
+  }
+}
+
+
 async function saveHistory(action = 'save') {
   if (!state.current.id || !state.db) return;
   const now = Date.now();
@@ -2712,11 +2836,11 @@ async function newPage() { const ok = await confirmAction({ title: t('createPage
 async function deleteCurrentPage() { if (!state.current.id) return; const ok = await confirmAction({ title: t('deleteTitle'), message: t('deleteMessage'), okText: t('deleteConfirm'), showPreview: false }); if (!ok) return; try { const oldId = state.current.id; await API.deletePage(oldId); if (localStorage.getItem(LS.lastPageId) === oldId) localStorage.removeItem(LS.lastPageId); await deletePageMeta(oldId); showBlankPage(); await loadSidebarPages({ force: true, reset: true }); setStatus(t('deleted')); log(t('deleted')); } catch (err) { alert(err.message || String(err)); log(err.message || String(err)); } }
 async function deletePageFromList(id, title) { if (!id || !state.isAdmin) return; const ok = await confirmAction({ title: t('deleteTitle'), message: `${t('deleteMessage')}\n\n${title || id}`, okText: t('deleteConfirm'), showPreview: true, previewId: id, openPreviewId: id }); if (!ok) return; try { await API.deletePage(id); if (localStorage.getItem(LS.lastPageId) === id) localStorage.removeItem(LS.lastPageId); await deletePageMeta(id); if (state.current.id === id) showBlankPage(); await loadSidebarPages({ force: true, reset: true }); if (!els.searchModal.classList.contains('hidden')) await loadSearchResults(); if (!els.welcomeSearchResults.classList.contains('hidden')) await loadWelcomeSearchResults(); setStatus(t('deleted')); log(`${t('deleted')}: ${title || id}`); } catch (err) { alert(err.message || String(err)); log(err.message || String(err)); } }
 async function savePage(action = 'save') {
-  if (state.saving) return;
+  if (state.saving) return false;
   const beforeSavePageId = state.current.id || '';
   await flushDraftAutosaveNow();
   updateCurrentFromInputs();
-  if (!state.current.title.trim()) { alert(t('validationTitle')); els.titleInput.focus(); return; }
+  if (!state.current.title.trim()) { alert(t('validationTitle')); els.titleInput.focus(); return false; }
   state.saving = true;
   els.saveBtn.disabled = true;
   setStatus(t('saving'));
@@ -2738,10 +2862,12 @@ async function savePage(action = 'save') {
     if (state.sidebar.open) await loadSidebarPages({ force: true, reset: true });
     setStatus(t('saved'));
     log(`${t('saved')}: ${state.current.title || state.current.id}`);
+    return true;
   } catch (err) {
     setStatus('Error');
     log(err.message || String(err));
     alert(err.message || String(err));
+    return false;
   } finally {
     state.saving = false;
     els.saveBtn.disabled = !state.isAdmin;
@@ -3328,8 +3454,8 @@ function bindEvents() {
   els.saveBtn.addEventListener('click', () => savePage('save'));
   els.updateAppBtn.addEventListener('click', openUpdateAppModal);
   els.refreshBtn.addEventListener('click', () => { els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); refreshPreview(); });
-  els.newPageBtn.addEventListener('click', newPage);
-  els.welcomeNewPageBtn.addEventListener('click', newPage);
+  els.newPageBtn.addEventListener('click', () => { void runWithUnsavedPageTransitionGuard(async () => { await newPage(); }); });
+  els.welcomeNewPageBtn.addEventListener('click', () => { void runWithUnsavedPageTransitionGuard(async () => { await newPage(); }); });
   els.searchPagesBtn.addEventListener('click', openSearchModal);
   els.historyBtn.addEventListener('click', () => { els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); openHistoryModal(); });
   els.deleteBtn.addEventListener('click', () => { els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); deleteCurrentPage(); });
@@ -3352,8 +3478,9 @@ function bindEvents() {
       setSidebarOpen(true);
       return;
     }
-    try { await flushDraftAutosaveNow(); } catch (err) { log(err.message || String(err)); }
-    showBlankPage();
+    await runWithUnsavedPageTransitionGuard(async () => {
+      showBlankPage();
+    });
   });
   els.refreshSidebarBtn.addEventListener('click', () => loadSidebarPages({ force: true, reset: false }));
   els.sidebarLoadMoreBtn.addEventListener('click', () => loadSidebarPages({ force: true, append: true }));
@@ -3367,16 +3494,19 @@ function bindEvents() {
     if (toggle) { e.preventDefault(); e.stopPropagation(); await toggleProject(toggle.dataset.projectId); return; }
     const btn = e.target.closest('.page-open');
     if (!btn) return;
-    await loadPage(btn.dataset.id);
+    if (!state.blank && btn.dataset.id === state.current.id) return;
+    await runWithUnsavedPageTransitionGuard(async () => {
+      await loadPage(btn.dataset.id);
+    });
   });
-  els.sidebarPagesList.addEventListener('click', async (e) => { const menu = e.target.closest('.page-menu'); if (menu) { openPageContextMenu(e, menu.dataset.pageId, menu.dataset.pageTitle || '', menu.dataset.projectId || ''); return; } const btn = e.target.closest('.page-open'); if (!btn) return; await loadPage(btn.dataset.id); });
+  els.sidebarPagesList.addEventListener('click', async (e) => { const menu = e.target.closest('.page-menu'); if (menu) { openPageContextMenu(e, menu.dataset.pageId, menu.dataset.pageTitle || '', menu.dataset.projectId || ''); return; } const btn = e.target.closest('.page-open'); if (!btn) return; if (!state.blank && btn.dataset.id === state.current.id) return; await runWithUnsavedPageTransitionGuard(async () => { await loadPage(btn.dataset.id); }); });
   els.globalSearchInput.addEventListener('input', () => { clearTimeout(state.search.debounce); state.search.query = els.globalSearchInput.value.trim(); state.search.debounce = setTimeout(loadSearchResults, 280); });
-  els.globalSearchResults.addEventListener('click', async (e) => { const menu = e.target.closest('.page-menu'); if (menu) { openPageContextMenu(e, menu.dataset.pageId, menu.dataset.pageTitle || '', menu.dataset.projectId || ''); return; } const btn = e.target.closest('.page-open'); if (!btn) return; closeSearchModal(); await loadPage(btn.dataset.id); });
+  els.globalSearchResults.addEventListener('click', async (e) => { const menu = e.target.closest('.page-menu'); if (menu) { openPageContextMenu(e, menu.dataset.pageId, menu.dataset.pageTitle || '', menu.dataset.projectId || ''); return; } const btn = e.target.closest('.page-open'); if (!btn) return; if (!state.blank && btn.dataset.id === state.current.id) { closeSearchModal(); return; } await runWithUnsavedPageTransitionGuard(async () => { await loadPage(btn.dataset.id); closeSearchModal(); }); });
   els.closeSearchBtn.addEventListener('click', closeSearchModal);
   els.searchModal.addEventListener('click', (e) => { if (e.target === els.searchModal) closeSearchModal(); });
   els.welcomeSearchInput.addEventListener('focus', openWelcomeSearch);
   els.welcomeSearchInput.addEventListener('input', () => { clearTimeout(state.welcomeSearch.debounce); state.welcomeSearch.query = els.welcomeSearchInput.value.trim(); state.welcomeSearch.debounce = setTimeout(loadWelcomeSearchResults, 260); openWelcomeSearch(); });
-  els.welcomeSearchResults.addEventListener('click', async (e) => { const menu = e.target.closest('.page-menu'); if (menu) { openPageContextMenu(e, menu.dataset.pageId, menu.dataset.pageTitle || '', menu.dataset.projectId || ''); return; } const btn = e.target.closest('.page-open'); if (!btn) return; closeWelcomeSearch(); await loadPage(btn.dataset.id); });
+  els.welcomeSearchResults.addEventListener('click', async (e) => { const menu = e.target.closest('.page-menu'); if (menu) { openPageContextMenu(e, menu.dataset.pageId, menu.dataset.pageTitle || '', menu.dataset.projectId || ''); return; } const btn = e.target.closest('.page-open'); if (!btn) return; if (!state.blank && btn.dataset.id === state.current.id) { closeWelcomeSearch(); return; } await runWithUnsavedPageTransitionGuard(async () => { await loadPage(btn.dataset.id); closeWelcomeSearch(); }); });
   els.confirmOpenPreviewBtn.addEventListener('click', () => { const id = els.confirmOpenPreviewBtn.dataset.previewId || state.current.id; if (id) window.open(viewUrl(id), '_blank'); });
   els.closeSettingsBtn.addEventListener('click', closeSettings);
   els.settingsModal.addEventListener('click', (e) => { if (e.target === els.settingsModal) closeSettings(); });
@@ -3471,7 +3601,12 @@ function bindEvents() {
   els.confirmCancelBtn.addEventListener('click', () => closeConfirm(false));
   els.confirmOkBtn.addEventListener('click', () => closeConfirm(true));
   els.confirmModal.addEventListener('click', (e) => { if (e.target === els.confirmModal) closeConfirm(false); });
-  window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (!els.draftRecoveryModal.classList.contains('hidden')) { keepCurrentVersionFromDraft(); return; } if (state.previewFocus) exitPreviewFocus(); els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); closeSearchModal(); closeSettings(); closeUpdateAppModal(); closeWelcomeSearch(); closeContextMenus(); closeCreateProjectModal(); } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); if (state.isAdmin && !state.blank) savePage('save'); } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearchModal(); } });
+  els.unsavedTransitionSaveBtn.addEventListener('click', () => closeUnsavedTransitionModal('save-open'));
+  els.unsavedTransitionKeepDraftBtn.addEventListener('click', () => closeUnsavedTransitionModal('keep-draft'));
+  els.unsavedTransitionDiscardBtn.addEventListener('click', () => closeUnsavedTransitionModal('discard'));
+  els.unsavedTransitionCancelBtn.addEventListener('click', () => closeUnsavedTransitionModal('cancel'));
+  els.unsavedTransitionModal.addEventListener('click', (e) => { if (e.target === els.unsavedTransitionModal) closeUnsavedTransitionModal('cancel'); });
+  window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (!els.unsavedTransitionModal.classList.contains('hidden')) { closeUnsavedTransitionModal('cancel'); return; } if (!els.draftRecoveryModal.classList.contains('hidden')) { keepCurrentVersionFromDraft(); return; } if (state.previewFocus) exitPreviewFocus(); els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); closeSearchModal(); closeSettings(); closeUpdateAppModal(); closeWelcomeSearch(); closeContextMenus(); closeCreateProjectModal(); } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); if (state.isAdmin && !state.blank) savePage('save'); } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearchModal(); } });
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       void flushDraftAutosaveNow();

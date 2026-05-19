@@ -4,8 +4,8 @@ function bindEvents() {
   els.saveBtn.addEventListener('click', () => savePage('save'));
   els.updateAppBtn.addEventListener('click', openUpdateAppModal);
   els.refreshBtn.addEventListener('click', () => { els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); refreshPreview(); });
-  els.newPageBtn.addEventListener('click', newPage);
-  els.welcomeNewPageBtn.addEventListener('click', newPage);
+  els.newPageBtn.addEventListener('click', () => { void runWithUnsavedPageTransitionGuard(async () => { await newPage(); }); });
+  els.welcomeNewPageBtn.addEventListener('click', () => { void runWithUnsavedPageTransitionGuard(async () => { await newPage(); }); });
   els.searchPagesBtn.addEventListener('click', openSearchModal);
   els.historyBtn.addEventListener('click', () => { els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); openHistoryModal(); });
   els.deleteBtn.addEventListener('click', () => { els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); deleteCurrentPage(); });
@@ -28,8 +28,9 @@ function bindEvents() {
       setSidebarOpen(true);
       return;
     }
-    try { await flushDraftAutosaveNow(); } catch (err) { log(err.message || String(err)); }
-    showBlankPage();
+    await runWithUnsavedPageTransitionGuard(async () => {
+      showBlankPage();
+    });
   });
   els.refreshSidebarBtn.addEventListener('click', () => loadSidebarPages({ force: true, reset: false }));
   els.sidebarLoadMoreBtn.addEventListener('click', () => loadSidebarPages({ force: true, append: true }));
@@ -43,16 +44,19 @@ function bindEvents() {
     if (toggle) { e.preventDefault(); e.stopPropagation(); await toggleProject(toggle.dataset.projectId); return; }
     const btn = e.target.closest('.page-open');
     if (!btn) return;
-    await loadPage(btn.dataset.id);
+    if (!state.blank && btn.dataset.id === state.current.id) return;
+    await runWithUnsavedPageTransitionGuard(async () => {
+      await loadPage(btn.dataset.id);
+    });
   });
-  els.sidebarPagesList.addEventListener('click', async (e) => { const menu = e.target.closest('.page-menu'); if (menu) { openPageContextMenu(e, menu.dataset.pageId, menu.dataset.pageTitle || '', menu.dataset.projectId || ''); return; } const btn = e.target.closest('.page-open'); if (!btn) return; await loadPage(btn.dataset.id); });
+  els.sidebarPagesList.addEventListener('click', async (e) => { const menu = e.target.closest('.page-menu'); if (menu) { openPageContextMenu(e, menu.dataset.pageId, menu.dataset.pageTitle || '', menu.dataset.projectId || ''); return; } const btn = e.target.closest('.page-open'); if (!btn) return; if (!state.blank && btn.dataset.id === state.current.id) return; await runWithUnsavedPageTransitionGuard(async () => { await loadPage(btn.dataset.id); }); });
   els.globalSearchInput.addEventListener('input', () => { clearTimeout(state.search.debounce); state.search.query = els.globalSearchInput.value.trim(); state.search.debounce = setTimeout(loadSearchResults, 280); });
-  els.globalSearchResults.addEventListener('click', async (e) => { const menu = e.target.closest('.page-menu'); if (menu) { openPageContextMenu(e, menu.dataset.pageId, menu.dataset.pageTitle || '', menu.dataset.projectId || ''); return; } const btn = e.target.closest('.page-open'); if (!btn) return; closeSearchModal(); await loadPage(btn.dataset.id); });
+  els.globalSearchResults.addEventListener('click', async (e) => { const menu = e.target.closest('.page-menu'); if (menu) { openPageContextMenu(e, menu.dataset.pageId, menu.dataset.pageTitle || '', menu.dataset.projectId || ''); return; } const btn = e.target.closest('.page-open'); if (!btn) return; if (!state.blank && btn.dataset.id === state.current.id) { closeSearchModal(); return; } await runWithUnsavedPageTransitionGuard(async () => { await loadPage(btn.dataset.id); closeSearchModal(); }); });
   els.closeSearchBtn.addEventListener('click', closeSearchModal);
   els.searchModal.addEventListener('click', (e) => { if (e.target === els.searchModal) closeSearchModal(); });
   els.welcomeSearchInput.addEventListener('focus', openWelcomeSearch);
   els.welcomeSearchInput.addEventListener('input', () => { clearTimeout(state.welcomeSearch.debounce); state.welcomeSearch.query = els.welcomeSearchInput.value.trim(); state.welcomeSearch.debounce = setTimeout(loadWelcomeSearchResults, 260); openWelcomeSearch(); });
-  els.welcomeSearchResults.addEventListener('click', async (e) => { const menu = e.target.closest('.page-menu'); if (menu) { openPageContextMenu(e, menu.dataset.pageId, menu.dataset.pageTitle || '', menu.dataset.projectId || ''); return; } const btn = e.target.closest('.page-open'); if (!btn) return; closeWelcomeSearch(); await loadPage(btn.dataset.id); });
+  els.welcomeSearchResults.addEventListener('click', async (e) => { const menu = e.target.closest('.page-menu'); if (menu) { openPageContextMenu(e, menu.dataset.pageId, menu.dataset.pageTitle || '', menu.dataset.projectId || ''); return; } const btn = e.target.closest('.page-open'); if (!btn) return; if (!state.blank && btn.dataset.id === state.current.id) { closeWelcomeSearch(); return; } await runWithUnsavedPageTransitionGuard(async () => { await loadPage(btn.dataset.id); closeWelcomeSearch(); }); });
   els.confirmOpenPreviewBtn.addEventListener('click', () => { const id = els.confirmOpenPreviewBtn.dataset.previewId || state.current.id; if (id) window.open(viewUrl(id), '_blank'); });
   els.closeSettingsBtn.addEventListener('click', closeSettings);
   els.settingsModal.addEventListener('click', (e) => { if (e.target === els.settingsModal) closeSettings(); });
@@ -147,7 +151,12 @@ function bindEvents() {
   els.confirmCancelBtn.addEventListener('click', () => closeConfirm(false));
   els.confirmOkBtn.addEventListener('click', () => closeConfirm(true));
   els.confirmModal.addEventListener('click', (e) => { if (e.target === els.confirmModal) closeConfirm(false); });
-  window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (!els.draftRecoveryModal.classList.contains('hidden')) { keepCurrentVersionFromDraft(); return; } if (state.previewFocus) exitPreviewFocus(); els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); closeSearchModal(); closeSettings(); closeUpdateAppModal(); closeWelcomeSearch(); closeContextMenus(); closeCreateProjectModal(); } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); if (state.isAdmin && !state.blank) savePage('save'); } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearchModal(); } });
+  els.unsavedTransitionSaveBtn.addEventListener('click', () => closeUnsavedTransitionModal('save-open'));
+  els.unsavedTransitionKeepDraftBtn.addEventListener('click', () => closeUnsavedTransitionModal('keep-draft'));
+  els.unsavedTransitionDiscardBtn.addEventListener('click', () => closeUnsavedTransitionModal('discard'));
+  els.unsavedTransitionCancelBtn.addEventListener('click', () => closeUnsavedTransitionModal('cancel'));
+  els.unsavedTransitionModal.addEventListener('click', (e) => { if (e.target === els.unsavedTransitionModal) closeUnsavedTransitionModal('cancel'); });
+  window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (!els.unsavedTransitionModal.classList.contains('hidden')) { closeUnsavedTransitionModal('cancel'); return; } if (!els.draftRecoveryModal.classList.contains('hidden')) { keepCurrentVersionFromDraft(); return; } if (state.previewFocus) exitPreviewFocus(); els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); closeSearchModal(); closeSettings(); closeUpdateAppModal(); closeWelcomeSearch(); closeContextMenus(); closeCreateProjectModal(); } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); if (state.isAdmin && !state.blank) savePage('save'); } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearchModal(); } });
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       void flushDraftAutosaveNow();

@@ -136,5 +136,12 @@ Object.assign(I18N.en, {
     updateRollbackRestored: 'Backup restored successfully.',
     updateRollbackReloadHint: 'Reload this page to run the restored version.',
     updateRollbackCanceled: 'Rollback canceled.',
-    updateRollbackFailed: 'Failed to restore backup.'
+    updateRollbackFailed: 'Failed to restore backup.',
+    unsavedTransitionTitle: 'Unsaved changes',
+    unsavedTransitionMessage: 'You have local changes that have not been saved to Fibery yet. What would you like to do before opening another page?',
+    unsavedTransitionSaveOpen: 'Save and open',
+    unsavedTransitionKeepDraft: 'Keep local draft',
+    unsavedTransitionDiscard: 'Discard changes',
+    unsavedTransitionCancel: 'Cancel',
+    unsavedTransitionSaveFailed: 'Save failed. Staying on the current page.'
   });

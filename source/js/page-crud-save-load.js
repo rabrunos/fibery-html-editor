@@ -19,11 +19,11 @@ async function newPage() { const ok = await confirmAction({ title: t('createPage
 async function deleteCurrentPage() { if (!state.current.id) return; const ok = await confirmAction({ title: t('deleteTitle'), message: t('deleteMessage'), okText: t('deleteConfirm'), showPreview: false }); if (!ok) return; try { const oldId = state.current.id; await API.deletePage(oldId); if (localStorage.getItem(LS.lastPageId) === oldId) localStorage.removeItem(LS.lastPageId); await deletePageMeta(oldId); showBlankPage(); await loadSidebarPages({ force: true, reset: true }); setStatus(t('deleted')); log(t('deleted')); } catch (err) { alert(err.message || String(err)); log(err.message || String(err)); } }
 async function deletePageFromList(id, title) { if (!id || !state.isAdmin) return; const ok = await confirmAction({ title: t('deleteTitle'), message: `${t('deleteMessage')}\n\n${title || id}`, okText: t('deleteConfirm'), showPreview: true, previewId: id, openPreviewId: id }); if (!ok) return; try { await API.deletePage(id); if (localStorage.getItem(LS.lastPageId) === id) localStorage.removeItem(LS.lastPageId); await deletePageMeta(id); if (state.current.id === id) showBlankPage(); await loadSidebarPages({ force: true, reset: true }); if (!els.searchModal.classList.contains('hidden')) await loadSearchResults(); if (!els.welcomeSearchResults.classList.contains('hidden')) await loadWelcomeSearchResults(); setStatus(t('deleted')); log(`${t('deleted')}: ${title || id}`); } catch (err) { alert(err.message || String(err)); log(err.message || String(err)); } }
 async function savePage(action = 'save') {
-  if (state.saving) return;
+  if (state.saving) return false;
   const beforeSavePageId = state.current.id || '';
   await flushDraftAutosaveNow();
   updateCurrentFromInputs();
-  if (!state.current.title.trim()) { alert(t('validationTitle')); els.titleInput.focus(); return; }
+  if (!state.current.title.trim()) { alert(t('validationTitle')); els.titleInput.focus(); return false; }
   state.saving = true;
   els.saveBtn.disabled = true;
   setStatus(t('saving'));
@@ -45,10 +45,12 @@ async function savePage(action = 'save') {
     if (state.sidebar.open) await loadSidebarPages({ force: true, reset: true });
     setStatus(t('saved'));
     log(`${t('saved')}: ${state.current.title || state.current.id}`);
+    return true;
   } catch (err) {
     setStatus('Error');
     log(err.message || String(err));
     alert(err.message || String(err));
+    return false;
   } finally {
     state.saving = false;
     els.saveBtn.disabled = !state.isAdmin;
