@@ -1,4 +1,4 @@
-﻿# AGENTS.md — Fibery HTML Editor
+# AGENTS.md — Fibery HTML Editor
 
 ## Purpose
 
@@ -186,6 +186,8 @@ const APP_VERSION = 'x.y.z';
 window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 document.documentElement.dataset.appVersion = APP_VERSION;
 ```
+
+If `package.json` has a `version` field, keep it aligned with `source/config/manifest.json` in the same change. The manifest remains the canonical app version; `package.json.version` is metadata for tooling/readability and must not become a separate source of truth.
 
 Use:
 
