@@ -147,8 +147,14 @@ Object.assign(I18N.en, {
     externalSyncDetectedTitle: 'External change detected',
     externalSyncMessageNoLocalEdits: 'The version saved in Fibery changed since you opened this page.',
     externalSyncMessageWithLocalEdits: 'The page changed in Fibery while you still have local unsaved edits.',
+    externalSyncCheckNow: 'Check now',
     externalSyncDismiss: 'Dismiss',
     externalSyncDetectedLog: 'External change detected for current page',
     externalSyncDetectedWithLocalEditsLog: 'External change detected while local unsaved edits exist',
+    externalSyncCheckStartedLog: 'External sync check started',
+    externalSyncCheckCompletedLog: 'External sync check completed',
+    externalSyncManualCheckStartedLog: 'External sync manual check started',
+    externalSyncManualCheckCompletedLog: 'External sync manual check completed',
+    externalSyncCheckSkippedLog: 'External sync check skipped',
     externalSyncCheckErrorLog: 'External change check failed'
   });

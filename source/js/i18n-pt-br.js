@@ -147,8 +147,14 @@ Object.assign(I18N['pt-BR'], {
     externalSyncDetectedTitle: 'Alteração externa detectada',
     externalSyncMessageNoLocalEdits: 'A versão salva no Fibery mudou desde que você abriu esta página.',
     externalSyncMessageWithLocalEdits: 'Esta página mudou no Fibery enquanto você ainda tem edições locais não salvas.',
+    externalSyncCheckNow: 'Verificar agora',
     externalSyncDismiss: 'Dispensar',
     externalSyncDetectedLog: 'Alteração externa detectada para a página atual',
     externalSyncDetectedWithLocalEditsLog: 'Alteração externa detectada enquanto existem edições locais não salvas',
+    externalSyncCheckStartedLog: 'Verificação automática de sync externo iniciada',
+    externalSyncCheckCompletedLog: 'Verificação automática de sync externo concluída',
+    externalSyncManualCheckStartedLog: 'Verificação manual de sync externo iniciada',
+    externalSyncManualCheckCompletedLog: 'Verificação manual de sync externo concluída',
+    externalSyncCheckSkippedLog: 'Verificação de sync externo ignorada',
     externalSyncCheckErrorLog: 'Falha ao verificar alteração externa'
   });

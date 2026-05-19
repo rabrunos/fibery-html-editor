@@ -29,6 +29,7 @@ function showBlankPage() {
   els.welcomeView.classList.remove('hidden');
   els.historyBtn.disabled = true;
   els.deleteBtn.disabled = true;
+  if (els.externalSyncCheckNowBtn) els.externalSyncCheckNowBtn.classList.add('hidden');
   if (els.updateAppBtn) els.updateAppBtn.classList.add('hidden');
   els.previewFrame.removeAttribute('src');
   els.previewFrame.srcdoc = '';
@@ -65,6 +66,7 @@ function renderCurrent() {
   els.historyBtn.disabled = !state.current.id;
   if (els.openViewMenuBtn) els.openViewMenuBtn.disabled = !state.current.id;
   els.deleteBtn.disabled = !state.current.id || !state.isAdmin;
+  if (els.externalSyncCheckNowBtn) els.externalSyncCheckNowBtn.classList.toggle('hidden', !state.current.id || !state.externalSync.enabled);
   if (els.updateAppBtn) els.updateAppBtn.classList.toggle('hidden', !(state.appPageId && state.current.id === state.appPageId && !state.blank));
   updateSidebarActiveState();
   updateRecoveryReopenButton();

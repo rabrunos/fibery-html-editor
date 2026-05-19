@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.10.0" />
+  <meta name="fibery-html-editor-version" content="8.10.1" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -223,6 +223,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
             <button id="externalSyncDismissBtn" class="h-6 shrink-0 rounded border border-amber-300 bg-white px-2 text-[10px] font-semibold text-amber-800 hover:bg-amber-100" data-i18n="externalSyncDismiss">Dismiss</button>
           </div>
         </div>
+        <button id="externalSyncCheckNowBtn" class="hidden h-7 shrink-0 rounded border border-gray-300 bg-white px-2 text-[11px] font-medium text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40" data-i18n="externalSyncCheckNow">Check now</button>
         <span id="statusText" class="hidden md:inline-block max-w-40 truncate text-xs text-gray-500">Ready</span>
         <button id="saveBtn" class="h-8 px-3 rounded bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed" data-i18n="save">Save</button>
         <button id="updateAppBtn" class="hidden h-8 rounded bg-yellow-400 px-3 text-sm font-semibold text-yellow-950 shadow-sm hover:bg-yellow-500" data-i18n="updateApp">Update App</button>
@@ -560,7 +561,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 (() => {
   'use strict';
 
-const APP_VERSION = '8.10.0';
+const APP_VERSION = '8.10.1';
 window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 document.documentElement.dataset.appVersion = APP_VERSION;
 
@@ -748,9 +749,15 @@ Object.assign(I18N.en, {
     externalSyncDetectedTitle: 'External change detected',
     externalSyncMessageNoLocalEdits: 'The version saved in Fibery changed since you opened this page.',
     externalSyncMessageWithLocalEdits: 'The page changed in Fibery while you still have local unsaved edits.',
+    externalSyncCheckNow: 'Check now',
     externalSyncDismiss: 'Dismiss',
     externalSyncDetectedLog: 'External change detected for current page',
     externalSyncDetectedWithLocalEditsLog: 'External change detected while local unsaved edits exist',
+    externalSyncCheckStartedLog: 'External sync check started',
+    externalSyncCheckCompletedLog: 'External sync check completed',
+    externalSyncManualCheckStartedLog: 'External sync manual check started',
+    externalSyncManualCheckCompletedLog: 'External sync manual check completed',
+    externalSyncCheckSkippedLog: 'External sync check skipped',
     externalSyncCheckErrorLog: 'External change check failed'
   });
 
@@ -904,9 +911,15 @@ Object.assign(I18N['pt-BR'], {
     externalSyncDetectedTitle: 'Alteração externa detectada',
     externalSyncMessageNoLocalEdits: 'A versão salva no Fibery mudou desde que você abriu esta página.',
     externalSyncMessageWithLocalEdits: 'Esta página mudou no Fibery enquanto você ainda tem edições locais não salvas.',
+    externalSyncCheckNow: 'Verificar agora',
     externalSyncDismiss: 'Dispensar',
     externalSyncDetectedLog: 'Alteração externa detectada para a página atual',
     externalSyncDetectedWithLocalEditsLog: 'Alteração externa detectada enquanto existem edições locais não salvas',
+    externalSyncCheckStartedLog: 'Verificação automática de sync externo iniciada',
+    externalSyncCheckCompletedLog: 'Verificação automática de sync externo concluída',
+    externalSyncManualCheckStartedLog: 'Verificação manual de sync externo iniciada',
+    externalSyncManualCheckCompletedLog: 'Verificação manual de sync externo concluída',
+    externalSyncCheckSkippedLog: 'Verificação de sync externo ignorada',
     externalSyncCheckErrorLog: 'Falha ao verificar alteração externa'
   });
 
@@ -923,7 +936,7 @@ const els = {
   pageHeader: $('pageHeader'), welcomeView: $('welcomeView'), welcomeNewPageBtn: $('welcomeNewPageBtn'), welcomeSearchInput: $('welcomeSearchInput'), welcomeSearchResults: $('welcomeSearchResults'),
   saveBtn: $('saveBtn'), updateAppBtn: $('updateAppBtn'), refreshBtn: $('refreshBtn'), openViewMenuBtn: $('openViewMenuBtn'), newPageBtn: $('newPageBtn'), historyBtn: $('historyBtn'), deleteBtn: $('deleteBtn'), moreBtn: $('moreBtn'), moreMenu: $('moreMenu'),
   quickBothBtn: $('quickBothBtn'), quickEditorBtn: $('quickEditorBtn'), quickPreviewBtn: $('quickPreviewBtn'),
-  titleInput: $('titleInput'), descriptionInput: $('descriptionInput'), dirtyBadge: $('dirtyBadge'), externalSyncNotice: $('externalSyncNotice'), externalSyncNoticeTitle: $('externalSyncNoticeTitle'), externalSyncNoticeMessage: $('externalSyncNoticeMessage'), externalSyncDismissBtn: $('externalSyncDismissBtn'), statusText: $('statusText'),
+  titleInput: $('titleInput'), descriptionInput: $('descriptionInput'), dirtyBadge: $('dirtyBadge'), externalSyncNotice: $('externalSyncNotice'), externalSyncNoticeTitle: $('externalSyncNoticeTitle'), externalSyncNoticeMessage: $('externalSyncNoticeMessage'), externalSyncDismissBtn: $('externalSyncDismissBtn'), externalSyncCheckNowBtn: $('externalSyncCheckNowBtn'), statusText: $('statusText'),
   logToggleBtn: $('logToggleBtn'), logMenuText: $('logMenuText'), settingsModal: $('settingsModal'), closeSettingsBtn: $('closeSettingsBtn'), langSelect: $('langSelect'),
   updateAppModal: $('updateAppModal'), closeUpdateAppBtn: $('closeUpdateAppBtn'), updateInstalledVersionValue: $('updateInstalledVersionValue'), updateAvailableVersionValue: $('updateAvailableVersionValue'), updateCheckStatusText: $('updateCheckStatusText'), updateVerifyAgainBtn: $('updateVerifyAgainBtn'), updateApplyBtn: $('updateApplyBtn'), updateBackupsBox: $('updateBackupsBox'), updateChangelogBox: $('updateChangelogBox'), updateCloseBtn: $('updateCloseBtn'),
   openLastToggle: $('openLastToggle'), versionLimitSelect: $('versionLimitSelect'), autosaveLimitSelect: $('autosaveLimitSelect'), codeEditor: $('codeEditor'), codeEditorFallback: $('codeEditorFallback'), charCount: $('charCount'), copyHtmlBtn: $('copyHtmlBtn'), editorPanelMenuBtn: $('editorPanelMenuBtn'),
@@ -952,8 +965,9 @@ const state = {
   isAdmin: false, lang: 'en', appPageId: detectCurrentAppPageId(), current: { id: '', title: '', description: '', html: '' }, currentBaseline: { id: '', title: '', description: '', html: '' }, blank: true, dirty: false, db: null, saving: false, loadingPage: false,
   code: { editor: null, suppress: false, fallback: false }, confirmResolver: null, unsavedTransitionResolver: null, unsavedTransitionBusy: false, unsavedBeforeUnloadWarningActive: false,
   externalSync: {
-    enabled: true, checking: false, timer: null, intervalMs: 60000, lastCheckedAt: 0, lastErrorAt: 0, lastErrorMessage: '',
-    remoteCandidate: null, remoteSignature: '', baselineSignatureAtDetection: '', localBaselineSignature: '', dismissedSignature: '', lastNotifiedSignature: '', pageId: '', status: 'idle'
+    enabled: true, checking: false, timer: null, intervalMs: 300000, minCooldownMs: 180000, lastCheckedAt: 0, lastErrorAt: 0, lastErrorMessage: '',
+    remoteCandidate: null, remoteSignature: '', baselineSignatureAtDetection: '', localBaselineSignature: '', dismissedSignature: '', lastNotifiedSignature: '', pageId: '', status: 'idle',
+    lastSkipReason: '', lastSkipLoggedAt: 0
   },
   update: { checking: false, applying: false, rollbacking: false, status: 'idle', remoteVersion: '', remoteChangelog: '', changelogLoading: false, backupsLoading: false, backups: [] },
   preview: { mode: 'real', localObjectUrl: '', localStatusLabel: '', activeRequestId: '', debounceTimer: null, debounceMs: 500, lastLocalDocSignature: '', lastLocalHtmlSignature: '', lastLocalUsesTailwind: false, lastRealUrl: '' },
@@ -2464,7 +2478,7 @@ function closeUnsavedTransitionModal(choice = 'cancel') {
   if (els.unsavedTransitionModal) els.unsavedTransitionModal.classList.add('hidden');
   const resolver = state.unsavedTransitionResolver;
   state.unsavedTransitionResolver = null;
-  if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState({ immediate: true });
+  if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
   if (resolver) resolver(choice);
 }
 
@@ -2491,7 +2505,7 @@ async function discardCurrentUnsavedChanges() {
   renderCurrent();
   syncCurrentSnapshotBaselineAndDirty({ alignBaseline: true });
   if (typeof clearExternalSyncCandidateForCurrentPage === 'function') clearExternalSyncCandidateForCurrentPage({ clearDismissed: true, clearNotified: true });
-  if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState({ immediate: true });
+  if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
   syncPreviewMode({ immediate: true });
 }
 
@@ -2536,7 +2550,7 @@ async function runWithUnsavedPageTransitionGuard(proceed) {
     return false;
   } finally {
     state.unsavedTransitionBusy = false;
-    if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState({ immediate: true });
+    if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
   }
 }
 
@@ -2566,6 +2580,8 @@ function resetExternalSyncStateForCurrentPage(pageId = '') {
   state.externalSync.lastCheckedAt = 0;
   state.externalSync.lastErrorAt = 0;
   state.externalSync.lastErrorMessage = '';
+  state.externalSync.lastSkipReason = '';
+  state.externalSync.lastSkipLoggedAt = 0;
   state.externalSync.localBaselineSignature = '';
   state.externalSync.dismissedSignature = '';
   state.externalSync.lastNotifiedSignature = '';
@@ -2684,16 +2700,55 @@ function hasOpenExternalSyncBlockingModal() {
   return false;
 }
 
-function shouldPauseExternalSyncPolling() {
-  if (!state.externalSync.enabled) return true;
-  if (state.blank || !state.current.id) return true;
-  if (document.hidden) return true;
-  if (state.saving || state.loadingPage) return true;
-  if (state.externalSync.checking) return true;
-  if (state.unsavedTransitionBusy || !!state.unsavedTransitionResolver) return true;
-  if (state.update.checking || state.update.applying || state.update.rollbacking) return true;
-  if (hasOpenExternalSyncBlockingModal()) return true;
-  return false;
+function externalSyncDebugLoggingEnabled() {
+  return !!els.logPanel && !els.logPanel.classList.contains('hidden');
+}
+
+function logExternalSyncDebug(message, options = {}) {
+  if (!message) return;
+  if (!options.force && !externalSyncDebugLoggingEnabled()) return;
+  log(message);
+}
+
+function externalSyncRemainingCooldownMs(now = Date.now()) {
+  const minCooldownMs = Math.max(120000, Number(state.externalSync.minCooldownMs || 180000));
+  const lastCheckedAt = Number(state.externalSync.lastCheckedAt || 0);
+  if (!lastCheckedAt) return 0;
+  return Math.max(0, minCooldownMs - (now - lastCheckedAt));
+}
+
+function externalSyncSkipReason(options = {}) {
+  const manual = !!options.manual;
+  if (!state.externalSync.enabled) return 'disabled';
+  if (state.blank || !state.current.id) return 'no-current-page';
+  if (document.hidden) return 'document-hidden';
+  if (state.saving) return 'saving';
+  if (state.loadingPage) return 'loading-page';
+  if (state.sidebar.loading) return 'sidebar-loading';
+  if (state.externalSync.checking) return 'already-checking';
+  if (state.unsavedTransitionBusy || !!state.unsavedTransitionResolver) return 'unsaved-transition';
+  if (state.update.checking || state.update.applying || state.update.rollbacking) return 'update-flow';
+  if (hasOpenExternalSyncBlockingModal()) return 'blocking-modal';
+  if (!manual && externalSyncRemainingCooldownMs() > 0) return 'cooldown';
+  return '';
+}
+
+function logExternalSyncSkip(reason) {
+  if (!reason) return;
+  const now = Date.now();
+  const sameReason = reason === String(state.externalSync.lastSkipReason || '');
+  const tooSoon = sameReason && (now - Number(state.externalSync.lastSkipLoggedAt || 0)) < 30000;
+  state.externalSync.lastSkipReason = reason;
+  state.externalSync.lastSkipLoggedAt = now;
+  if (tooSoon) return;
+  logExternalSyncDebug(`${t('externalSyncCheckSkippedLog')}: ${reason}`);
+}
+
+function externalSyncNextDelayMs() {
+  const intervalMs = Math.max(120000, Number(state.externalSync.intervalMs || 300000));
+  const cooldownMs = externalSyncRemainingCooldownMs();
+  if (!cooldownMs) return intervalMs;
+  return Math.max(intervalMs, cooldownMs);
 }
 
 function stopExternalSyncPolling() {
@@ -2702,20 +2757,26 @@ function stopExternalSyncPolling() {
   state.externalSync.timer = null;
 }
 
-function scheduleExternalSyncPolling(delayMs = state.externalSync.intervalMs) {
+function scheduleExternalSyncPolling(delayMs = externalSyncNextDelayMs()) {
   stopExternalSyncPolling();
   if (!state.externalSync.enabled) return;
-  const safeDelay = Math.max(1000, Number(delayMs || state.externalSync.intervalMs || 60000));
+  const safeDelay = Math.max(120000, Number(delayMs || externalSyncNextDelayMs()));
   state.externalSync.timer = window.setTimeout(() => {
     state.externalSync.timer = null;
     void runExternalSyncPollingCycle();
   }, safeDelay);
 }
 
-async function checkExternalSyncNow() {
-  if (shouldPauseExternalSyncPolling()) return false;
+async function checkExternalSyncNow(options = {}) {
+  const manual = !!options.manual;
+  const skipReason = externalSyncSkipReason({ manual });
+  if (skipReason) {
+    logExternalSyncSkip(skipReason);
+    return false;
+  }
   const pageId = String(state.current.id || '');
   if (!pageId) return false;
+  logExternalSyncDebug(manual ? t('externalSyncManualCheckStartedLog') : t('externalSyncCheckStartedLog'));
   state.externalSync.checking = true;
   state.externalSync.status = 'checking';
   try {
@@ -2725,6 +2786,9 @@ async function checkExternalSyncNow() {
     state.externalSync.lastCheckedAt = Date.now();
     state.externalSync.lastErrorAt = 0;
     state.externalSync.lastErrorMessage = '';
+    state.externalSync.lastSkipReason = '';
+    state.externalSync.lastSkipLoggedAt = 0;
+    logExternalSyncDebug(manual ? t('externalSyncManualCheckCompletedLog') : t('externalSyncCheckCompletedLog'));
     return true;
   } catch (err) {
     state.externalSync.lastErrorAt = Date.now();
@@ -2739,30 +2803,34 @@ async function checkExternalSyncNow() {
 
 async function runExternalSyncPollingCycle(options = {}) {
   if (!state.externalSync.enabled) return;
-  if (!options.force && shouldPauseExternalSyncPolling()) {
-    stopExternalSyncPolling();
-    return;
+  const manual = !!options.manual;
+  await checkExternalSyncNow({ manual });
+  syncExternalSyncPollingState({ forceReschedule: manual });
+}
+
+async function runExternalSyncManualCheck() {
+  if (els.externalSyncCheckNowBtn) els.externalSyncCheckNowBtn.disabled = true;
+  try {
+    await runExternalSyncPollingCycle({ manual: true });
+  } finally {
+    if (els.externalSyncCheckNowBtn) els.externalSyncCheckNowBtn.disabled = false;
   }
-  await checkExternalSyncNow();
-  if (shouldPauseExternalSyncPolling()) {
-    stopExternalSyncPolling();
-    return;
-  }
-  scheduleExternalSyncPolling(state.externalSync.intervalMs);
 }
 
 function syncExternalSyncPollingState(options = {}) {
-  const immediate = !!options.immediate;
+  const forceReschedule = !!options.forceReschedule;
   if (!state.externalSync.enabled) {
     stopExternalSyncPolling();
     return;
   }
-  if (shouldPauseExternalSyncPolling()) {
+  const skipReason = externalSyncSkipReason({ manual: false });
+  if (skipReason && skipReason !== 'cooldown') {
+    logExternalSyncSkip(skipReason);
     stopExternalSyncPolling();
     return;
   }
-  if (!immediate && state.externalSync.timer) return;
-  scheduleExternalSyncPolling(immediate ? 1200 : state.externalSync.intervalMs);
+  if (state.externalSync.timer && !forceReschedule) return;
+  scheduleExternalSyncPolling(externalSyncNextDelayMs());
 }
 
 
@@ -2911,6 +2979,7 @@ function showBlankPage() {
   els.welcomeView.classList.remove('hidden');
   els.historyBtn.disabled = true;
   els.deleteBtn.disabled = true;
+  if (els.externalSyncCheckNowBtn) els.externalSyncCheckNowBtn.classList.add('hidden');
   if (els.updateAppBtn) els.updateAppBtn.classList.add('hidden');
   els.previewFrame.removeAttribute('src');
   els.previewFrame.srcdoc = '';
@@ -2947,6 +3016,7 @@ function renderCurrent() {
   els.historyBtn.disabled = !state.current.id;
   if (els.openViewMenuBtn) els.openViewMenuBtn.disabled = !state.current.id;
   els.deleteBtn.disabled = !state.current.id || !state.isAdmin;
+  if (els.externalSyncCheckNowBtn) els.externalSyncCheckNowBtn.classList.toggle('hidden', !state.current.id || !state.externalSync.enabled);
   if (els.updateAppBtn) els.updateAppBtn.classList.toggle('hidden', !(state.appPageId && state.current.id === state.appPageId && !state.blank));
   updateSidebarActiveState();
   updateRecoveryReopenButton();
@@ -3138,7 +3208,7 @@ async function loadPage(id) {
     void maybePromptDraftRecoveryForCurrentPage(promptToken);
   } finally {
     state.loadingPage = false;
-    if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState({ immediate: true });
+    if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
   }
 }
 async function confirmAction({ title, message, okText = 'OK', showPreview = false, previewId = '', openPreviewId = '' } = {}) { els.confirmTitle.textContent = title || ''; els.confirmMessage.textContent = message || ''; els.confirmOkBtn.textContent = okText; const previewTargetId = previewId || state.current.id; els.confirmOpenPreviewBtn.dataset.previewId = openPreviewId || previewTargetId || ''; els.deletePreviewWrap.classList.toggle('hidden', !showPreview); if (showPreview && previewTargetId) els.deletePreviewFrame.src = viewUrl(previewTargetId); else { els.deletePreviewFrame.removeAttribute('src'); els.confirmOpenPreviewBtn.dataset.previewId = ''; } els.confirmModal.classList.remove('hidden'); return new Promise(resolve => { state.confirmResolver = resolve; }); }
@@ -3171,7 +3241,7 @@ async function savePage(action = 'save') {
     if (typeof clearExternalSyncCandidateForCurrentPage === 'function') clearExternalSyncCandidateForCurrentPage({ clearDismissed: true, clearNotified: true });
     renderCurrent();
     syncCurrentSnapshotBaselineAndDirty({ alignBaseline: true });
-    if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState({ immediate: true });
+    if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
     syncPreviewMode({ immediate: true, forceRealReload: true });
     if (state.sidebar.open) await loadSidebarPages({ force: true, reset: true });
     setStatus(t('saved'));
@@ -3464,6 +3534,7 @@ async function loadSidebarPages(options = {}) {
     els.sidebarLoadMoreWrap.classList.add('hidden');
   } finally {
     state.sidebar.loading = false;
+    if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
   }
 }
 
@@ -3907,6 +3978,7 @@ function bindEvents() {
   els.keepCurrentVersionBtn.addEventListener('click', () => keepCurrentVersionFromDraft());
   els.discardDraftBtn.addEventListener('click', () => discardDraftFromModal());
   if (els.externalSyncDismissBtn) els.externalSyncDismissBtn.addEventListener('click', () => dismissExternalSyncNotice());
+  if (els.externalSyncCheckNowBtn) els.externalSyncCheckNowBtn.addEventListener('click', () => { void runExternalSyncManualCheck(); });
   els.closeDraftRecoveryBtn.addEventListener('click', () => keepCurrentVersionFromDraft());
   els.draftRecoveryModal.addEventListener('click', (e) => { if (e.target === els.draftRecoveryModal) keepCurrentVersionFromDraft(); });
   els.reopenRecoveryBtn.addEventListener('click', () => openRecoveryFromButton());
@@ -3930,7 +4002,7 @@ function bindEvents() {
       return;
     }
     if (state.sidebar.open) loadSidebarPages({ force: true, reset: false });
-    if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState({ immediate: true });
+    if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
   });
   window.addEventListener('pagehide', () => {
     stopSidebarAutoRefresh();
@@ -3939,7 +4011,7 @@ function bindEvents() {
     if (typeof stopExternalSyncPolling === 'function') stopExternalSyncPolling();
   });
   syncBeforeUnloadWarningState();
-  if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState({ immediate: true });
+  if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
 }
 
 

@@ -19,7 +19,7 @@ async function loadPage(id) {
     void maybePromptDraftRecoveryForCurrentPage(promptToken);
   } finally {
     state.loadingPage = false;
-    if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState({ immediate: true });
+    if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
   }
 }
 async function confirmAction({ title, message, okText = 'OK', showPreview = false, previewId = '', openPreviewId = '' } = {}) { els.confirmTitle.textContent = title || ''; els.confirmMessage.textContent = message || ''; els.confirmOkBtn.textContent = okText; const previewTargetId = previewId || state.current.id; els.confirmOpenPreviewBtn.dataset.previewId = openPreviewId || previewTargetId || ''; els.deletePreviewWrap.classList.toggle('hidden', !showPreview); if (showPreview && previewTargetId) els.deletePreviewFrame.src = viewUrl(previewTargetId); else { els.deletePreviewFrame.removeAttribute('src'); els.confirmOpenPreviewBtn.dataset.previewId = ''; } els.confirmModal.classList.remove('hidden'); return new Promise(resolve => { state.confirmResolver = resolve; }); }
@@ -52,7 +52,7 @@ async function savePage(action = 'save') {
     if (typeof clearExternalSyncCandidateForCurrentPage === 'function') clearExternalSyncCandidateForCurrentPage({ clearDismissed: true, clearNotified: true });
     renderCurrent();
     syncCurrentSnapshotBaselineAndDirty({ alignBaseline: true });
-    if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState({ immediate: true });
+    if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
     syncPreviewMode({ immediate: true, forceRealReload: true });
     if (state.sidebar.open) await loadSidebarPages({ force: true, reset: true });
     setStatus(t('saved'));

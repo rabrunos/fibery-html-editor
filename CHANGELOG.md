@@ -1,3 +1,24 @@
+## [8.10.1] - 2026-05-19
+
+### Fixed
+
+* Reduced aggressive external-sync API usage that could trigger perceived slowdowns during page switches, page loads, and save flows.
+* Removed immediate post-load and post-save external sync checks to avoid duplicate `API.loadPage` calls right after the same page was already loaded/saved.
+* Prevented repeated fast re-scheduling of external sync checks from transition/visibility/baseline hooks.
+
+### Technical adjustments
+
+* Increased automatic external-sync interval from 60 seconds to a conservative 300 seconds.
+* Added a minimum automatic cooldown (180 seconds) for non-manual checks.
+* Expanded pause conditions for external-sync checks to include `state.sidebar.loading`, in addition to loading/saving/hidden-tab/modal/update safeguards.
+* Kept single-timer recurring `setTimeout` scheduling and explicit check-in-progress protection.
+* Added a manual header action (`Check now`) to run a safe on-demand external sync check when the user explicitly requests it.
+* Added discreet diagnostics logs for started/completed/skipped checks (debug-visible) and failures (always logged).
+
+### Validation
+
+* Local build and validation pass for temporary and final generated artifacts.
+
 ## [8.10.0] - 2026-05-19
 
 ### Added

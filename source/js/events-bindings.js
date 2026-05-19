@@ -142,6 +142,7 @@ function bindEvents() {
   els.keepCurrentVersionBtn.addEventListener('click', () => keepCurrentVersionFromDraft());
   els.discardDraftBtn.addEventListener('click', () => discardDraftFromModal());
   if (els.externalSyncDismissBtn) els.externalSyncDismissBtn.addEventListener('click', () => dismissExternalSyncNotice());
+  if (els.externalSyncCheckNowBtn) els.externalSyncCheckNowBtn.addEventListener('click', () => { void runExternalSyncManualCheck(); });
   els.closeDraftRecoveryBtn.addEventListener('click', () => keepCurrentVersionFromDraft());
   els.draftRecoveryModal.addEventListener('click', (e) => { if (e.target === els.draftRecoveryModal) keepCurrentVersionFromDraft(); });
   els.reopenRecoveryBtn.addEventListener('click', () => openRecoveryFromButton());
@@ -165,7 +166,7 @@ function bindEvents() {
       return;
     }
     if (state.sidebar.open) loadSidebarPages({ force: true, reset: false });
-    if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState({ immediate: true });
+    if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
   });
   window.addEventListener('pagehide', () => {
     stopSidebarAutoRefresh();
@@ -174,5 +175,5 @@ function bindEvents() {
     if (typeof stopExternalSyncPolling === 'function') stopExternalSyncPolling();
   });
   syncBeforeUnloadWarningState();
-  if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState({ immediate: true });
+  if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
 }

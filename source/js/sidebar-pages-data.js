@@ -50,5 +50,6 @@ async function loadSidebarPages(options = {}) {
     els.sidebarLoadMoreWrap.classList.add('hidden');
   } finally {
     state.sidebar.loading = false;
+    if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
   }
 }
