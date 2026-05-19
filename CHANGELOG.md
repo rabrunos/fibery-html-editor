@@ -1,3 +1,33 @@
+## [8.8.0] - 2026-05-19
+
+### Added
+
+* Added a local "Update backups" section in the Update App modal, listing update-backup records for the current app/editor page.
+* Added per-backup restore actions with clear labels, local date/time, version transition (from/to), local-backup badge, and optional page title.
+* Added a dedicated rollback flow that restores app HTML from a selected local update backup with explicit confirmation.
+* Added a required safety backup step that creates a new local backup of the current installed version before rollback save.
+
+### Fixed
+
+* Blocked rollback when admin permission is missing, current page is not the app page, backup is missing, or backup validation fails.
+* Blocked rollback when the selected backup is invalid/corrupted (missing required metadata/version assignments or not recognized as Fibery HTML Editor HTML).
+* Blocked rollback if creating the pre-rollback current-version backup fails.
+
+### Technical adjustments
+
+* Added modular sources `source/js/update-backup-list.js` and `source/js/update-rollback-flow.js`.
+* Reused existing save path (`API.savePage`) to apply rollback to Fibery and then refreshed baseline/state/preview/sidebar via the existing flow.
+* Added rollback/update concurrency guards so remote-check/apply/rollback operations do not overlap unsafely.
+* Updated manifest/module ordering and version metadata propagation to `8.8.0`.
+
+### Validation
+
+* Local build and validation pass for temporary and final outputs, including inline JS syntax checks.
+
+### Notes
+
+* Rollback availability depends on local update backups stored in this browser (IndexedDB `versions` store).
+
 ## [8.7.1] - 2026-05-18
 
 ### Technical adjustments

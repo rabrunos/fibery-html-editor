@@ -43,7 +43,7 @@ function renderUpdateAppPanel() {
   els.updateCheckStatusText.textContent = updateStatusMessage();
   setUpdateVersionValueTone();
   if (els.updateVerifyAgainBtn) {
-    els.updateVerifyAgainBtn.disabled = !!state.update.checking || !!state.update.applying;
+    els.updateVerifyAgainBtn.disabled = !!state.update.checking || !!state.update.applying || !!state.update.rollbacking;
     els.updateVerifyAgainBtn.textContent = state.update.checking ? t('updateChecking') : t('updateCheckAgain');
   }
   if (els.updateApplyBtn) {
@@ -55,6 +55,8 @@ function renderUpdateAppPanel() {
         ? t('updateApplyUnavailableWhileChecking')
         : state.update.applying
           ? t('updateApplying')
+          : state.update.rollbacking
+            ? t('updateRollbackRestoring')
           : !state.isAdmin
             ? t('updateAdminRequired')
             : !isCurrentAppPageForUpdate()
@@ -65,6 +67,7 @@ function renderUpdateAppPanel() {
     els.updateApplyBtn.textContent = state.update.applying ? t('updateApplying') : t('updateApply');
     els.updateApplyBtn.title = disableReason || t('updateApply');
   }
+  renderUpdateBackupList();
   const comparison = updateVersionComparisonState();
   if (state.update.changelogLoading) {
     renderUpdateChangelog(els.updateChangelogBox, t('updateChangelogLoading'), comparison);
@@ -78,6 +81,7 @@ function openUpdateAppModal() {
   if (!els.updateAppModal) return;
   els.updateAppModal.classList.remove('hidden');
   renderUpdateAppPanel();
+  void loadUpdateBackupList();
   void checkRemoteUpdateInfo();
 }
 function closeUpdateAppModal() {

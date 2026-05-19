@@ -60,6 +60,11 @@ function bindEvents() {
   els.updateCloseBtn.addEventListener('click', closeUpdateAppModal);
   els.updateVerifyAgainBtn.addEventListener('click', () => { void checkRemoteUpdateInfo(); });
   els.updateApplyBtn.addEventListener('click', () => { void applyRemoteUpdate(); });
+  els.updateBackupsBox.addEventListener('click', (e) => {
+    const restoreBtn = e.target.closest('[data-update-backup-restore-key]');
+    if (!restoreBtn) return;
+    void restoreUpdateBackupByKey(restoreBtn.dataset.updateBackupRestoreKey || '');
+  });
   els.updateAppModal.addEventListener('click', (e) => { if (e.target === els.updateAppModal) closeUpdateAppModal(); });
   els.langSelect.addEventListener('change', () => { localStorage.setItem(LS.lang, els.langSelect.value); applyI18n(); if (state.blank) showBlankPage(); else renderCurrent(); });
   els.openLastToggle.addEventListener('change', () => localStorage.setItem(LS.openLast, els.openLastToggle.checked ? '1' : '0'));

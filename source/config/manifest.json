@@ -1,5 +1,5 @@
 {
-  "version": "8.7.1",
+  "version": "8.8.0",
   "bodyOpenTag": "<body class=\"h-screen overflow-hidden bg-gray-50 text-gray-900 antialiased\">",
   "template": "source/template/index.template.html",
   "html": [
@@ -37,7 +37,9 @@
     "source/js/update-remote-check.js",
     "source/js/update-validate-html.js",
     "source/js/update-backup.js",
+    "source/js/update-backup-list.js",
     "source/js/update-apply-flow.js",
+    "source/js/update-rollback-flow.js",
     "source/js/update-changelog-render.js",
     "source/js/update-panel-render.js",
     "source/js/indexeddb-core.js",

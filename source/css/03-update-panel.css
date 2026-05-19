@@ -14,3 +14,6 @@
     .update-changelog-list-item { margin:.125rem 0; }
     .update-changelog-section-title { margin-top:.625rem; margin-bottom:.25rem; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.02em; color:rgb(75 85 99); }
     .update-changelog-paragraph { margin-top:.375rem; margin-bottom:.5rem; color:rgb(55 65 81); }
+    .update-backup-item { transition:border-color .12s ease, box-shadow .12s ease; }
+    .update-backup-item:hover { border-color:rgb(191 219 254); box-shadow:0 1px 2px 0 rgb(0 0 0 / 0.06); }
+    .update-backup-badge { letter-spacing:.01em; }

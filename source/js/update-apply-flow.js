@@ -7,10 +7,11 @@ function canShowApplyUpdateButton() {
   return state.update.status === 'available';
 }
 function canApplyUpdateNow() {
-  return canShowApplyUpdateButton() && !state.update.checking && !state.update.applying && state.isAdmin && isCurrentAppPageForUpdate();
+  return canShowApplyUpdateButton() && !state.update.checking && !state.update.applying && !state.update.rollbacking && state.isAdmin && isCurrentAppPageForUpdate();
 }
 async function applyRemoteUpdate() {
   if (state.update.applying) return;
+  if (state.update.rollbacking) { setStatus(t('updateRollbackRestoring')); return; }
   if (state.update.checking) { setStatus(t('updateApplyUnavailableWhileChecking')); return; }
   if (!state.isAdmin) { setStatus(t('updateAdminRequired')); log(t('updateAdminRequired')); return; }
   if (!isCurrentAppPageForUpdate()) { setStatus(t('updateAppPageRequired')); log(t('updateAppPageRequired')); return; }
@@ -60,6 +61,7 @@ async function applyRemoteUpdate() {
       return;
     }
     log(`${t('updateBackupCreated')}: ${backupRecord.fromVersion} -> ${backupRecord.toVersion}`);
+    await loadUpdateBackupList();
 
     setStatus(t('updateSaving'));
     const saved = await API.savePage({

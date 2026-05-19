@@ -10,6 +10,7 @@ async function fetchRemoteText(url) {
   return response.text();
 }
 function updateStatusMessage() {
+  if (state.update.rollbacking) return t('updateRollbackRestoring');
   if (state.update.status === 'checking') return t('updateChecking');
   if (state.update.status === 'applying') return t('updateApplying');
   if (state.update.status === 'latest') return t('updateStatusLatest');
@@ -20,7 +21,7 @@ function updateStatusMessage() {
   return t('updateNotChecked');
 }
 async function checkRemoteUpdateInfo() {
-  if (state.update.checking || state.update.applying) return;
+  if (state.update.checking || state.update.applying || state.update.rollbacking) return;
   state.update.checking = true;
   state.update.status = 'checking';
   state.update.remoteVersion = '';

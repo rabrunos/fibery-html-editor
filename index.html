@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.7.1" />
+  <meta name="fibery-html-editor-version" content="8.8.0" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -132,6 +132,9 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
     .update-changelog-list-item { margin:.125rem 0; }
     .update-changelog-section-title { margin-top:.625rem; margin-bottom:.25rem; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.02em; color:rgb(75 85 99); }
     .update-changelog-paragraph { margin-top:.375rem; margin-bottom:.5rem; color:rgb(55 65 81); }
+    .update-backup-item { transition:border-color .12s ease, box-shadow .12s ease; }
+    .update-backup-item:hover { border-color:rgb(191 219 254); box-shadow:0 1px 2px 0 rgb(0 0 0 / 0.06); }
+    .update-backup-badge { letter-spacing:.01em; }
 
 
 @keyframes miniTooltip { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
@@ -463,6 +466,13 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
           </div>
         </div>
         <div class="rounded-xl border border-gray-200 bg-white">
+          <div class="border-b border-gray-200 bg-gray-50 px-3 py-2">
+            <div class="text-xs font-semibold uppercase tracking-wide text-gray-600" data-i18n="updateBackupsTitle">Local update backups</div>
+            <div class="mt-1 text-[11px] text-gray-500" data-i18n="updateBackupsHelp">Backups are created in this browser before applying an app update.</div>
+          </div>
+          <div id="updateBackupsBox" class="space-y-2 p-3 text-xs text-gray-700" aria-live="polite">-</div>
+        </div>
+        <div class="rounded-xl border border-gray-200 bg-white">
           <div class="border-b border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-600" data-i18n="updateWhatChanged">What changed</div>
           <div id="updateChangelogBox" class="max-h-[42vh] overflow-auto p-3 text-xs leading-5 text-gray-700" aria-live="polite">-</div>
         </div>
@@ -524,7 +534,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 (() => {
   'use strict';
 
-const APP_VERSION = '8.7.1';
+const APP_VERSION = '8.8.0';
 window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 document.documentElement.dataset.appVersion = APP_VERSION;
 
@@ -673,7 +683,35 @@ Object.assign(I18N.en, {
     updateApplied: 'Update applied successfully.',
     updateAppliedReloadHint: 'Reload this app page to run the new version.',
     updateApplyFailed: 'Failed to apply update.',
-    updateApplyUnavailableWhileChecking: 'Wait for remote version check to finish.'
+    updateApplyUnavailableWhileChecking: 'Wait for remote version check to finish.',
+    updateBackupsTitle: 'Local update backups',
+    updateBackupsHelp: 'Backups are created in this browser before applying an app update.',
+    updateBackupsLoading: 'Loading local update backups...',
+    updateBackupsEmpty: 'No local update backups found.',
+    updateBackupsLoadFailed: 'Could not load local update backups',
+    updateBackupRestore: 'Restore backup',
+    updateBackupLocalBadge: 'Local backup',
+    updateBackupOfVersion: 'Backup of version',
+    updateBackupVersionUnknown: 'Backup version unavailable',
+    updateBackupDateLabel: 'Local date',
+    updateBackupDateUnknown: 'Unknown date',
+    updateRollbackConfirmTitle: 'Restore app backup?',
+    updateRollbackConfirmMessage: 'The current app version will be replaced by the selected local backup. Before restoring, a new backup of the current version will be created. The rollback is applied only if saving to Fibery succeeds.',
+    updateRollbackConfirmButton: 'Restore backup',
+    updateRollbackBusyChecking: 'Wait for remote version check to finish.',
+    updateRollbackBusyApplying: 'Wait for the update process to finish.',
+    updateRollbackAdminRequired: 'Admin permission is required to restore backups.',
+    updateRollbackAppPageRequired: 'Current page is not the app page.',
+    updateRollbackValidating: 'Validating selected backup...',
+    updateRollbackCreatingCurrentBackup: 'Creating backup of current version...',
+    updateRollbackCurrentBackupFailed: 'Could not create backup of current version. Rollback canceled.',
+    updateRollbackBackupMissing: 'Selected backup was not found.',
+    updateRollbackBackupInvalid: 'Selected backup is invalid or corrupted.',
+    updateRollbackRestoring: 'Restoring backup...',
+    updateRollbackRestored: 'Backup restored successfully.',
+    updateRollbackReloadHint: 'Reload this page to run the restored version.',
+    updateRollbackCanceled: 'Rollback canceled.',
+    updateRollbackFailed: 'Failed to restore backup.'
   });
 
 
@@ -787,7 +825,35 @@ Object.assign(I18N['pt-BR'], {
     updateApplied: 'Atualização aplicada com sucesso.',
     updateAppliedReloadHint: 'Recarregue esta página do app para usar a nova versão.',
     updateApplyFailed: 'Falha ao aplicar atualização.',
-    updateApplyUnavailableWhileChecking: 'Aguarde a verificação da versão remota terminar.'
+    updateApplyUnavailableWhileChecking: 'Aguarde a verificação da versão remota terminar.',
+    updateBackupsTitle: 'Backups locais de atualização',
+    updateBackupsHelp: 'Backups são criados neste navegador antes de aplicar uma atualização do app.',
+    updateBackupsLoading: 'Carregando backups locais de atualização...',
+    updateBackupsEmpty: 'Nenhum backup local de atualização encontrado.',
+    updateBackupsLoadFailed: 'Não foi possível carregar os backups locais de atualização',
+    updateBackupRestore: 'Restaurar backup',
+    updateBackupLocalBadge: 'Backup local',
+    updateBackupOfVersion: 'Backup da versão',
+    updateBackupVersionUnknown: 'Versão do backup indisponível',
+    updateBackupDateLabel: 'Data local',
+    updateBackupDateUnknown: 'Data desconhecida',
+    updateRollbackConfirmTitle: 'Restaurar backup do app?',
+    updateRollbackConfirmMessage: 'A versão atual do app será substituída pelo backup local selecionado. Antes de restaurar, um novo backup da versão atual será criado. A restauração só será aplicada se o salvamento no Fibery for concluído.',
+    updateRollbackConfirmButton: 'Restaurar backup',
+    updateRollbackBusyChecking: 'Aguarde a verificação da versão remota terminar.',
+    updateRollbackBusyApplying: 'Aguarde o processo de atualização terminar.',
+    updateRollbackAdminRequired: 'Permissão de admin é necessária para restaurar backups.',
+    updateRollbackAppPageRequired: 'A página atual não é a página do app.',
+    updateRollbackValidating: 'Validando backup selecionado...',
+    updateRollbackCreatingCurrentBackup: 'Criando backup da versão atual...',
+    updateRollbackCurrentBackupFailed: 'Não foi possível criar backup da versão atual. Rollback cancelado.',
+    updateRollbackBackupMissing: 'O backup selecionado não foi encontrado.',
+    updateRollbackBackupInvalid: 'O backup selecionado é inválido ou está corrompido.',
+    updateRollbackRestoring: 'Restaurando backup...',
+    updateRollbackRestored: 'Backup restaurado com sucesso.',
+    updateRollbackReloadHint: 'Recarregue esta página para usar a versão restaurada.',
+    updateRollbackCanceled: 'Rollback cancelado.',
+    updateRollbackFailed: 'Falha ao restaurar backup.'
   });
 
 
@@ -805,7 +871,7 @@ const els = {
   quickBothBtn: $('quickBothBtn'), quickEditorBtn: $('quickEditorBtn'), quickPreviewBtn: $('quickPreviewBtn'),
   titleInput: $('titleInput'), descriptionInput: $('descriptionInput'), dirtyBadge: $('dirtyBadge'), statusText: $('statusText'),
   logToggleBtn: $('logToggleBtn'), logMenuText: $('logMenuText'), settingsModal: $('settingsModal'), closeSettingsBtn: $('closeSettingsBtn'), langSelect: $('langSelect'),
-  updateAppModal: $('updateAppModal'), closeUpdateAppBtn: $('closeUpdateAppBtn'), updateInstalledVersionValue: $('updateInstalledVersionValue'), updateAvailableVersionValue: $('updateAvailableVersionValue'), updateCheckStatusText: $('updateCheckStatusText'), updateVerifyAgainBtn: $('updateVerifyAgainBtn'), updateApplyBtn: $('updateApplyBtn'), updateChangelogBox: $('updateChangelogBox'), updateCloseBtn: $('updateCloseBtn'),
+  updateAppModal: $('updateAppModal'), closeUpdateAppBtn: $('closeUpdateAppBtn'), updateInstalledVersionValue: $('updateInstalledVersionValue'), updateAvailableVersionValue: $('updateAvailableVersionValue'), updateCheckStatusText: $('updateCheckStatusText'), updateVerifyAgainBtn: $('updateVerifyAgainBtn'), updateApplyBtn: $('updateApplyBtn'), updateBackupsBox: $('updateBackupsBox'), updateChangelogBox: $('updateChangelogBox'), updateCloseBtn: $('updateCloseBtn'),
   openLastToggle: $('openLastToggle'), versionLimitSelect: $('versionLimitSelect'), autosaveLimitSelect: $('autosaveLimitSelect'), codeEditor: $('codeEditor'), codeEditorFallback: $('codeEditorFallback'), charCount: $('charCount'), copyHtmlBtn: $('copyHtmlBtn'), editorPanelMenuBtn: $('editorPanelMenuBtn'),
   previewFrame: $('previewFrame'), previewStatus: $('previewStatus'), previewPanelMenuBtn: $('previewPanelMenuBtn'), previewFocusBtn: $('previewFocusBtn'), previewFocusExitBtn: $('previewFocusExitBtn'), splitter: $('splitter'), splitArea: $('splitArea'), editorPane: $('editorPane'), previewPane: $('previewPane'), dragOverlay: $('dragOverlay'),
   searchModal: $('searchModal'), closeSearchBtn: $('closeSearchBtn'), globalSearchInput: $('globalSearchInput'), globalSearchResults: $('globalSearchResults'),
@@ -830,7 +896,7 @@ const LOCAL_PREVIEW_MESSAGE_SOURCE = 'fibery-html-editor/local-preview';
 const state = {
   isAdmin: false, lang: 'en', appPageId: detectCurrentAppPageId(), current: { id: '', title: '', description: '', html: '' }, currentBaseline: { id: '', title: '', description: '', html: '' }, blank: true, dirty: false, db: null, saving: false,
   code: { editor: null, suppress: false, fallback: false }, confirmResolver: null,
-  update: { checking: false, applying: false, status: 'idle', remoteVersion: '', remoteChangelog: '', changelogLoading: false },
+  update: { checking: false, applying: false, rollbacking: false, status: 'idle', remoteVersion: '', remoteChangelog: '', changelogLoading: false, backupsLoading: false, backups: [] },
   preview: { mode: 'real', localObjectUrl: '', localStatusLabel: '', activeRequestId: '', debounceTimer: null, debounceMs: 500, lastLocalDocSignature: '', lastLocalHtmlSignature: '', lastLocalUsesTailwind: false, lastRealUrl: '' },
   sidebar: { open: true, pages: [], loading: false, refreshTimer: null, hasMore: false, limit: 20, visibleLimit: 20, pageCache: {} },
   projects: { rows: [], items: [], pageToProject: {}, itemsByProject: {} },
@@ -939,6 +1005,7 @@ async function fetchRemoteText(url) {
   return response.text();
 }
 function updateStatusMessage() {
+  if (state.update.rollbacking) return t('updateRollbackRestoring');
   if (state.update.status === 'checking') return t('updateChecking');
   if (state.update.status === 'applying') return t('updateApplying');
   if (state.update.status === 'latest') return t('updateStatusLatest');
@@ -949,7 +1016,7 @@ function updateStatusMessage() {
   return t('updateNotChecked');
 }
 async function checkRemoteUpdateInfo() {
-  if (state.update.checking || state.update.applying) return;
+  if (state.update.checking || state.update.applying || state.update.rollbacking) return;
   state.update.checking = true;
   state.update.status = 'checking';
   state.update.remoteVersion = '';
@@ -1055,6 +1122,153 @@ async function createUpdateBackupRecord({ pageId, fromVersion, toVersion, title,
 }
 
 
+let updateBackupsLoadToken = 0;
+
+function isSafeUpdateBackupRecord(record = {}) {
+  const kind = String(record.kind || '').trim();
+  const source = String(record.source || '').trim();
+  const action = String(record.action || '').trim();
+  return kind === 'update-backup' || source === 'update-backup' || action === 'update-backup';
+}
+
+function getUpdateBackupTargetPageId() {
+  return String(state.appPageId || state.current.id || '');
+}
+
+function extractVersionFromUpdateBackupHtml(record = {}) {
+  const source = String(record.html || '');
+  const metaVersion = extractRemoteVersionFromHtml(source);
+  const metaSemver = parseSemverSimple(metaVersion);
+  if (metaSemver) return metaSemver.raw;
+  const appVersion = parseAppVersionFromHtmlSource(source);
+  const appSemver = parseSemverSimple(appVersion);
+  return appSemver ? appSemver.raw : '';
+}
+
+function formatUpdateBackupVersionLabel(record = {}) {
+  const fromVersion = String(record.fromVersion || '').trim();
+  const toVersion = String(record.toVersion || '').trim();
+  if (fromVersion && toVersion) return `${fromVersion} -> ${toVersion}`;
+  const htmlVersion = extractVersionFromUpdateBackupHtml(record);
+  if (fromVersion) return `${t('updateBackupOfVersion')} ${fromVersion}`;
+  if (htmlVersion) return `${t('updateBackupOfVersion')} ${htmlVersion}`;
+  return t('updateBackupVersionUnknown');
+}
+
+function formatUpdateBackupCreatedAt(createdAt) {
+  const value = Number(createdAt || 0);
+  if (!Number.isFinite(value) || value <= 0) return t('updateBackupDateUnknown');
+  return new Date(value).toLocaleString(state.lang === 'pt-BR' ? 'pt-BR' : 'en-US');
+}
+
+async function getUpdateBackupRecordByKey(key = '') {
+  const normalizedKey = String(key || '').trim();
+  if (!normalizedKey) return null;
+  const cached = (state.update.backups || []).find(row => String(row.key || '') === normalizedKey);
+  if (cached) return cached;
+  const pageId = getUpdateBackupTargetPageId();
+  if (!state.db || !pageId) return null;
+  const rows = await getHistory(pageId, 'all');
+  return rows.find(row => String(row.key || '') === normalizedKey && isSafeUpdateBackupRecord(row)) || null;
+}
+
+async function loadUpdateBackupList() {
+  const pageId = getUpdateBackupTargetPageId();
+  const loadToken = ++updateBackupsLoadToken;
+  state.update.backupsLoading = true;
+  renderUpdateAppPanel();
+  try {
+    if (!state.db || !pageId) {
+      state.update.backups = [];
+      return;
+    }
+    const rows = await getHistory(pageId, 'all');
+    if (loadToken !== updateBackupsLoadToken) return;
+    state.update.backups = rows
+      .filter(row => isSafeUpdateBackupRecord(row) && String(row.pageId || '') === pageId)
+      .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+  } catch (err) {
+    state.update.backups = [];
+    log(`${t('updateBackupsLoadFailed')}: ${String(err?.message || err || '')}`);
+  } finally {
+    if (loadToken !== updateBackupsLoadToken) return;
+    state.update.backupsLoading = false;
+    renderUpdateAppPanel();
+  }
+}
+
+function renderUpdateBackupList() {
+  if (!els.updateBackupsBox) return;
+  els.updateBackupsBox.textContent = '';
+  if (state.update.backupsLoading) {
+    const loading = document.createElement('div');
+    loading.className = 'text-xs text-gray-500';
+    loading.textContent = t('updateBackupsLoading');
+    els.updateBackupsBox.appendChild(loading);
+    return;
+  }
+  const backups = Array.isArray(state.update.backups) ? state.update.backups : [];
+  if (!backups.length) {
+    const empty = document.createElement('div');
+    empty.className = 'text-xs text-gray-500';
+    empty.textContent = t('updateBackupsEmpty');
+    els.updateBackupsBox.appendChild(empty);
+    return;
+  }
+
+  const restoreDisabledReason = getRollbackDisabledReasonText();
+  for (const backup of backups) {
+    const row = document.createElement('div');
+    row.className = 'update-backup-item rounded-lg border border-gray-200 bg-white p-3';
+
+    const top = document.createElement('div');
+    top.className = 'flex items-start justify-between gap-3';
+
+    const info = document.createElement('div');
+    info.className = 'min-w-0 flex-1';
+
+    const version = document.createElement('div');
+    version.className = 'truncate text-sm font-semibold text-gray-900';
+    version.textContent = formatUpdateBackupVersionLabel(backup);
+    info.appendChild(version);
+
+    const created = document.createElement('div');
+    created.className = 'mt-1 text-xs text-gray-500';
+    created.textContent = `${t('updateBackupDateLabel')}: ${formatUpdateBackupCreatedAt(backup.createdAt)}`;
+    info.appendChild(created);
+
+    if (String(backup.title || '').trim()) {
+      const title = document.createElement('div');
+      title.className = 'mt-1 truncate text-xs text-gray-500';
+      title.textContent = `${t('title')}: ${String(backup.title || '').trim()}`;
+      info.appendChild(title);
+    }
+
+    const badge = document.createElement('span');
+    badge.className = 'update-backup-badge inline-flex shrink-0 items-center rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold text-blue-800';
+    badge.textContent = t('updateBackupLocalBadge');
+
+    top.appendChild(info);
+    top.appendChild(badge);
+    row.appendChild(top);
+
+    const actions = document.createElement('div');
+    actions.className = 'mt-3 flex items-center justify-end';
+    const restoreButton = document.createElement('button');
+    restoreButton.type = 'button';
+    restoreButton.dataset.updateBackupRestoreKey = String(backup.key || '');
+    restoreButton.className = 'h-8 rounded border border-gray-300 bg-white px-3 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40';
+    restoreButton.textContent = t('updateBackupRestore');
+    restoreButton.disabled = !!restoreDisabledReason;
+    restoreButton.title = restoreDisabledReason || t('updateBackupRestore');
+    actions.appendChild(restoreButton);
+    row.appendChild(actions);
+
+    els.updateBackupsBox.appendChild(row);
+  }
+}
+
+
 function isCurrentAppPageForUpdate() {
   if (state.blank) return false;
   if (!state.current.id || !state.appPageId) return false;
@@ -1064,10 +1278,11 @@ function canShowApplyUpdateButton() {
   return state.update.status === 'available';
 }
 function canApplyUpdateNow() {
-  return canShowApplyUpdateButton() && !state.update.checking && !state.update.applying && state.isAdmin && isCurrentAppPageForUpdate();
+  return canShowApplyUpdateButton() && !state.update.checking && !state.update.applying && !state.update.rollbacking && state.isAdmin && isCurrentAppPageForUpdate();
 }
 async function applyRemoteUpdate() {
   if (state.update.applying) return;
+  if (state.update.rollbacking) { setStatus(t('updateRollbackRestoring')); return; }
   if (state.update.checking) { setStatus(t('updateApplyUnavailableWhileChecking')); return; }
   if (!state.isAdmin) { setStatus(t('updateAdminRequired')); log(t('updateAdminRequired')); return; }
   if (!isCurrentAppPageForUpdate()) { setStatus(t('updateAppPageRequired')); log(t('updateAppPageRequired')); return; }
@@ -1117,6 +1332,7 @@ async function applyRemoteUpdate() {
       return;
     }
     log(`${t('updateBackupCreated')}: ${backupRecord.fromVersion} -> ${backupRecord.toVersion}`);
+    await loadUpdateBackupList();
 
     setStatus(t('updateSaving'));
     const saved = await API.savePage({
@@ -1156,6 +1372,179 @@ async function applyRemoteUpdate() {
   } finally {
     state.update.applying = false;
     if (state.update.status === 'applying') state.update.status = previousStatus;
+    renderUpdateAppPanel();
+  }
+}
+
+
+function getRollbackDisabledReasonText() {
+  if (state.update.checking) return t('updateRollbackBusyChecking');
+  if (state.update.applying) return t('updateRollbackBusyApplying');
+  if (state.update.rollbacking) return t('updateRollbackRestoring');
+  if (!state.isAdmin) return t('updateRollbackAdminRequired');
+  if (!isCurrentAppPageForUpdate()) return t('updateRollbackAppPageRequired');
+  return '';
+}
+
+function validateUpdateBackupForRollback(record = {}) {
+  if (!isSafeUpdateBackupRecord(record)) return { ok: false, reason: 'invalid-origin' };
+  const expectedPageId = getUpdateBackupTargetPageId();
+  if (!expectedPageId || String(record.pageId || '') !== expectedPageId) return { ok: false, reason: 'page-mismatch' };
+
+  const source = String(record.html || '');
+  if (!source.trim()) return { ok: false, reason: 'empty' };
+  if (source.trim().length < 300) return { ok: false, reason: 'too-short' };
+  if (!/<html[\s>]/i.test(source) && !/<!doctype html/i.test(source)) return { ok: false, reason: 'not-html' };
+  if (!/fibery-html-editor/i.test(source)) return { ok: false, reason: 'not-editor' };
+
+  const metaVersion = extractRemoteVersionFromHtml(source);
+  if (!metaVersion) return { ok: false, reason: 'missing-meta-version' };
+  const metaSemver = parseSemverSimple(metaVersion);
+  if (!metaSemver) return { ok: false, reason: 'invalid-meta-version' };
+
+  const appVersionLiteral = parseAppVersionFromHtmlSource(source);
+  if (!appVersionLiteral) return { ok: false, reason: 'missing-app-version' };
+  if (appVersionLiteral !== metaSemver.raw) return { ok: false, reason: 'version-mismatch' };
+
+  if (!/window\.FIBERY_HTML_EDITOR_VERSION\s*=\s*APP_VERSION/.test(source)) return { ok: false, reason: 'missing-window-version-assign' };
+  if (!/document\.documentElement\.dataset\.appVersion\s*=\s*APP_VERSION/.test(source)) return { ok: false, reason: 'missing-dataset-version-assign' };
+
+  return { ok: true, backupVersion: metaSemver.raw, backupHtml: source };
+}
+
+function updateRollbackValidationReasonText() {
+  return t('updateRollbackBackupInvalid');
+}
+
+function getInstalledAppVersionFromCurrentState() {
+  const sources = [
+    String(state.currentBaseline?.html || ''),
+    String(state.current?.html || '')
+  ];
+  for (const source of sources) {
+    if (!source.trim()) continue;
+    const metaVersion = extractRemoteVersionFromHtml(source);
+    const metaSemver = parseSemverSimple(metaVersion);
+    if (metaSemver) return metaSemver.raw;
+    const appVersion = parseAppVersionFromHtmlSource(source);
+    const appSemver = parseSemverSimple(appVersion);
+    if (appSemver) return appSemver.raw;
+  }
+  const runtimeSemver = parseSemverSimple(APP_VERSION);
+  return runtimeSemver ? runtimeSemver.raw : APP_VERSION;
+}
+
+async function restoreUpdateBackupByKey(key = '') {
+  const rollbackKey = String(key || '').trim();
+  if (!rollbackKey) return;
+
+  const disableReason = getRollbackDisabledReasonText();
+  if (disableReason) {
+    setStatus(disableReason);
+    log(disableReason);
+    return;
+  }
+
+  let record = null;
+  try {
+    record = await getUpdateBackupRecordByKey(rollbackKey);
+  } catch (err) {
+    setStatus(t('updateRollbackFailed'));
+    log(`${t('updateRollbackFailed')}: ${String(err?.message || err || '')}`);
+    return;
+  }
+  if (!record) {
+    setStatus(t('updateRollbackBackupMissing'));
+    log(t('updateRollbackBackupMissing'));
+    await loadUpdateBackupList();
+    return;
+  }
+
+  setStatus(t('updateRollbackValidating'));
+  const validation = validateUpdateBackupForRollback(record);
+  if (!validation.ok) {
+    const reasonText = updateRollbackValidationReasonText(validation.reason);
+    setStatus(reasonText);
+    log(`${reasonText}: ${String(validation.reason || 'unknown')}`);
+    return;
+  }
+
+  const installedVersion = getInstalledAppVersionFromCurrentState();
+  const ok = await confirmAction({
+    title: t('updateRollbackConfirmTitle'),
+    message: `${t('updateRollbackConfirmMessage')}\n\n${t('updateInstalledVersion')}: ${installedVersion}\n${t('updateBackupOfVersion')}: ${validation.backupVersion}`,
+    okText: t('updateRollbackConfirmButton'),
+    showPreview: false
+  });
+  if (!ok) {
+    setStatus(t('updateRollbackCanceled'));
+    log(t('updateRollbackCanceled'));
+    return;
+  }
+
+  state.update.rollbacking = true;
+  renderUpdateAppPanel();
+  try {
+    updateCurrentFromInputs();
+
+    setStatus(t('updateRollbackCreatingCurrentBackup'));
+    const baselineSnapshot = currentBaselineSnapshot();
+    try {
+      await createUpdateBackupRecord({
+        pageId: state.current.id,
+        fromVersion: installedVersion,
+        toVersion: validation.backupVersion,
+        title: baselineSnapshot.title || state.current.title,
+        description: baselineSnapshot.description || state.current.description,
+        html: baselineSnapshot.html || state.current.html
+      });
+    } catch (backupErr) {
+      const backupMessage = String(backupErr?.message || backupErr || '');
+      setStatus(t('updateRollbackCurrentBackupFailed'));
+      log(`${t('updateRollbackCurrentBackupFailed')}: ${backupMessage}`);
+      return;
+    }
+
+    setStatus(t('updateRollbackRestoring'));
+    const saved = await API.savePage({
+      id: state.current.id,
+      title: state.current.title,
+      description: state.current.description,
+      html: validation.backupHtml
+    });
+
+    state.current = {
+      id: saved.id || saved.data?.id || state.current.id,
+      title: saved.title || saved.data?.title || state.current.title,
+      description: saved.description || saved.data?.description || state.current.description,
+      html: saved.html || saved.data?.html || validation.backupHtml
+    };
+
+    localStorage.setItem(LS.lastPageId, state.current.id);
+    const now = Date.now();
+    await savePageMeta(state.current.id, {
+      title: state.current.title,
+      description: state.current.description,
+      lastOpenedAt: now,
+      lastSavedAt: now
+    });
+    await clearAutosaveHistoryBySignature(state.current.id, snapshotSignature(state.current));
+    await saveHistory('update-rollback');
+    setCurrentBaseline();
+    renderCurrent();
+    syncPreviewMode({ immediate: true, forceRealReload: true });
+    if (state.sidebar.open) await loadSidebarPages({ force: true, reset: true });
+
+    await loadUpdateBackupList();
+    setStatus(`${t('updateRollbackRestored')} ${t('updateRollbackReloadHint')}`);
+    log(`${t('updateRollbackRestored')}: ${installedVersion} -> ${validation.backupVersion}`);
+    void checkRemoteUpdateInfo();
+  } catch (err) {
+    const message = String(err?.message || err || '');
+    setStatus(t('updateRollbackFailed'));
+    log(`${t('updateRollbackFailed')}: ${message}`);
+  } finally {
+    state.update.rollbacking = false;
     renderUpdateAppPanel();
   }
 }
@@ -1346,7 +1735,7 @@ function renderUpdateAppPanel() {
   els.updateCheckStatusText.textContent = updateStatusMessage();
   setUpdateVersionValueTone();
   if (els.updateVerifyAgainBtn) {
-    els.updateVerifyAgainBtn.disabled = !!state.update.checking || !!state.update.applying;
+    els.updateVerifyAgainBtn.disabled = !!state.update.checking || !!state.update.applying || !!state.update.rollbacking;
     els.updateVerifyAgainBtn.textContent = state.update.checking ? t('updateChecking') : t('updateCheckAgain');
   }
   if (els.updateApplyBtn) {
@@ -1358,6 +1747,8 @@ function renderUpdateAppPanel() {
         ? t('updateApplyUnavailableWhileChecking')
         : state.update.applying
           ? t('updateApplying')
+          : state.update.rollbacking
+            ? t('updateRollbackRestoring')
           : !state.isAdmin
             ? t('updateAdminRequired')
             : !isCurrentAppPageForUpdate()
@@ -1368,6 +1759,7 @@ function renderUpdateAppPanel() {
     els.updateApplyBtn.textContent = state.update.applying ? t('updateApplying') : t('updateApply');
     els.updateApplyBtn.title = disableReason || t('updateApply');
   }
+  renderUpdateBackupList();
   const comparison = updateVersionComparisonState();
   if (state.update.changelogLoading) {
     renderUpdateChangelog(els.updateChangelogBox, t('updateChangelogLoading'), comparison);
@@ -1381,6 +1773,7 @@ function openUpdateAppModal() {
   if (!els.updateAppModal) return;
   els.updateAppModal.classList.remove('hidden');
   renderUpdateAppPanel();
+  void loadUpdateBackupList();
   void checkRemoteUpdateInfo();
 }
 function closeUpdateAppModal() {
@@ -2991,6 +3384,11 @@ function bindEvents() {
   els.updateCloseBtn.addEventListener('click', closeUpdateAppModal);
   els.updateVerifyAgainBtn.addEventListener('click', () => { void checkRemoteUpdateInfo(); });
   els.updateApplyBtn.addEventListener('click', () => { void applyRemoteUpdate(); });
+  els.updateBackupsBox.addEventListener('click', (e) => {
+    const restoreBtn = e.target.closest('[data-update-backup-restore-key]');
+    if (!restoreBtn) return;
+    void restoreUpdateBackupByKey(restoreBtn.dataset.updateBackupRestoreKey || '');
+  });
   els.updateAppModal.addEventListener('click', (e) => { if (e.target === els.updateAppModal) closeUpdateAppModal(); });
   els.langSelect.addEventListener('change', () => { localStorage.setItem(LS.lang, els.langSelect.value); applyI18n(); if (state.blank) showBlankPage(); else renderCurrent(); });
   els.openLastToggle.addEventListener('change', () => localStorage.setItem(LS.openLast, els.openLastToggle.checked ? '1' : '0'));
