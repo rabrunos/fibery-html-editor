@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.13.0" />
+  <meta name="fibery-html-editor-version" content="8.14.0" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -224,6 +224,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
           </div>
         </div>
         <button id="externalSyncCheckNowBtn" class="hidden h-7 shrink-0 rounded border border-gray-300 bg-white px-2 text-[11px] font-medium text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40" data-i18n="externalSyncCheckNow">Check now</button>
+        <button id="conflictCompareOpenBtn" class="hidden h-7 shrink-0 rounded border border-red-300 bg-red-50 px-2 text-[11px] font-medium text-red-700 hover:bg-red-100" data-i18n="conflictCompareOpenBtn">Compare versions</button>
         <span id="statusText" class="hidden md:inline-block max-w-40 truncate text-xs text-gray-500">Ready</span>
         <button id="saveBtn" class="h-8 px-3 rounded bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed" data-i18n="save">Save</button>
         <button id="updateAppBtn" class="hidden h-8 rounded bg-yellow-400 px-3 text-sm font-semibold text-yellow-950 shadow-sm hover:bg-yellow-500" data-i18n="updateApp">Update App</button>
@@ -542,6 +543,51 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
   </div>
 
 
+<!-- Conflict compare modal -->
+  <div id="conflictCompareModal" class="hidden fixed inset-0 z-[80] bg-black/25 p-4 sm:p-6">
+    <div class="mx-auto mt-2 sm:mt-8 flex max-h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
+      <div class="border-b border-gray-200 px-4 py-3 sm:px-5 flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <div id="conflictCompareTitle" class="text-base font-semibold text-gray-900" data-i18n="conflictCompareTitle">Resolve conflict</div>
+          <div id="conflictCompareSubtitle" class="mt-1 text-xs text-gray-500"></div>
+        </div>
+        <button id="closeConflictCompareBtn" class="h-8 w-8 shrink-0 rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-900" aria-label="Close">×</button>
+      </div>
+      <div class="min-h-0 flex-1 overflow-auto p-4 sm:p-5">
+        <div class="space-y-4">
+          <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <div id="conflictBaseColumn"></div>
+            <div id="conflictLocalColumn"></div>
+            <div id="conflictRemoteColumn"></div>
+          </div>
+          <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+            <div class="border-b border-gray-200 bg-gray-50 px-3 py-2 flex flex-wrap items-center justify-between gap-2">
+              <div class="text-xs font-semibold uppercase tracking-wide text-gray-600" data-i18n="draftFieldHtml">HTML / code</div>
+              <div class="flex items-center gap-1">
+                <button id="conflictDiffTabRemote" class="h-6 rounded-md border px-2 text-[11px] font-medium" data-i18n="conflictDiffTabRemote">Fibery changes</button>
+                <button id="conflictDiffTabLocal" class="h-6 rounded-md border px-2 text-[11px] font-medium" data-i18n="conflictDiffTabLocal">My changes</button>
+              </div>
+              <div id="conflictCodeDiffLegend" class="flex flex-wrap items-center gap-2 text-[11px]"></div>
+            </div>
+            <div id="conflictCodeDiffMonaco" class="hidden w-full" style="height:320px;"></div>
+            <div id="conflictCodeDiffFallback" class="hidden overflow-hidden bg-white" style="height:320px;">
+              <div class="grid h-full grid-cols-1 gap-px bg-gray-200 lg:grid-cols-2">
+                <div id="conflictFallbackLeftPane" class="min-h-0 overflow-auto bg-white"></div>
+                <div id="conflictFallbackRightPane" class="min-h-0 overflow-auto bg-white"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="border-t border-gray-200 px-4 py-3 sm:px-5 flex flex-wrap items-center justify-end gap-2">
+        <button id="conflictContinueEditingBtn" class="h-9 rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 hover:bg-gray-50" data-i18n="conflictContinueEditing">Continue editing</button>
+        <button id="conflictLoadRemoteBtn" class="h-9 rounded-lg border border-amber-300 bg-amber-50 px-3 text-sm font-medium text-amber-800 hover:bg-amber-100" data-i18n="conflictLoadRemote">Load Fibery version</button>
+        <button id="conflictKeepLocalBtn" class="h-9 rounded-lg bg-blue-600 px-3 text-sm font-medium text-white hover:bg-blue-700" data-i18n="conflictKeepLocal">Keep my edits</button>
+      </div>
+    </div>
+  </div>
+
+
 <!-- Log panel -->
   <div id="logPanel" class="hidden fixed bottom-3 right-3 z-40 w-[520px] max-w-[calc(100vw-24px)] rounded-lg border border-gray-200 bg-white shadow-xl">
     <div class="border-b border-gray-200 px-3 py-2 flex items-center justify-between">
@@ -556,7 +602,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 (() => {
   'use strict';
 
-const APP_VERSION = '8.13.0';
+const APP_VERSION = '8.14.0';
 window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 document.documentElement.dataset.appVersion = APP_VERSION;
 
@@ -770,7 +816,26 @@ Object.assign(I18N.en, {
     apiUsageLastCall: 'Last call',
     apiUsageNoCalls: 'no calls yet',
     apiUsageLogPrefix: 'API usage',
-    apiUsageAutomaticSkippedLog: 'Automatic Fibery API call skipped'
+    apiUsageAutomaticSkippedLog: 'Automatic Fibery API call skipped',
+    conflictCompareTitle: 'Resolve conflict',
+    conflictCompareSubtitle: 'Fibery was updated while you were editing. Choose how to resolve the conflict before saving.',
+    conflictCompareOpenBtn: 'Compare versions',
+    conflictBaseLabel: 'Base (from cache)',
+    conflictLocalLabel: 'My edits',
+    conflictRemoteLabel: 'Fibery version',
+    conflictDiffTabRemote: 'Fibery changes',
+    conflictDiffTabLocal: 'My changes',
+    conflictKeepLocal: 'Keep my edits',
+    conflictLoadRemote: 'Load Fibery version',
+    conflictContinueEditing: 'Continue editing',
+    conflictKeepLocalStatus: 'Keeping local edits. Save will overwrite the Fibery version.',
+    conflictKeepLocalLog: 'Conflict resolved: keeping local edits (save will overwrite Fibery version)',
+    conflictLoadRemoteConfirmTitle: 'Load Fibery version?',
+    conflictLoadRemoteConfirmMessage: 'Your local edits will be saved as a draft first. You can recover them later from draft recovery.',
+    conflictLoadRemoteConfirmButton: 'Load Fibery version',
+    conflictLoadRemoteStatus: 'Fibery version loaded.',
+    conflictLoadRemoteLog: 'Conflict resolved: Fibery version loaded into editor',
+    conflictLoadRemoteDraftSaved: 'Local edits saved as draft before loading Fibery version'
   });
 
 
@@ -949,7 +1014,26 @@ Object.assign(I18N['pt-BR'], {
     apiUsageLastCall: 'Última chamada',
     apiUsageNoCalls: 'nenhuma chamada ainda',
     apiUsageLogPrefix: 'Uso de API',
-    apiUsageAutomaticSkippedLog: 'Chamada automática ao Fibery ignorada'
+    apiUsageAutomaticSkippedLog: 'Chamada automática ao Fibery ignorada',
+    conflictCompareTitle: 'Resolver conflito',
+    conflictCompareSubtitle: 'O Fibery foi atualizado enquanto você editava. Escolha como resolver o conflito antes de salvar.',
+    conflictCompareOpenBtn: 'Comparar versões',
+    conflictBaseLabel: 'Base (do cache)',
+    conflictLocalLabel: 'Minha edição',
+    conflictRemoteLabel: 'Versão do Fibery',
+    conflictDiffTabRemote: 'Alterações do Fibery',
+    conflictDiffTabLocal: 'Minhas alterações',
+    conflictKeepLocal: 'Manter minha edição',
+    conflictLoadRemote: 'Carregar versão do Fibery',
+    conflictContinueEditing: 'Continuar editando',
+    conflictKeepLocalStatus: 'Mantendo edição local. Salvar vai sobrescrever a versão do Fibery.',
+    conflictKeepLocalLog: 'Conflito resolvido: mantendo edição local (salvar vai sobrescrever a versão do Fibery)',
+    conflictLoadRemoteConfirmTitle: 'Carregar versão do Fibery?',
+    conflictLoadRemoteConfirmMessage: 'Suas edições locais serão salvas como rascunho primeiro. Você pode recuperá-las depois pelo recuperador de rascunho.',
+    conflictLoadRemoteConfirmButton: 'Carregar versão do Fibery',
+    conflictLoadRemoteStatus: 'Versão do Fibery carregada.',
+    conflictLoadRemoteLog: 'Conflito resolvido: versão do Fibery carregada no editor',
+    conflictLoadRemoteDraftSaved: 'Edição local salva como rascunho antes de carregar versão do Fibery'
   });
 
 
@@ -976,7 +1060,8 @@ const els = {
   confirmModal: $('confirmModal'), confirmBox: $('confirmBox'), confirmTitle: $('confirmTitle'), confirmMessage: $('confirmMessage'), confirmCancelBtn: $('confirmCancelBtn'), confirmOkBtn: $('confirmOkBtn'), deletePreviewWrap: $('deletePreviewWrap'), deletePreviewFrame: $('deletePreviewFrame'), confirmOpenPreviewBtn: $('confirmOpenPreviewBtn'),
   unsavedTransitionModal: $('unsavedTransitionModal'), unsavedTransitionSaveBtn: $('unsavedTransitionSaveBtn'), unsavedTransitionKeepDraftBtn: $('unsavedTransitionKeepDraftBtn'), unsavedTransitionDiscardBtn: $('unsavedTransitionDiscardBtn'), unsavedTransitionCancelBtn: $('unsavedTransitionCancelBtn'),
   draftRecoveryModal: $('draftRecoveryModal'), draftRecoveryTitle: $('draftRecoveryTitle'), draftRecoverySubtitle: $('draftRecoverySubtitle'), draftCurrentColumn: $('draftCurrentColumn'), draftLocalColumn: $('draftLocalColumn'), draftCodeDiffLegend: $('draftCodeDiffLegend'), draftCodeDiffMonaco: $('draftCodeDiffMonaco'), draftCodeDiffFallback: $('draftCodeDiffFallback'), draftFallbackCurrentPane: $('draftFallbackCurrentPane'), draftFallbackLocalPane: $('draftFallbackLocalPane'), closeDraftRecoveryBtn: $('closeDraftRecoveryBtn'), restoreDraftBtn: $('restoreDraftBtn'), keepCurrentVersionBtn: $('keepCurrentVersionBtn'), discardDraftBtn: $('discardDraftBtn'),
-  reopenRecoveryBtn: $('reopenRecoveryBtn')
+  reopenRecoveryBtn: $('reopenRecoveryBtn'),
+  conflictCompareModal: $('conflictCompareModal'), conflictCompareTitle: $('conflictCompareTitle'), conflictCompareSubtitle: $('conflictCompareSubtitle'), closeConflictCompareBtn: $('closeConflictCompareBtn'), conflictBaseColumn: $('conflictBaseColumn'), conflictLocalColumn: $('conflictLocalColumn'), conflictRemoteColumn: $('conflictRemoteColumn'), conflictCodeDiffLegend: $('conflictCodeDiffLegend'), conflictCodeDiffMonaco: $('conflictCodeDiffMonaco'), conflictCodeDiffFallback: $('conflictCodeDiffFallback'), conflictFallbackLeftPane: $('conflictFallbackLeftPane'), conflictFallbackRightPane: $('conflictFallbackRightPane'), conflictDiffTabRemote: $('conflictDiffTabRemote'), conflictDiffTabLocal: $('conflictDiffTabLocal'), conflictKeepLocalBtn: $('conflictKeepLocalBtn'), conflictLoadRemoteBtn: $('conflictLoadRemoteBtn'), conflictContinueEditingBtn: $('conflictContinueEditingBtn'), conflictCompareOpenBtn: $('conflictCompareOpenBtn')
 };
 
 
@@ -1019,7 +1104,8 @@ const state = {
   sidebar: { open: true, pages: [], loading: false, refreshTimer: null, hasMore: false, limit: 20, visibleLimit: 20, pageCache: {}, lastRemoteLoadAt: 0, remoteCacheTtlMs: 300000, autoRefreshEnabled: false, autoRefreshIntervalMs: 600000 },
   projects: { rows: [], items: [], pageToProject: {}, itemsByProject: {} },
   search: { debounce: null, query: '', pages: [], cache: {}, loading: false, remoteQuery: '' }, welcomeSearch: { debounce: null, query: '', pages: [], cache: {}, loading: false, remoteQuery: '' }, panelMode: 'both', previewFocus: false, pageMeta: {}, context: { pageId: '', pageTitle: '', projectId: '', createProjectTargetPageId: '' },
-  drafts: { byKey: {}, autosaveTimer: null, autosaveIntervalMs: 60000, unsavedId: 'local-unsaved-main', lastAutosaveAtByKey: {}, promptToken: 0, diffEditor: null, diffOriginalModel: null, diffModifiedModel: null, fallbackSyncing: false, activeDraftKey: '', activeRecovery: null, reopenCandidate: null, dismissedMap: {} }
+  drafts: { byKey: {}, autosaveTimer: null, autosaveIntervalMs: 60000, unsavedId: 'local-unsaved-main', lastAutosaveAtByKey: {}, promptToken: 0, diffEditor: null, diffOriginalModel: null, diffModifiedModel: null, fallbackSyncing: false, activeDraftKey: '', activeRecovery: null, reopenCandidate: null, dismissedMap: {} },
+  conflictCompare: { diffEditor: null, diffOriginalModel: null, diffModifiedModel: null, diffMode: 'remote', fallbackSyncing: false }
 };
 
 
@@ -3113,6 +3199,7 @@ function shouldForceLocalPreviewForCachedOpen() {
   return status === 'checking' || status === 'failed' || status === 'conflict';
 }
 
+
 function shouldKeepCachedOpenStatusMessage() {
   const status = currentCachedPageRemoteStatus();
   if (!String(state.cachedPageOpen.openedFromCache || '')) return false;
@@ -3128,6 +3215,7 @@ function saveBlockedReasonForCurrentPage() {
   if (status === 'checking') return 'pending';
   if (status === 'failed') return 'failed';
   if (status === 'conflict') return 'conflict';
+  if (status === 'conflict-resolved-local') return '';
   return '';
 }
 
@@ -3188,6 +3276,7 @@ function syncSaveAvailabilityState(options = {}) {
     const statusKey = saveBlockedStatusKey(blockedReason);
     if (statusKey) setStatus(t(statusKey));
   }
+  if (typeof syncConflictCompareButtonState === 'function') syncConflictCompareButtonState();
   return !blockedReason;
 }
 
@@ -3477,6 +3566,271 @@ async function handleExternalSyncCheckNowAction() {
     return;
   }
   await runExternalSyncManualCheck();
+}
+
+
+function disposeConflictDiffEditor() {
+  if (state.conflictCompare.diffEditor) {
+    try { state.conflictCompare.diffEditor.dispose(); } catch (_) {}
+    state.conflictCompare.diffEditor = null;
+  }
+  if (state.conflictCompare.diffOriginalModel) {
+    try { state.conflictCompare.diffOriginalModel.dispose(); } catch (_) {}
+    state.conflictCompare.diffOriginalModel = null;
+  }
+  if (state.conflictCompare.diffModifiedModel) {
+    try { state.conflictCompare.diffModifiedModel.dispose(); } catch (_) {}
+    state.conflictCompare.diffModifiedModel = null;
+  }
+}
+
+function renderConflictCodeLegend(stats = {}) {
+  if (!els.conflictCodeDiffLegend) return;
+  const added = Number(stats.added || 0);
+  const removed = Number(stats.removed || 0);
+  const changed = Number(stats.changed || 0);
+  const parts = [];
+  if (added) parts.push(`<span class="inline-flex items-center rounded-full border border-green-200 bg-green-50 px-2 py-1 font-semibold text-green-700">${escapeHtml(t('draftAdded'))}: ${added}</span>`);
+  if (removed) parts.push(`<span class="inline-flex items-center rounded-full border border-red-200 bg-red-50 px-2 py-1 font-semibold text-red-700">${escapeHtml(t('draftRemoved'))}: ${removed}</span>`);
+  if (changed) parts.push(`<span class="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-1 font-semibold text-amber-700">${escapeHtml(t('draftChanged'))}: ${changed}</span>`);
+  if (!parts.length) parts.push(`<span class="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2 py-1 font-semibold text-gray-600">${escapeHtml(t('draftNoCodeDifferences'))}</span>`);
+  els.conflictCodeDiffLegend.innerHTML = parts.join('');
+}
+
+function syncConflictFallbackScroll(source, target) {
+  if (state.conflictCompare.fallbackSyncing) return;
+  state.conflictCompare.fallbackSyncing = true;
+  target.scrollTop = source.scrollTop;
+  target.scrollLeft = source.scrollLeft;
+  window.requestAnimationFrame(() => { state.conflictCompare.fallbackSyncing = false; });
+}
+
+function renderConflictFallbackDiff(rows, stats) {
+  if (!els.conflictCodeDiffMonaco || !els.conflictCodeDiffFallback) return;
+  els.conflictCodeDiffMonaco.classList.add('hidden');
+  els.conflictCodeDiffFallback.classList.remove('hidden');
+  const leftHtml = rows.map(row => draftFallbackLineHtml(row.leftNo, row.leftLine, row.leftType)).join('');
+  const rightHtml = rows.map(row => draftFallbackLineHtml(row.rightNo, row.rightLine, row.rightType)).join('');
+  if (els.conflictFallbackLeftPane) {
+    els.conflictFallbackLeftPane.innerHTML = leftHtml || '<div class="p-3 text-xs text-gray-500">-</div>';
+    els.conflictFallbackLeftPane.onscroll = () => syncConflictFallbackScroll(els.conflictFallbackLeftPane, els.conflictFallbackRightPane);
+    els.conflictFallbackLeftPane.scrollTop = 0;
+  }
+  if (els.conflictFallbackRightPane) {
+    els.conflictFallbackRightPane.innerHTML = rightHtml || '<div class="p-3 text-xs text-gray-500">-</div>';
+    els.conflictFallbackRightPane.onscroll = () => syncConflictFallbackScroll(els.conflictFallbackRightPane, els.conflictFallbackLeftPane);
+    els.conflictFallbackRightPane.scrollTop = 0;
+  }
+  renderConflictCodeLegend(stats);
+}
+
+function renderConflictCodeDiff(leftSnapshot, rightSnapshot) {
+  disposeConflictDiffEditor();
+  if (!els.conflictCodeDiffMonaco || !els.conflictCodeDiffFallback) return;
+  const leftCode = String(leftSnapshot?.html || '');
+  const rightCode = String(rightSnapshot?.html || '');
+  const fallback = buildDraftLineDiffRows(leftCode, rightCode);
+  renderConflictCodeLegend(fallback.stats);
+  els.conflictCodeDiffMonaco.classList.add('hidden');
+  els.conflictCodeDiffFallback.classList.add('hidden');
+
+  if (!(window.monaco && window.monaco.editor && els.conflictCodeDiffMonaco)) {
+    renderConflictFallbackDiff(fallback.rows, fallback.stats);
+    return;
+  }
+
+  try {
+    state.conflictCompare.diffOriginalModel = monaco.editor.createModel(leftCode, 'html');
+    state.conflictCompare.diffModifiedModel = monaco.editor.createModel(rightCode, 'html');
+    state.conflictCompare.diffEditor = monaco.editor.createDiffEditor(els.conflictCodeDiffMonaco, {
+      automaticLayout: true, readOnly: true, originalEditable: false, renderIndicators: true,
+      renderSideBySide: window.matchMedia('(min-width: 1024px)').matches,
+      minimap: { enabled: false }, lineNumbers: 'on', scrollBeyondLastLine: false,
+      ignoreTrimWhitespace: false, wordWrap: 'off', fontSize: 12, lineHeight: 20
+    });
+    state.conflictCompare.diffEditor.setModel({ original: state.conflictCompare.diffOriginalModel, modified: state.conflictCompare.diffModifiedModel });
+    els.conflictCodeDiffMonaco.classList.remove('hidden');
+    const refreshLegend = () => {
+      const editor = state.conflictCompare.diffEditor;
+      if (!editor) return;
+      const changes = editor.getLineChanges() || [];
+      if (!changes.length) {
+        renderConflictCodeLegend(leftCode === rightCode ? { added: 0, removed: 0, changed: 0 } : fallback.stats);
+        return;
+      }
+      renderConflictCodeLegend(monacoDiffStatsFromChanges(changes));
+    };
+    state.conflictCompare.diffEditor.onDidUpdateDiff(refreshLegend);
+    refreshLegend();
+    state.conflictCompare.diffEditor.layout();
+  } catch (err) {
+    log(err.message || String(err));
+    disposeConflictDiffEditor();
+    renderConflictFallbackDiff(fallback.rows, fallback.stats);
+  }
+}
+
+function renderConflictDiffTabs(mode) {
+  if (!els.conflictDiffTabRemote || !els.conflictDiffTabLocal) return;
+  els.conflictDiffTabRemote.textContent = t('conflictDiffTabRemote');
+  els.conflictDiffTabLocal.textContent = t('conflictDiffTabLocal');
+  const activeClasses = ['border-blue-300', 'bg-blue-50', 'text-blue-700'];
+  const inactiveClasses = ['border-gray-200', 'bg-white', 'text-gray-600'];
+  if (mode === 'local') {
+    els.conflictDiffTabLocal.classList.remove(...inactiveClasses);
+    els.conflictDiffTabLocal.classList.add(...activeClasses);
+    els.conflictDiffTabRemote.classList.remove(...activeClasses);
+    els.conflictDiffTabRemote.classList.add(...inactiveClasses);
+  } else {
+    els.conflictDiffTabRemote.classList.remove(...inactiveClasses);
+    els.conflictDiffTabRemote.classList.add(...activeClasses);
+    els.conflictDiffTabLocal.classList.remove(...activeClasses);
+    els.conflictDiffTabLocal.classList.add(...inactiveClasses);
+  }
+}
+
+function conflictSnapshotsFromState() {
+  const candidate = state.cachedPageOpen.remoteCandidate;
+  if (!candidate) return null;
+  updateCurrentFromInputs();
+  const baseSnapshot = currentBaselineSnapshot();
+  const localSnapshot = currentSnapshotFromState();
+  const remoteSnapshot = {
+    id: String(candidate.id || state.current.id || ''),
+    title: String(candidate.title || ''),
+    description: String(candidate.description || ''),
+    html: String(candidate.html || '')
+  };
+  return { baseSnapshot, localSnapshot, remoteSnapshot };
+}
+
+function renderConflictCompareContent(baseSnapshot, localSnapshot, remoteSnapshot) {
+  if (!els.conflictBaseColumn || !els.conflictLocalColumn || !els.conflictRemoteColumn) return;
+  const diffBaseLocal = draftDiffMap(baseSnapshot, localSnapshot);
+  const diffBaseRemote = draftDiffMap(baseSnapshot, remoteSnapshot);
+  const baseTime = Number(state.cachedPageOpen.verifiedAt || 0);
+  const remoteTime = Number(state.cachedPageOpen.remoteCandidate?.detectedAt || 0);
+  const baseSubtitle = baseTime ? draftUpdatedAtLabel(baseTime) : '';
+  const remoteSubtitle = remoteTime ? draftUpdatedAtLabel(remoteTime) : '';
+  els.conflictBaseColumn.innerHTML = draftColumnHtml(t('conflictBaseLabel'), baseSnapshot, { title: false, description: false, html: false }, { subtitle: baseSubtitle });
+  els.conflictLocalColumn.innerHTML = draftColumnHtml(t('conflictLocalLabel'), localSnapshot, diffBaseLocal, { subtitle: '' });
+  els.conflictRemoteColumn.innerHTML = draftColumnHtml(t('conflictRemoteLabel'), remoteSnapshot, diffBaseRemote, { subtitle: remoteSubtitle });
+  const mode = state.conflictCompare.diffMode;
+  renderConflictDiffTabs(mode);
+  renderConflictCodeDiff(baseSnapshot, mode === 'local' ? localSnapshot : remoteSnapshot);
+}
+
+function openConflictCompareModal() {
+  if (!els.conflictCompareModal) return;
+  const snapshots = conflictSnapshotsFromState();
+  if (!snapshots) return;
+  if (els.conflictCompareTitle) els.conflictCompareTitle.textContent = t('conflictCompareTitle');
+  if (els.conflictCompareSubtitle) els.conflictCompareSubtitle.textContent = t('conflictCompareSubtitle');
+  if (els.conflictKeepLocalBtn) els.conflictKeepLocalBtn.textContent = t('conflictKeepLocal');
+  if (els.conflictLoadRemoteBtn) els.conflictLoadRemoteBtn.textContent = t('conflictLoadRemote');
+  if (els.conflictContinueEditingBtn) els.conflictContinueEditingBtn.textContent = t('conflictContinueEditing');
+  state.conflictCompare.diffMode = 'remote';
+  renderConflictCompareContent(snapshots.baseSnapshot, snapshots.localSnapshot, snapshots.remoteSnapshot);
+  els.conflictCompareModal.classList.remove('hidden');
+}
+
+function closeConflictCompareModal() {
+  if (!els.conflictCompareModal) return;
+  disposeConflictDiffEditor();
+  if (els.conflictCodeDiffMonaco) els.conflictCodeDiffMonaco.classList.add('hidden');
+  if (els.conflictCodeDiffFallback) els.conflictCodeDiffFallback.classList.add('hidden');
+  if (els.conflictFallbackLeftPane) els.conflictFallbackLeftPane.innerHTML = '';
+  if (els.conflictFallbackRightPane) els.conflictFallbackRightPane.innerHTML = '';
+  if (els.conflictBaseColumn) els.conflictBaseColumn.innerHTML = '';
+  if (els.conflictLocalColumn) els.conflictLocalColumn.innerHTML = '';
+  if (els.conflictRemoteColumn) els.conflictRemoteColumn.innerHTML = '';
+  els.conflictCompareModal.classList.add('hidden');
+}
+
+function keepLocalEditsFromConflict() {
+  if (String(state.cachedPageOpen.remoteStatus || '') !== 'conflict') {
+    closeConflictCompareModal();
+    return;
+  }
+  state.cachedPageOpen.remoteStatus = 'conflict-resolved-local';
+  state.cachedPageOpen.saveBlockedReason = '';
+  state.cachedPageOpen.remoteCandidate = null;
+  syncSaveAvailabilityState();
+  closeConflictCompareModal();
+  setStatus(t('conflictKeepLocalStatus'));
+  log(t('conflictKeepLocalLog'));
+}
+
+async function loadFiberyVersionFromConflict() {
+  const candidate = state.cachedPageOpen.remoteCandidate;
+  if (!candidate) { closeConflictCompareModal(); return; }
+
+  const confirmed = await openConfirm({
+    title: t('conflictLoadRemoteConfirmTitle'),
+    message: t('conflictLoadRemoteConfirmMessage'),
+    okText: t('conflictLoadRemoteConfirmButton')
+  });
+  if (!confirmed) return;
+
+  closeConflictCompareModal();
+
+  try {
+    await saveCurrentDraftNow({ force: true });
+    log(t('conflictLoadRemoteDraftSaved'));
+  } catch (_) {}
+
+  const pageId = String(state.current.id || candidate.id || '');
+  const remoteSnapshot = {
+    id: pageId,
+    title: String(candidate.title || ''),
+    description: String(candidate.description || ''),
+    html: String(candidate.html || '')
+  };
+
+  state.current = { id: remoteSnapshot.id, title: remoteSnapshot.title, description: remoteSnapshot.description, html: remoteSnapshot.html };
+  setCurrentBaseline();
+  renderCurrent();
+  syncCurrentSnapshotBaselineAndDirty({ alignBaseline: true });
+
+  const remoteSignature = String(candidate.signature || snapshotSignature(remoteSnapshot));
+  const resolvedAt = Date.now();
+  await savePageContentCacheSafe(remoteSnapshot, { pageId, source: 'conflict-resolve-load-remote', cachedAt: resolvedAt, verifiedAt: resolvedAt, signature: remoteSignature });
+
+  state.cachedPageOpen.remoteStatus = 'verified';
+  state.cachedPageOpen.saveBlockedReason = '';
+  state.cachedPageOpen.remoteCandidate = null;
+  state.cachedPageOpen.cacheSignature = remoteSignature;
+  state.cachedPageOpen.verifiedAt = resolvedAt;
+  if (typeof clearExternalSyncCandidateForCurrentPage === 'function') {
+    clearExternalSyncCandidateForCurrentPage({ clearDismissed: true, clearNotified: false });
+  }
+  syncSaveAvailabilityState();
+  renderLocalPreview();
+  setStatus(t('conflictLoadRemoteStatus'));
+  log(t('conflictLoadRemoteLog'));
+}
+
+function continueEditingFromConflict() {
+  closeConflictCompareModal();
+}
+
+function switchConflictDiffTab(mode) {
+  if (mode === state.conflictCompare.diffMode) return;
+  state.conflictCompare.diffMode = mode;
+  renderConflictDiffTabs(mode);
+  const snapshots = conflictSnapshotsFromState();
+  if (!snapshots) return;
+  renderConflictCodeDiff(snapshots.baseSnapshot, mode === 'local' ? snapshots.localSnapshot : snapshots.remoteSnapshot);
+}
+
+function syncConflictCompareButtonState() {
+  if (!els.conflictCompareOpenBtn) return;
+  const isConflict = String(state.cachedPageOpen.remoteStatus || '') === 'conflict';
+  els.conflictCompareOpenBtn.classList.toggle('hidden', !isConflict);
+  if (isConflict) {
+    els.conflictCompareOpenBtn.textContent = t('conflictCompareOpenBtn');
+    els.conflictCompareOpenBtn.title = t('conflictCompareOpenBtn');
+  }
 }
 
 
@@ -4840,6 +5194,14 @@ function bindEvents() {
   els.closeDraftRecoveryBtn.addEventListener('click', () => keepCurrentVersionFromDraft());
   els.draftRecoveryModal.addEventListener('click', (e) => { if (e.target === els.draftRecoveryModal) keepCurrentVersionFromDraft(); });
   els.reopenRecoveryBtn.addEventListener('click', () => openRecoveryFromButton());
+  if (els.conflictCompareOpenBtn) els.conflictCompareOpenBtn.addEventListener('click', () => openConflictCompareModal());
+  if (els.closeConflictCompareBtn) els.closeConflictCompareBtn.addEventListener('click', () => continueEditingFromConflict());
+  if (els.conflictCompareModal) els.conflictCompareModal.addEventListener('click', (e) => { if (e.target === els.conflictCompareModal) continueEditingFromConflict(); });
+  if (els.conflictKeepLocalBtn) els.conflictKeepLocalBtn.addEventListener('click', () => keepLocalEditsFromConflict());
+  if (els.conflictLoadRemoteBtn) els.conflictLoadRemoteBtn.addEventListener('click', () => { void loadFiberyVersionFromConflict(); });
+  if (els.conflictContinueEditingBtn) els.conflictContinueEditingBtn.addEventListener('click', () => continueEditingFromConflict());
+  if (els.conflictDiffTabRemote) els.conflictDiffTabRemote.addEventListener('click', () => switchConflictDiffTab('remote'));
+  if (els.conflictDiffTabLocal) els.conflictDiffTabLocal.addEventListener('click', () => switchConflictDiffTab('local'));
   document.addEventListener('click', (e) => { if (!els.moreMenu.contains(e.target) && !els.moreBtn.contains(e.target)) { els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); } if (!els.welcomeSearchResults.contains(e.target) && !els.welcomeSearchInput.contains(e.target)) closeWelcomeSearch(); closeContextMenus(); });
   els.closeHistoryBtn.addEventListener('click', closeHistoryModal);
   els.historyModal.addEventListener('click', (e) => { if (e.target === els.historyModal) closeHistoryModal(); });
@@ -4852,7 +5214,7 @@ function bindEvents() {
   els.unsavedTransitionDiscardBtn.addEventListener('click', () => closeUnsavedTransitionModal('discard'));
   els.unsavedTransitionCancelBtn.addEventListener('click', () => closeUnsavedTransitionModal('cancel'));
   els.unsavedTransitionModal.addEventListener('click', (e) => { if (e.target === els.unsavedTransitionModal) closeUnsavedTransitionModal('cancel'); });
-  window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (!els.unsavedTransitionModal.classList.contains('hidden')) { closeUnsavedTransitionModal('cancel'); return; } if (!els.draftRecoveryModal.classList.contains('hidden')) { keepCurrentVersionFromDraft(); return; } if (state.previewFocus) exitPreviewFocus(); els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); closeSearchModal(); closeSettings(); closeUpdateAppModal(); closeWelcomeSearch(); closeContextMenus(); closeCreateProjectModal(); } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); if (state.isAdmin && !state.blank) { void requestSavePage('save'); } } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearchModal(); } });
+  window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (!els.unsavedTransitionModal.classList.contains('hidden')) { closeUnsavedTransitionModal('cancel'); return; } if (!els.draftRecoveryModal.classList.contains('hidden')) { keepCurrentVersionFromDraft(); return; } if (els.conflictCompareModal && !els.conflictCompareModal.classList.contains('hidden')) { continueEditingFromConflict(); return; } if (state.previewFocus) exitPreviewFocus(); els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); closeSearchModal(); closeSettings(); closeUpdateAppModal(); closeWelcomeSearch(); closeContextMenus(); closeCreateProjectModal(); } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); if (state.isAdmin && !state.blank) { void requestSavePage('save'); } } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearchModal(); } });
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       void flushDraftAutosaveNow();

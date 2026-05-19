@@ -1,5 +1,5 @@
 {
-  "version": "8.13.0",
+  "version": "8.14.0",
   "bodyOpenTag": "<body class=\"h-screen overflow-hidden bg-gray-50 text-gray-900 antialiased\">",
   "template": "source/template/index.template.html",
   "html": [
@@ -13,6 +13,7 @@
     "source/html/modal-history.html",
     "source/html/modal-confirm.html",
     "source/html/modal-unsaved-transition.html",
+    "source/html/modal-conflict-compare.html",
     "source/html/panel-log.html"
   ],
   "css": [
@@ -57,6 +58,7 @@
     "source/js/external-sync-polling.js",
     "source/js/save-availability-state.js",
     "source/js/cached-page-open-flow.js",
+    "source/js/conflict-resolution-flow.js",
     "source/js/history-storage.js",
     "source/js/history-render.js",
     "source/js/editor-monaco.js",

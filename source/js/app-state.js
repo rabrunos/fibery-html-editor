@@ -37,5 +37,6 @@ const state = {
   sidebar: { open: true, pages: [], loading: false, refreshTimer: null, hasMore: false, limit: 20, visibleLimit: 20, pageCache: {}, lastRemoteLoadAt: 0, remoteCacheTtlMs: 300000, autoRefreshEnabled: false, autoRefreshIntervalMs: 600000 },
   projects: { rows: [], items: [], pageToProject: {}, itemsByProject: {} },
   search: { debounce: null, query: '', pages: [], cache: {}, loading: false, remoteQuery: '' }, welcomeSearch: { debounce: null, query: '', pages: [], cache: {}, loading: false, remoteQuery: '' }, panelMode: 'both', previewFocus: false, pageMeta: {}, context: { pageId: '', pageTitle: '', projectId: '', createProjectTargetPageId: '' },
-  drafts: { byKey: {}, autosaveTimer: null, autosaveIntervalMs: 60000, unsavedId: 'local-unsaved-main', lastAutosaveAtByKey: {}, promptToken: 0, diffEditor: null, diffOriginalModel: null, diffModifiedModel: null, fallbackSyncing: false, activeDraftKey: '', activeRecovery: null, reopenCandidate: null, dismissedMap: {} }
+  drafts: { byKey: {}, autosaveTimer: null, autosaveIntervalMs: 60000, unsavedId: 'local-unsaved-main', lastAutosaveAtByKey: {}, promptToken: 0, diffEditor: null, diffOriginalModel: null, diffModifiedModel: null, fallbackSyncing: false, activeDraftKey: '', activeRecovery: null, reopenCandidate: null, dismissedMap: {} },
+  conflictCompare: { diffEditor: null, diffOriginalModel: null, diffModifiedModel: null, diffMode: 'remote', fallbackSyncing: false }
 };

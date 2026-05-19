@@ -11,6 +11,7 @@ function shouldForceLocalPreviewForCachedOpen() {
   return status === 'checking' || status === 'failed' || status === 'conflict';
 }
 
+
 function shouldKeepCachedOpenStatusMessage() {
   const status = currentCachedPageRemoteStatus();
   if (!String(state.cachedPageOpen.openedFromCache || '')) return false;
@@ -26,6 +27,7 @@ function saveBlockedReasonForCurrentPage() {
   if (status === 'checking') return 'pending';
   if (status === 'failed') return 'failed';
   if (status === 'conflict') return 'conflict';
+  if (status === 'conflict-resolved-local') return '';
   return '';
 }
 
@@ -86,6 +88,7 @@ function syncSaveAvailabilityState(options = {}) {
     const statusKey = saveBlockedStatusKey(blockedReason);
     if (statusKey) setStatus(t(statusKey));
   }
+  if (typeof syncConflictCompareButtonState === 'function') syncConflictCompareButtonState();
   return !blockedReason;
 }
 

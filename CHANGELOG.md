@@ -1,3 +1,35 @@
+## [8.14.0] - 2026-05-19
+
+### Added
+
+* Added guided conflict comparison modal (`modal-conflict-compare.html`) showing three snapshots side by side: Base (from Last Saved Cache), My Edits (current editor content), and Fibery version (detected during background verification).
+* Added `conflict-resolution-flow.js` with three resolution actions when a cached-open conflict is detected:
+  * **Keep my edits**: marks conflict as resolved-local, unblocks save (next save will overwrite Fibery version), clears remote candidate.
+  * **Load Fibery version**: saves local edits as a draft first, then applies the remote candidate into the editor, updates Last Saved Cache, and marks verification as confirmed.
+  * **Continue editing**: closes the modal without changing conflict state; save remains blocked.
+* Added "Compare versions" button in the page header, visible only when `remoteStatus === 'conflict'`, to open the comparison modal.
+* Added two diff tabs inside the conflict modal (Fibery changes / My changes) to switch the Monaco diff view between base→remote and base→local comparisons.
+
+### Fixed
+
+* Save is correctly unblocked after resolving conflict via "Keep my edits" (`conflict-resolved-local` status returns empty blocked reason).
+* Local edits are preserved as a draft before applying the remote Fibery version ("Load Fibery version" action), making them recoverable via draft recovery.
+* ESC key and backdrop click close the conflict modal without changing conflict state (same as "Continue editing").
+
+### Technical adjustments
+
+* Added `conflict-resolved-local` as a non-blocking resolved status recognized by `saveBlockedReasonForCurrentPage()`.
+* Added `syncConflictCompareButtonState()` called from `syncSaveAvailabilityState()` to keep the header "Compare versions" button in sync with conflict state.
+* Added separate Monaco diff editor state (`state.conflictCompare`) for the conflict modal, isolated from the draft recovery diff editor state.
+* Bumped app version metadata to `8.14.0` via manifest and regenerated single-file deploy artifact.
+
+### Validation
+
+* `npm run build:tmp`
+* `npm run validate:tmp`
+* `npm run build`
+* `npm run validate`
+
 ## [8.13.0] - 2026-05-19
 
 ### Added
