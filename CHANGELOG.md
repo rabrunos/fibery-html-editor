@@ -6,6 +6,8 @@
 * Eliminated numeric file prefixes; concatenation order is now controlled exclusively by `source/config/manifest.json`.
 * Each new module covers a single functional area: version/config, i18n, state, utils, snapshot, update flow, IndexedDB core, page meta, drafts, history, editor, workspace, preview, page CRUD, projects, sidebar, search, context menus, UI modes, settings, event bindings, and lifecycle init.
 * Updated `AGENTS.md` to document the descriptive naming rule and the manifest-controlled ordering convention.
+* Aligned `package.json` metadata version with the canonical app version in `source/config/manifest.json`.
+* Documented that `package.json.version`, when present, must stay aligned with the manifest while the manifest remains the canonical source of truth.
 * No behavior changes; app functionality is preserved exactly as in `8.7.0`.
 
 ## [8.7.0] - 2026-05-18
