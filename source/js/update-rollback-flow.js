@@ -140,6 +140,7 @@ async function restoreUpdateBackupByKey(key = '') {
       description: saved.description || saved.data?.description || state.current.description,
       html: saved.html || saved.data?.html || validation.backupHtml
     };
+    await savePageContentCacheSafe(state.current, { source: 'update-rollback' });
     cachePagesForSidebar([state.current]);
     clearSearchCaches();
 

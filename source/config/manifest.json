@@ -1,5 +1,5 @@
 {
-  "version": "8.11.0",
+  "version": "8.12.0",
   "bodyOpenTag": "<body class=\"h-screen overflow-hidden bg-gray-50 text-gray-900 antialiased\">",
   "template": "source/template/index.template.html",
   "html": [
@@ -45,6 +45,7 @@
     "source/js/update-changelog-render.js",
     "source/js/update-panel-render.js",
     "source/js/indexeddb-core.js",
+    "source/js/page-content-cache.js",
     "source/js/page-meta.js",
     "source/js/drafts-autosave.js",
     "source/js/drafts-diff-utils.js",

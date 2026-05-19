@@ -1,3 +1,29 @@
+## [8.12.0] - 2026-05-19
+
+### Added
+
+* Added a dedicated Last Saved Cache store (`pageContentCache`) in IndexedDB to persist the latest full page content confirmed by Fibery (`title`, `description`, `html`, `signature`, timestamps, and source).
+* Added cache helpers for normalize/save/read/delete flows to keep Last Saved Cache isolated from manual history, drafts, and page metadata.
+
+### Fixed
+
+* Updated Last Saved Cache automatically after successful remote page load (`fibery-load`), manual save/rename (`fibery-save`), update apply (`update-apply`), and update rollback (`update-rollback`).
+* Removed Last Saved Cache entries after successful page deletion.
+* Ensured cache write/delete failures do not block primary load/save/delete/update flows (non-blocking with discreet log output).
+
+### Technical adjustments
+
+* Bumped IndexedDB schema version to `5` and created `pageContentCache` with dedicated indexes.
+* Preserved manual history behavior (`versions`, `kind: manual`) and draft recovery behavior (`drafts`) without adding cache records to history UI.
+* Bumped app version metadata to `8.12.0` via manifest and regenerated single-file deploy artifact.
+
+### Validation
+
+* `npm run build:tmp`
+* `npm run validate:tmp`
+* `npm run build`
+* `npm run validate`
+
 ## [8.11.0] - 2026-05-19
 
 ### Fixed

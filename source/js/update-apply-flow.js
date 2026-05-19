@@ -77,6 +77,7 @@ async function applyRemoteUpdate() {
       description: saved.description || saved.data?.description || state.current.description,
       html: saved.html || saved.data?.html || remoteHtml
     };
+    await savePageContentCacheSafe(state.current, { source: 'update-apply' });
     cachePagesForSidebar([state.current]);
     clearSearchCaches();
     localStorage.setItem(LS.lastPageId, state.current.id);
