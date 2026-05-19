@@ -73,7 +73,6 @@ function bindEvents() {
   els.langSelect.addEventListener('change', () => { localStorage.setItem(LS.lang, els.langSelect.value); applyI18n(); if (state.blank) showBlankPage(); else renderCurrent(); });
   els.openLastToggle.addEventListener('change', () => localStorage.setItem(LS.openLast, els.openLastToggle.checked ? '1' : '0'));
   els.versionLimitSelect.addEventListener('change', async () => { localStorage.setItem(LS.versionLimit, els.versionLimitSelect.value); if (state.current.id) await enforceHistoryLimit(state.current.id); });
-  els.autosaveLimitSelect.addEventListener('change', async () => { localStorage.setItem(LS.autosaveLimit, els.autosaveLimitSelect.value); if (state.current.id) await enforceAutosaveHistoryLimit(state.current.id); });
   els.pageContextMenu.addEventListener('click', async (e) => {
     e.stopPropagation();
     const actionBtn = e.target.closest('[data-action]');
@@ -149,7 +148,7 @@ function bindEvents() {
   document.addEventListener('click', (e) => { if (!els.moreMenu.contains(e.target) && !els.moreBtn.contains(e.target)) { els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); } if (!els.welcomeSearchResults.contains(e.target) && !els.welcomeSearchInput.contains(e.target)) closeWelcomeSearch(); closeContextMenus(); });
   els.closeHistoryBtn.addEventListener('click', closeHistoryModal);
   els.historyModal.addEventListener('click', (e) => { if (e.target === els.historyModal) closeHistoryModal(); });
-  els.historyList.addEventListener('click', async (e) => { const btn = e.target.closest('.restore-version'); if (!btn) return; await restoreVersion(btn.dataset.key, btn.dataset.source || 'manual'); });
+  els.historyList.addEventListener('click', async (e) => { const btn = e.target.closest('.restore-version'); if (!btn) return; await restoreVersion(btn.dataset.key); });
   els.confirmCancelBtn.addEventListener('click', () => closeConfirm(false));
   els.confirmOkBtn.addEventListener('click', () => closeConfirm(true));
   els.confirmModal.addEventListener('click', (e) => { if (e.target === els.confirmModal) closeConfirm(false); });

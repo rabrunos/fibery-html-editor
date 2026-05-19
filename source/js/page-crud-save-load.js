@@ -58,7 +58,6 @@ async function savePage(action = 'save') {
     const savedDraftKey = draftKeyForPage(state.current.id || '');
     await deleteDraftByKey(oldDraftKey);
     if (savedDraftKey !== oldDraftKey) await deleteDraftByKey(savedDraftKey);
-    await clearAutosaveHistoryBySignature(state.current.id, snapshotSignature(state.current));
     await saveHistory(action);
     setCurrentBaseline();
     if (typeof clearExternalSyncCandidateForCurrentPage === 'function') clearExternalSyncCandidateForCurrentPage({ clearDismissed: true, clearNotified: true });

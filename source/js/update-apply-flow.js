@@ -82,7 +82,6 @@ async function applyRemoteUpdate() {
     localStorage.setItem(LS.lastPageId, state.current.id);
     const now = Date.now();
     await savePageMeta(state.current.id, { title: state.current.title, description: state.current.description, lastOpenedAt: now, lastSavedAt: now });
-    await clearAutosaveHistoryBySignature(state.current.id, snapshotSignature(state.current));
     await saveHistory('update-app');
     setCurrentBaseline();
     renderCurrent();

@@ -151,7 +151,6 @@ async function restoreUpdateBackupByKey(key = '') {
       lastOpenedAt: now,
       lastSavedAt: now
     });
-    await clearAutosaveHistoryBySignature(state.current.id, snapshotSignature(state.current));
     await saveHistory('update-rollback');
     setCurrentBaseline();
     renderCurrent();

@@ -2,7 +2,6 @@ async function init() {
   els.langSelect.value = localStorage.getItem(LS.lang) || 'auto';
   els.openLastToggle.checked = (localStorage.getItem(LS.openLast) ?? '1') === '1';
   els.versionLimitSelect.value = localStorage.getItem(LS.versionLimit) || '20';
-  els.autosaveLimitSelect.value = localStorage.getItem(LS.autosaveLimit) || '10';
   state.panelMode = localStorage.getItem(LS.panelMode) || 'both';
   applyI18n();
   await setupCodeEditor();

@@ -69,10 +69,8 @@ async function keepDraftBeforeTransition() {
 async function discardCurrentUnsavedChanges() {
   if (state.blank) return;
   updateCurrentFromInputs();
-  const discardedSignature = snapshotSignature(currentSnapshotFromState());
   const draftKey = draftKeyForPage(state.current.id || '');
   await deleteDraftByKey(draftKey);
-  if (state.current.id) await clearAutosaveHistoryBySignature(state.current.id, discardedSignature);
 
   const baseline = currentBaselineSnapshot();
   state.current.title = baseline.title;

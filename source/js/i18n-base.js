@@ -1,7 +1,7 @@
 const I18N = {
   en: {
     save: 'Save', newPage: 'New Page', history: 'History', settings: 'Settings', deletePage: 'Delete', openLast: 'Open last page on startup',
-    versionLimit: 'Local version limit', manualHistoryLimit: 'Manual history limit', autosaveLimit: 'Autosave limit', unlimited: 'Unlimited', historyLocalNote: 'Version history is saved only in this browser.',
+    versionLimit: 'Local version limit', manualHistoryLimit: 'Manual history limit', unlimited: 'Unlimited', historyLocalNote: 'Version history is saved only in this browser.',
     editor: 'Editor', preview: 'Preview', openView: 'Open preview', title: 'Title', description: 'Description', view: 'Preview', unsaved: 'Unsaved', saved: 'Saved', saving: 'Saving...',
     noPage: 'No page selected', pageLoaded: 'Page loaded', pageCreated: 'New page draft', selectOrCreate: 'Select or create a page', restore: 'Restore', confirmRestore: 'Restore this version and save it to Fibery?', noHistory: 'No local history for this page.',
     searchPages: 'Search pages...', searchPagesShort: 'Search pages', recentPages: 'Recent', validationTitle: 'Page title is required.', readOnly: 'Read-only: admin permission not detected.',
@@ -13,7 +13,7 @@ const I18N = {
   },
   'pt-BR': {
     save: 'Salvar', newPage: 'Nova página', history: 'Histórico', settings: 'Configurações', deletePage: 'Apagar', openLast: 'Abrir última página ao iniciar',
-    versionLimit: 'Limite de versões locais', manualHistoryLimit: 'Limite do histórico manual', autosaveLimit: 'Limite de salvamentos automáticos', unlimited: 'Sem limite', historyLocalNote: 'O histórico fica salvo apenas neste navegador.',
+    versionLimit: 'Limite de versões locais', manualHistoryLimit: 'Limite do histórico manual', unlimited: 'Sem limite', historyLocalNote: 'O histórico fica salvo apenas neste navegador.',
     editor: 'Editor', preview: 'Prévia', openView: 'Abrir prévia', title: 'Título', description: 'Descrição', view: 'Prévia', unsaved: 'Não salvo', saved: 'Salvo', saving: 'Salvando...',
     noPage: 'Nenhuma página selecionada', pageLoaded: 'Página carregada', pageCreated: 'Rascunho criado', selectOrCreate: 'Selecione ou crie uma página', restore: 'Restaurar', confirmRestore: 'Restaurar esta versão e salvar no Fibery?', noHistory: 'Sem histórico local para esta página.',
     searchPages: 'Buscar páginas...', searchPagesShort: 'Buscar páginas', recentPages: 'Recentes', validationTitle: 'O título da página é obrigatório.', readOnly: 'Somente leitura: permissão de admin não detectada.',

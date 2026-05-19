@@ -23,7 +23,7 @@ function getHistory(pageId, kind = 'all') {
     req.onsuccess = () => {
       const rows = (req.result || []).sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
       if (kind === 'manual') return resolve(rows.filter(row => (row.kind || 'manual') === 'manual'));
-      if (kind === 'autosave') return resolve(rows.filter(row => row.kind === 'autosave'));
+      if (kind === 'autosave') return resolve([]);
       resolve(rows);
     };
     req.onerror = () => reject(req.error);
@@ -43,18 +43,4 @@ async function enforceHistoryLimit(pageId) {
   const rows = await getHistory(pageId, 'manual');
   const excess = rows.slice(limit);
   for (const row of excess) await deleteVersion(row.key);
-}
-async function enforceAutosaveHistoryLimit(pageId) {
-  const limit = getAutosaveLimit();
-  if (!limit) return;
-  const rows = await getHistory(pageId, 'autosave');
-  const excess = rows.slice(limit);
-  for (const row of excess) await deleteVersion(row.key);
-}
-async function clearAutosaveHistoryBySignature(pageId, signature) {
-  if (!pageId || !signature) return;
-  const rows = await getHistory(pageId, 'autosave');
-  for (const row of rows) {
-    if (String(row.signature || '') === String(signature)) await deleteVersion(row.key);
-  }
 }

@@ -67,7 +67,7 @@ async function restoreDraftFromModal() {
   if (state.drafts.reopenCandidate?.key === key) state.drafts.reopenCandidate = null;
   updateRecoveryReopenButton();
   closeDraftRecoveryModal();
-  setStatus(recovery.mode === 'history-manual' || recovery.mode === 'history-autosave' ? t('restoredFromHistory') : t('draftRestored'));
+  setStatus(recovery.mode === 'history-manual' ? t('restoredFromHistory') : t('draftRestored'));
 }
 async function maybePromptDraftRecoveryForCurrentPage(promptToken = state.drafts.promptToken) {
   if (!state.db || state.blank) return;

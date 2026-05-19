@@ -1,3 +1,28 @@
+## [8.11.0] - 2026-05-19
+
+### Fixed
+
+* Simplified autosave to keep only one current local draft per page in IndexedDB `drafts` (replace-by-key behavior).
+* Stopped creating new autosave timeline entries (`kind: autosave`) in IndexedDB `versions`.
+* Removed autosave-history rendering from the History modal; history now shows only intentional manual saves (`kind: manual`).
+* Kept draft recovery and diff flow focused on the current draft snapshot, without autosave-version list restore paths.
+* Updated unsaved-transition discard/save flows to manage only draft state (no autosave-history cleanup side effects).
+
+### Technical adjustments
+
+* Removed autosave-history specific settings/UI wiring (`autosaveLimitSelect`, `LS.autosaveLimit`, autosave history limit handlers).
+* Removed autosave-history write/trim helpers from runtime paths (`saveAutosaveHistory`, autosave-history enforcement, signature cleanup calls).
+* Kept legacy `kind: autosave` records untouched and hidden from current UI/restore flows.
+* Preserved manual history, update backups/rollback records, and `versions` store usage for non-autosave features.
+* Bumped app version metadata to `8.11.0` via manifest and regenerated single-file deploy artifact.
+
+### Validation
+
+* `npm run build:tmp`
+* `npm run validate:tmp`
+* `npm run build`
+* `npm run validate`
+
 ## [8.10.2] - 2026-05-19
 
 ### Fixed

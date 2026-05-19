@@ -82,31 +82,10 @@ async function deleteDraftByKey(key) {
     try { await txDelete('drafts', key); } catch (_) {}
   }
 }
-function getAutosaveLimit() {
-  const raw = Number(localStorage.getItem(LS.autosaveLimit) || '10');
-  if (!Number.isFinite(raw) || raw < 0) return 10;
-  return raw;
-}
 function getManualHistoryLimit() {
   const raw = Number(localStorage.getItem(LS.versionLimit) || '20');
   if (!Number.isFinite(raw) || raw < 0) return 20;
   return raw;
-}
-async function saveAutosaveHistory(record) {
-  if (!state.current.id || !state.db || !record) return;
-  const row = {
-    key: `autosave:${state.current.id}:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`,
-    kind: 'autosave',
-    pageId: state.current.id,
-    title: record.title || '',
-    description: record.description || '',
-    html: record.html || '',
-    action: 'autosave',
-    signature: record.signature || snapshotSignature(record),
-    createdAt: Date.now()
-  };
-  await txPut('versions', row);
-  await enforceAutosaveHistoryLimit(state.current.id);
 }
 async function saveCurrentDraftNow(options = {}) {
   const force = !!options.force;
@@ -147,7 +126,6 @@ async function saveCurrentDraftNow(options = {}) {
   clearDismissedRecovery(key);
   if (state.drafts.reopenCandidate?.key === key) state.drafts.reopenCandidate = null;
   updateRecoveryReopenButton();
-  await saveAutosaveHistory(record);
   return record;
 }
 function scheduleDraftAutosave() {

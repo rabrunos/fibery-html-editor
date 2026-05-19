@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.10.2" />
+  <meta name="fibery-html-editor-version" content="8.11.0" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -433,12 +433,6 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
             <option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option><option value="0" data-i18n="unlimited">Unlimited</option>
           </select>
         </label>
-        <label class="block text-sm text-gray-700">
-          <span data-i18n="autosaveLimit">Autosave limit</span>
-          <select id="autosaveLimitSelect" class="mt-1 h-8 w-full rounded border border-gray-300 bg-white px-2 text-sm">
-            <option value="5">5</option><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="0" data-i18n="unlimited">Unlimited</option>
-          </select>
-        </label>
         <button id="logToggleBtn" class="flex h-9 w-full items-center justify-between rounded border border-gray-200 bg-white px-3 text-left text-sm text-gray-700 hover:bg-gray-50">
           <span id="logMenuText">Show log</span>
           <span class="text-xs text-gray-400">Log</span>
@@ -562,7 +556,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 (() => {
   'use strict';
 
-const APP_VERSION = '8.10.2';
+const APP_VERSION = '8.11.0';
 window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 document.documentElement.dataset.appVersion = APP_VERSION;
 
@@ -576,7 +570,7 @@ const UPDATE_REMOTE = Object.freeze({
 const I18N = {
   en: {
     save: 'Save', newPage: 'New Page', history: 'History', settings: 'Settings', deletePage: 'Delete', openLast: 'Open last page on startup',
-    versionLimit: 'Local version limit', manualHistoryLimit: 'Manual history limit', autosaveLimit: 'Autosave limit', unlimited: 'Unlimited', historyLocalNote: 'Version history is saved only in this browser.',
+    versionLimit: 'Local version limit', manualHistoryLimit: 'Manual history limit', unlimited: 'Unlimited', historyLocalNote: 'Version history is saved only in this browser.',
     editor: 'Editor', preview: 'Preview', openView: 'Open preview', title: 'Title', description: 'Description', view: 'Preview', unsaved: 'Unsaved', saved: 'Saved', saving: 'Saving...',
     noPage: 'No page selected', pageLoaded: 'Page loaded', pageCreated: 'New page draft', selectOrCreate: 'Select or create a page', restore: 'Restore', confirmRestore: 'Restore this version and save it to Fibery?', noHistory: 'No local history for this page.',
     searchPages: 'Search pages...', searchPagesShort: 'Search pages', recentPages: 'Recent', validationTitle: 'Page title is required.', readOnly: 'Read-only: admin permission not detected.',
@@ -588,7 +582,7 @@ const I18N = {
   },
   'pt-BR': {
     save: 'Salvar', newPage: 'Nova página', history: 'Histórico', settings: 'Configurações', deletePage: 'Apagar', openLast: 'Abrir última página ao iniciar',
-    versionLimit: 'Limite de versões locais', manualHistoryLimit: 'Limite do histórico manual', autosaveLimit: 'Limite de salvamentos automáticos', unlimited: 'Sem limite', historyLocalNote: 'O histórico fica salvo apenas neste navegador.',
+    versionLimit: 'Limite de versões locais', manualHistoryLimit: 'Limite do histórico manual', unlimited: 'Sem limite', historyLocalNote: 'O histórico fica salvo apenas neste navegador.',
     editor: 'Editor', preview: 'Prévia', openView: 'Abrir prévia', title: 'Título', description: 'Descrição', view: 'Prévia', unsaved: 'Não salvo', saved: 'Salvo', saving: 'Salvando...',
     noPage: 'Nenhuma página selecionada', pageLoaded: 'Página carregada', pageCreated: 'Rascunho criado', selectOrCreate: 'Selecione ou crie uma página', restore: 'Restaurar', confirmRestore: 'Restaurar esta versão e salvar no Fibery?', noHistory: 'Sem histórico local para esta página.',
     searchPages: 'Buscar páginas...', searchPagesShort: 'Buscar páginas', recentPages: 'Recentes', validationTitle: 'O título da página é obrigatório.', readOnly: 'Somente leitura: permissão de admin não detectada.',
@@ -630,16 +624,12 @@ Object.assign(I18N.en, {
     draftAdded: 'Added',
     draftRemoved: 'Removed',
     draftChanged: 'Changed',
-    autosave: 'Salvamento automático',
-    autosaves: 'Salvamentos automáticos',
     manualHistory: 'Manual history',
     currentEditorContent: 'Current editor content',
     selectedHistoryVersion: 'Selected history version',
-    selectedAutosave: 'Selected autosave',
     compareBeforeRestore: 'Compare before restore',
     restoreSelectedVersion: 'Restore selected version',
     reopenRecoveryComparison: 'Reopen recovery comparison',
-    noAutosaves: 'No autosaves',
     restoredFromHistory: 'Version restored to editor',
     localPreviewPocBlobRelative: 'Local preview PoC · Blob · tailwind.css',
     localPreviewPocBlobRoot: 'Local preview PoC · Blob · /tailwind.css',
@@ -800,16 +790,12 @@ Object.assign(I18N['pt-BR'], {
     draftAdded: 'Adicionado',
     draftRemoved: 'Removido',
     draftChanged: 'Alterado',
-    autosave: 'Salvamento automático',
-    autosaves: 'Salvamentos automáticos',
     manualHistory: 'Histórico manual',
     currentEditorContent: 'Conteúdo atual do editor',
     selectedHistoryVersion: 'Versão selecionada do histórico',
-    selectedAutosave: 'Salvamento automático selecionado',
     compareBeforeRestore: 'Comparar antes de restaurar',
     restoreSelectedVersion: 'Restaurar versão selecionada',
     reopenRecoveryComparison: 'Reabrir comparação',
-    noAutosaves: 'Sem salvamentos automáticos',
     restoredFromHistory: 'Versão restaurada no editor',
     localPreviewPocBlobRelative: 'Prévia local PoC · Blob · tailwind.css',
     localPreviewPocBlobRoot: 'Prévia local PoC · Blob · /tailwind.css',
@@ -942,7 +928,7 @@ Object.assign(I18N['pt-BR'], {
 
 
 const LS = {
-  lang: 'fibery-pro-editor.lang', openLast: 'fibery-pro-editor.openLast', lastPageId: 'fibery-pro-editor.lastPageId', versionLimit: 'fibery-pro-editor.versionLimit', autosaveLimit: 'fibery-pro-editor.autosaveLimit', split: 'fibery-pro-editor.split',
+  lang: 'fibery-pro-editor.lang', openLast: 'fibery-pro-editor.openLast', lastPageId: 'fibery-pro-editor.lastPageId', versionLimit: 'fibery-pro-editor.versionLimit', split: 'fibery-pro-editor.split',
   sidebarOpen: 'fibery-pro-editor.sidebarOpen', pageMeta: 'fibery-pro-editor.pageMeta', panelMode: 'fibery-pro-editor.panelMode', dismissedRecovery: 'fibery-pro-editor.dismissedRecovery'
 };
 
@@ -956,7 +942,7 @@ const els = {
   titleInput: $('titleInput'), descriptionInput: $('descriptionInput'), dirtyBadge: $('dirtyBadge'), externalSyncNotice: $('externalSyncNotice'), externalSyncNoticeTitle: $('externalSyncNoticeTitle'), externalSyncNoticeMessage: $('externalSyncNoticeMessage'), externalSyncDismissBtn: $('externalSyncDismissBtn'), externalSyncCheckNowBtn: $('externalSyncCheckNowBtn'), statusText: $('statusText'),
   logToggleBtn: $('logToggleBtn'), logMenuText: $('logMenuText'), settingsModal: $('settingsModal'), closeSettingsBtn: $('closeSettingsBtn'), langSelect: $('langSelect'),
   updateAppModal: $('updateAppModal'), closeUpdateAppBtn: $('closeUpdateAppBtn'), updateInstalledVersionValue: $('updateInstalledVersionValue'), updateAvailableVersionValue: $('updateAvailableVersionValue'), updateCheckStatusText: $('updateCheckStatusText'), updateVerifyAgainBtn: $('updateVerifyAgainBtn'), updateApplyBtn: $('updateApplyBtn'), updateBackupsBox: $('updateBackupsBox'), updateChangelogBox: $('updateChangelogBox'), updateCloseBtn: $('updateCloseBtn'),
-  openLastToggle: $('openLastToggle'), versionLimitSelect: $('versionLimitSelect'), autosaveLimitSelect: $('autosaveLimitSelect'), codeEditor: $('codeEditor'), codeEditorFallback: $('codeEditorFallback'), charCount: $('charCount'), copyHtmlBtn: $('copyHtmlBtn'), editorPanelMenuBtn: $('editorPanelMenuBtn'),
+  openLastToggle: $('openLastToggle'), versionLimitSelect: $('versionLimitSelect'), codeEditor: $('codeEditor'), codeEditorFallback: $('codeEditorFallback'), charCount: $('charCount'), copyHtmlBtn: $('copyHtmlBtn'), editorPanelMenuBtn: $('editorPanelMenuBtn'),
   previewFrame: $('previewFrame'), previewStatus: $('previewStatus'), previewPanelMenuBtn: $('previewPanelMenuBtn'), previewFocusBtn: $('previewFocusBtn'), previewFocusExitBtn: $('previewFocusExitBtn'), splitter: $('splitter'), splitArea: $('splitArea'), editorPane: $('editorPane'), previewPane: $('previewPane'), dragOverlay: $('dragOverlay'),
   searchModal: $('searchModal'), closeSearchBtn: $('closeSearchBtn'), globalSearchInput: $('globalSearchInput'), globalSearchResults: $('globalSearchResults'),
   pageContextMenu: $('pageContextMenu'), moveProjectMenu: $('moveProjectMenu'), projectContextMenu: $('projectContextMenu'), editorPanelMenu: $('editorPanelMenu'), previewPanelMenu: $('previewPanelMenu'), createProjectModal: $('createProjectModal'), createProjectNameInput: $('createProjectNameInput'), closeCreateProjectBtn: $('closeCreateProjectBtn'), cancelCreateProjectBtn: $('cancelCreateProjectBtn'), confirmCreateProjectBtn: $('confirmCreateProjectBtn'),
@@ -1619,7 +1605,6 @@ async function applyRemoteUpdate() {
     localStorage.setItem(LS.lastPageId, state.current.id);
     const now = Date.now();
     await savePageMeta(state.current.id, { title: state.current.title, description: state.current.description, lastOpenedAt: now, lastSavedAt: now });
-    await clearAutosaveHistoryBySignature(state.current.id, snapshotSignature(state.current));
     await saveHistory('update-app');
     setCurrentBaseline();
     renderCurrent();
@@ -1798,7 +1783,6 @@ async function restoreUpdateBackupByKey(key = '') {
       lastOpenedAt: now,
       lastSavedAt: now
     });
-    await clearAutosaveHistoryBySignature(state.current.id, snapshotSignature(state.current));
     await saveHistory('update-rollback');
     setCurrentBaseline();
     renderCurrent();
@@ -2172,31 +2156,10 @@ async function deleteDraftByKey(key) {
     try { await txDelete('drafts', key); } catch (_) {}
   }
 }
-function getAutosaveLimit() {
-  const raw = Number(localStorage.getItem(LS.autosaveLimit) || '10');
-  if (!Number.isFinite(raw) || raw < 0) return 10;
-  return raw;
-}
 function getManualHistoryLimit() {
   const raw = Number(localStorage.getItem(LS.versionLimit) || '20');
   if (!Number.isFinite(raw) || raw < 0) return 20;
   return raw;
-}
-async function saveAutosaveHistory(record) {
-  if (!state.current.id || !state.db || !record) return;
-  const row = {
-    key: `autosave:${state.current.id}:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`,
-    kind: 'autosave',
-    pageId: state.current.id,
-    title: record.title || '',
-    description: record.description || '',
-    html: record.html || '',
-    action: 'autosave',
-    signature: record.signature || snapshotSignature(record),
-    createdAt: Date.now()
-  };
-  await txPut('versions', row);
-  await enforceAutosaveHistoryLimit(state.current.id);
 }
 async function saveCurrentDraftNow(options = {}) {
   const force = !!options.force;
@@ -2237,7 +2200,6 @@ async function saveCurrentDraftNow(options = {}) {
   clearDismissedRecovery(key);
   if (state.drafts.reopenCandidate?.key === key) state.drafts.reopenCandidate = null;
   updateRecoveryReopenButton();
-  await saveAutosaveHistory(record);
   return record;
 }
 function scheduleDraftAutosave() {
@@ -2556,7 +2518,7 @@ async function restoreDraftFromModal() {
   if (state.drafts.reopenCandidate?.key === key) state.drafts.reopenCandidate = null;
   updateRecoveryReopenButton();
   closeDraftRecoveryModal();
-  setStatus(recovery.mode === 'history-manual' || recovery.mode === 'history-autosave' ? t('restoredFromHistory') : t('draftRestored'));
+  setStatus(recovery.mode === 'history-manual' ? t('restoredFromHistory') : t('draftRestored'));
 }
 async function maybePromptDraftRecoveryForCurrentPage(promptToken = state.drafts.promptToken) {
   if (!state.db || state.blank) return;
@@ -2685,10 +2647,8 @@ async function keepDraftBeforeTransition() {
 async function discardCurrentUnsavedChanges() {
   if (state.blank) return;
   updateCurrentFromInputs();
-  const discardedSignature = snapshotSignature(currentSnapshotFromState());
   const draftKey = draftKeyForPage(state.current.id || '');
   await deleteDraftByKey(draftKey);
-  if (state.current.id) await clearAutosaveHistoryBySignature(state.current.id, discardedSignature);
 
   const baseline = currentBaselineSnapshot();
   state.current.title = baseline.title;
@@ -3055,7 +3015,7 @@ function getHistory(pageId, kind = 'all') {
     req.onsuccess = () => {
       const rows = (req.result || []).sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
       if (kind === 'manual') return resolve(rows.filter(row => (row.kind || 'manual') === 'manual'));
-      if (kind === 'autosave') return resolve(rows.filter(row => row.kind === 'autosave'));
+      if (kind === 'autosave') return resolve([]);
       resolve(rows);
     };
     req.onerror = () => reject(req.error);
@@ -3076,20 +3036,6 @@ async function enforceHistoryLimit(pageId) {
   const excess = rows.slice(limit);
   for (const row of excess) await deleteVersion(row.key);
 }
-async function enforceAutosaveHistoryLimit(pageId) {
-  const limit = getAutosaveLimit();
-  if (!limit) return;
-  const rows = await getHistory(pageId, 'autosave');
-  const excess = rows.slice(limit);
-  for (const row of excess) await deleteVersion(row.key);
-}
-async function clearAutosaveHistoryBySignature(pageId, signature) {
-  if (!pageId || !signature) return;
-  const rows = await getHistory(pageId, 'autosave');
-  for (const row of rows) {
-    if (String(row.signature || '') === String(signature)) await deleteVersion(row.key);
-  }
-}
 
 
 async function openHistoryModal() {
@@ -3099,27 +3045,23 @@ async function openHistoryModal() {
   renderHistory();
 }
 function closeHistoryModal() { els.historyModal.classList.add('hidden'); }
-function historyRowHtml(row, source = 'manual') {
+function historyRowHtml(row) {
   const d = new Date(row.createdAt || Date.now()).toLocaleString(state.lang === 'pt-BR' ? 'pt-BR' : 'en-US');
-  const badge = source === 'autosave'
-    ? `<span class="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">${escapeHtml(t('autosave'))}</span>`
-    : `<span class="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold text-blue-800">${escapeHtml(t('save'))}</span>`;
-  return `<div class="p-3 flex items-center gap-3 hover:bg-gray-50"><div class="min-w-0 flex-1"><div class="flex items-center gap-2 text-sm font-medium text-gray-900"><span>${escapeHtml(d)}</span>${badge}</div><div class="truncate text-xs text-gray-500">${escapeHtml(row.title || '')}</div></div><button class="restore-version h-8 px-3 rounded border border-gray-300 bg-white text-sm text-gray-700 hover:bg-gray-50" data-source="${escapeHtml(source)}" data-key="${escapeHtml(row.key)}">${escapeHtml(t('restore'))}</button></div>`;
+  const badge = `<span class="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold text-blue-800">${escapeHtml(t('save'))}</span>`;
+  return `<div class="p-3 flex items-center gap-3 hover:bg-gray-50"><div class="min-w-0 flex-1"><div class="flex items-center gap-2 text-sm font-medium text-gray-900"><span>${escapeHtml(d)}</span>${badge}</div><div class="truncate text-xs text-gray-500">${escapeHtml(row.title || '')}</div></div><button class="restore-version h-8 px-3 rounded border border-gray-300 bg-white text-sm text-gray-700 hover:bg-gray-50" data-key="${escapeHtml(row.key)}">${escapeHtml(t('restore'))}</button></div>`;
 }
 async function renderHistory() {
   const manualRows = await getHistory(state.current.id, 'manual');
-  const autosaveRows = await getHistory(state.current.id, 'autosave');
-  if (!manualRows.length && !autosaveRows.length) {
+  if (!manualRows.length) {
     els.historyList.innerHTML = `<div class="p-6 text-sm text-gray-500">${escapeHtml(t('noHistory'))}</div>`;
     return;
   }
-  const manualSection = `<div class="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500 bg-gray-50">${escapeHtml(t('manualHistory'))}</div>${manualRows.length ? manualRows.map(row => historyRowHtml(row, 'manual')).join('') : `<div class="p-4 text-xs text-gray-400">${escapeHtml(t('noHistory'))}</div>`}`;
-  const autosaveSection = `<div class="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500 bg-gray-50 border-t border-gray-200">${escapeHtml(t('autosaves'))}</div>${autosaveRows.length ? autosaveRows.map(row => historyRowHtml(row, 'autosave')).join('') : `<div class="p-4 text-xs text-gray-400">${escapeHtml(t('noAutosaves'))}</div>`}`;
-  els.historyList.innerHTML = `${manualSection}${autosaveSection}`;
+  const manualSection = `<div class="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500 bg-gray-50">${escapeHtml(t('manualHistory'))}</div>${manualRows.map(row => historyRowHtml(row)).join('')}`;
+  els.historyList.innerHTML = manualSection;
 }
-async function restoreVersion(key, source = 'manual') {
+async function restoreVersion(key) {
   if (!key) return;
-  const rows = await getHistory(state.current.id, source === 'autosave' ? 'autosave' : 'manual');
+  const rows = await getHistory(state.current.id, 'manual');
   const row = rows.find(x => x.key === key);
   if (!row) return;
   closeHistoryModal();
@@ -3128,10 +3070,10 @@ async function restoreVersion(key, source = 'manual') {
     pageId: state.current.id || '',
     currentSnapshot: currentSnapshotFromState(),
     draftRecord: row,
-    mode: source === 'autosave' ? 'history-autosave' : 'history-manual',
+    mode: 'history-manual',
     titleKey: 'compareBeforeRestore',
-    subtitle: source === 'autosave' ? t('selectedAutosave') : t('selectedHistoryVersion'),
-    rightTitleKey: source === 'autosave' ? 'selectedAutosave' : 'selectedHistoryVersion',
+    subtitle: t('selectedHistoryVersion'),
+    rightTitleKey: 'selectedHistoryVersion',
     leftTitleKey: 'currentEditorContent',
     restoreTextKey: 'restoreSelectedVersion',
     showDiscard: false
@@ -3446,7 +3388,6 @@ async function savePage(action = 'save') {
     const savedDraftKey = draftKeyForPage(state.current.id || '');
     await deleteDraftByKey(oldDraftKey);
     if (savedDraftKey !== oldDraftKey) await deleteDraftByKey(savedDraftKey);
-    await clearAutosaveHistoryBySignature(state.current.id, snapshotSignature(state.current));
     await saveHistory(action);
     setCurrentBaseline();
     if (typeof clearExternalSyncCandidateForCurrentPage === 'function') clearExternalSyncCandidateForCurrentPage({ clearDismissed: true, clearNotified: true });
@@ -4325,7 +4266,6 @@ function bindEvents() {
   els.langSelect.addEventListener('change', () => { localStorage.setItem(LS.lang, els.langSelect.value); applyI18n(); if (state.blank) showBlankPage(); else renderCurrent(); });
   els.openLastToggle.addEventListener('change', () => localStorage.setItem(LS.openLast, els.openLastToggle.checked ? '1' : '0'));
   els.versionLimitSelect.addEventListener('change', async () => { localStorage.setItem(LS.versionLimit, els.versionLimitSelect.value); if (state.current.id) await enforceHistoryLimit(state.current.id); });
-  els.autosaveLimitSelect.addEventListener('change', async () => { localStorage.setItem(LS.autosaveLimit, els.autosaveLimitSelect.value); if (state.current.id) await enforceAutosaveHistoryLimit(state.current.id); });
   els.pageContextMenu.addEventListener('click', async (e) => {
     e.stopPropagation();
     const actionBtn = e.target.closest('[data-action]');
@@ -4401,7 +4341,7 @@ function bindEvents() {
   document.addEventListener('click', (e) => { if (!els.moreMenu.contains(e.target) && !els.moreBtn.contains(e.target)) { els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); } if (!els.welcomeSearchResults.contains(e.target) && !els.welcomeSearchInput.contains(e.target)) closeWelcomeSearch(); closeContextMenus(); });
   els.closeHistoryBtn.addEventListener('click', closeHistoryModal);
   els.historyModal.addEventListener('click', (e) => { if (e.target === els.historyModal) closeHistoryModal(); });
-  els.historyList.addEventListener('click', async (e) => { const btn = e.target.closest('.restore-version'); if (!btn) return; await restoreVersion(btn.dataset.key, btn.dataset.source || 'manual'); });
+  els.historyList.addEventListener('click', async (e) => { const btn = e.target.closest('.restore-version'); if (!btn) return; await restoreVersion(btn.dataset.key); });
   els.confirmCancelBtn.addEventListener('click', () => closeConfirm(false));
   els.confirmOkBtn.addEventListener('click', () => closeConfirm(true));
   els.confirmModal.addEventListener('click', (e) => { if (e.target === els.confirmModal) closeConfirm(false); });
@@ -4436,7 +4376,6 @@ async function init() {
   els.langSelect.value = localStorage.getItem(LS.lang) || 'auto';
   els.openLastToggle.checked = (localStorage.getItem(LS.openLast) ?? '1') === '1';
   els.versionLimitSelect.value = localStorage.getItem(LS.versionLimit) || '20';
-  els.autosaveLimitSelect.value = localStorage.getItem(LS.autosaveLimit) || '10';
   state.panelMode = localStorage.getItem(LS.panelMode) || 'both';
   applyI18n();
   await setupCodeEditor();
