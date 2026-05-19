@@ -1,7 +1,7 @@
 function bindEvents() {
   els.titleInput.addEventListener('input', () => { updateCurrentFromInputs(); markDirty(true); scheduleLocalPreviewRefresh(); });
   els.descriptionInput.addEventListener('input', () => { updateCurrentFromInputs(); markDirty(true); scheduleLocalPreviewRefresh(); });
-  els.saveBtn.addEventListener('click', () => savePage('save'));
+  els.saveBtn.addEventListener('click', () => { void requestSavePage('save'); });
   els.updateAppBtn.addEventListener('click', openUpdateAppModal);
   els.refreshBtn.addEventListener('click', () => { els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); refreshPreview(); });
   els.newPageBtn.addEventListener('click', () => { void runWithUnsavedPageTransitionGuard(async () => { await newPage(); }); });
@@ -141,7 +141,7 @@ function bindEvents() {
   els.keepCurrentVersionBtn.addEventListener('click', () => keepCurrentVersionFromDraft());
   els.discardDraftBtn.addEventListener('click', () => discardDraftFromModal());
   if (els.externalSyncDismissBtn) els.externalSyncDismissBtn.addEventListener('click', () => dismissExternalSyncNotice());
-  if (els.externalSyncCheckNowBtn) els.externalSyncCheckNowBtn.addEventListener('click', () => { void runExternalSyncManualCheck(); });
+  if (els.externalSyncCheckNowBtn) els.externalSyncCheckNowBtn.addEventListener('click', () => { void handleExternalSyncCheckNowAction(); });
   els.closeDraftRecoveryBtn.addEventListener('click', () => keepCurrentVersionFromDraft());
   els.draftRecoveryModal.addEventListener('click', (e) => { if (e.target === els.draftRecoveryModal) keepCurrentVersionFromDraft(); });
   els.reopenRecoveryBtn.addEventListener('click', () => openRecoveryFromButton());
@@ -157,7 +157,7 @@ function bindEvents() {
   els.unsavedTransitionDiscardBtn.addEventListener('click', () => closeUnsavedTransitionModal('discard'));
   els.unsavedTransitionCancelBtn.addEventListener('click', () => closeUnsavedTransitionModal('cancel'));
   els.unsavedTransitionModal.addEventListener('click', (e) => { if (e.target === els.unsavedTransitionModal) closeUnsavedTransitionModal('cancel'); });
-  window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (!els.unsavedTransitionModal.classList.contains('hidden')) { closeUnsavedTransitionModal('cancel'); return; } if (!els.draftRecoveryModal.classList.contains('hidden')) { keepCurrentVersionFromDraft(); return; } if (state.previewFocus) exitPreviewFocus(); els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); closeSearchModal(); closeSettings(); closeUpdateAppModal(); closeWelcomeSearch(); closeContextMenus(); closeCreateProjectModal(); } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); if (state.isAdmin && !state.blank) savePage('save'); } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearchModal(); } });
+  window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (!els.unsavedTransitionModal.classList.contains('hidden')) { closeUnsavedTransitionModal('cancel'); return; } if (!els.draftRecoveryModal.classList.contains('hidden')) { keepCurrentVersionFromDraft(); return; } if (state.previewFocus) exitPreviewFocus(); els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); closeSearchModal(); closeSettings(); closeUpdateAppModal(); closeWelcomeSearch(); closeContextMenus(); closeCreateProjectModal(); } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); if (state.isAdmin && !state.blank) { void requestSavePage('save'); } } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearchModal(); } });
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       void flushDraftAutosaveNow();

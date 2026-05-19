@@ -18,7 +18,12 @@ function localPreviewStatusLabel({ usesTailwind = false } = {}) { return usesTai
 function htmlUsesTailwindStylesheet(html = '') {
   return /<link\b[^>]*href\s*=\s*["'](?:\.\/|\/)?tailwind\.css["'][^>]*>/i.test(String(html || ''));
 }
-function shouldUseLocalPreview() { if (state.blank) return false; if (!state.current.id) return true; return !sameSnapshot(currentSnapshotFromState(), currentBaselineSnapshot()); }
+function shouldUseLocalPreview() {
+  if (state.blank) return false;
+  if (typeof shouldForceLocalPreviewForCachedOpen === 'function' && shouldForceLocalPreviewForCachedOpen()) return true;
+  if (!state.current.id) return true;
+  return !sameSnapshot(currentSnapshotFromState(), currentBaselineSnapshot());
+}
 function localPreviewRenderSignature(html, baseHref, usesTailwind) {
   return snapshotSignature({
     title: String(baseHref || ''),

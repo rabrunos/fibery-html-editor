@@ -1,5 +1,5 @@
 {
-  "version": "8.12.0",
+  "version": "8.13.0",
   "bodyOpenTag": "<body class=\"h-screen overflow-hidden bg-gray-50 text-gray-900 antialiased\">",
   "template": "source/template/index.template.html",
   "html": [
@@ -55,6 +55,8 @@
     "source/js/external-sync-state.js",
     "source/js/external-sync-banner.js",
     "source/js/external-sync-polling.js",
+    "source/js/save-availability-state.js",
+    "source/js/cached-page-open-flow.js",
     "source/js/history-storage.js",
     "source/js/history-render.js",
     "source/js/editor-monaco.js",

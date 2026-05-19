@@ -124,6 +124,7 @@ async function runExternalSyncManualCheck() {
     await runExternalSyncPollingCycle({ manual: true });
   } finally {
     if (els.externalSyncCheckNowBtn) els.externalSyncCheckNowBtn.disabled = false;
+    if (typeof syncCachedOpenCheckNowButtonLabel === 'function') syncCachedOpenCheckNowButtonLabel();
   }
 }
 

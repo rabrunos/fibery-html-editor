@@ -99,7 +99,9 @@ async function runWithUnsavedPageTransitionGuard(proceed) {
     if (choice === 'save-open') {
       const saved = await savePage('save');
       if (!saved) {
-        setStatus(t('unsavedTransitionSaveFailed'));
+        if (!(typeof isSaveBlockedByRemoteVerification === 'function' && isSaveBlockedByRemoteVerification())) {
+          setStatus(t('unsavedTransitionSaveFailed'));
+        }
         return false;
       }
       await proceed();

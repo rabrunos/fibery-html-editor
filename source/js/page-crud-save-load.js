@@ -8,21 +8,7 @@ async function loadPage(id) {
     state.loadingPage = true;
     await flushDraftAutosaveNow();
     const promptToken = ++state.drafts.promptToken;
-    setStatus(t('loading'));
-    const page = await API.loadPage(pageId, { source: 'load-page' });
-    state.current = { id: page.id || pageId, title: page.title || '', description: page.description || '', html: page.html || '' };
-    await savePageContentCacheSafe(state.current, { source: 'fibery-load' });
-    cachePagesForSidebar([state.current]);
-    if (typeof resetExternalSyncStateForCurrentPage === 'function') resetExternalSyncStateForCurrentPage(state.current.id);
-    setCurrentBaseline();
-    await savePageMeta(state.current.id, { title: state.current.title, description: state.current.description, lastOpenedAt: Date.now() });
-    renderCurrent();
-    syncCurrentSnapshotBaselineAndDirty({ alignBaseline: true });
-    localStorage.setItem(LS.lastPageId, state.current.id);
-    syncPreviewMode({ immediate: true });
-    setStatus(t('pageLoaded'));
-    log(`${t('pageLoaded')}: ${state.current.title || state.current.id}`);
-    void maybePromptDraftRecoveryForCurrentPage(promptToken);
+    await loadPageWithCacheAwareFlow(pageId, promptToken);
   })();
 
   state.pageLoads.inFlightById[pageId] = loadPromise;
@@ -31,21 +17,27 @@ async function loadPage(id) {
   } finally {
     delete state.pageLoads.inFlightById[pageId];
     state.loadingPage = false;
+    syncSaveAvailabilityState();
   }
 }
 async function confirmAction({ title, message, okText = 'OK', showPreview = false, previewId = '', openPreviewId = '' } = {}) { els.confirmTitle.textContent = title || ''; els.confirmMessage.textContent = message || ''; els.confirmOkBtn.textContent = okText; const previewTargetId = previewId || state.current.id; els.confirmOpenPreviewBtn.dataset.previewId = openPreviewId || previewTargetId || ''; els.deletePreviewWrap.classList.toggle('hidden', !showPreview); if (showPreview && previewTargetId) { els.deletePreviewFrame.src = viewUrl(previewTargetId); recordPreviewUsage({ source: 'confirm-preview', pageId: previewTargetId }); } else { els.deletePreviewFrame.removeAttribute('src'); els.confirmOpenPreviewBtn.dataset.previewId = ''; } els.confirmModal.classList.remove('hidden'); return new Promise(resolve => { state.confirmResolver = resolve; }); }
 function closeConfirm(result) { els.confirmModal.classList.add('hidden'); els.deletePreviewFrame.removeAttribute('src'); els.confirmOpenPreviewBtn.dataset.previewId = ''; const resolver = state.confirmResolver; state.confirmResolver = null; if (resolver) resolver(!!result); }
-async function newPage() { const ok = await confirmAction({ title: t('createPageTitle'), message: t('createPageMessage'), okText: t('create') }); if (!ok) return; await flushDraftAutosaveNow(); state.current = { id: '', title: 'Untitled Page', description: '', html: '' }; if (typeof resetExternalSyncStateForCurrentPage === 'function') resetExternalSyncStateForCurrentPage(''); setCurrentBaseline(); renderCurrent(); markDirty(true); syncPreviewMode({ immediate: true }); setStatus(t('pageCreated')); els.titleInput.focus(); els.titleInput.select(); }
+async function newPage() { const ok = await confirmAction({ title: t('createPageTitle'), message: t('createPageMessage'), okText: t('create') }); if (!ok) return; await flushDraftAutosaveNow(); state.current = { id: '', title: 'Untitled Page', description: '', html: '' }; if (typeof resetExternalSyncStateForCurrentPage === 'function') resetExternalSyncStateForCurrentPage(''); resetCachedPageOpenState(''); setCurrentBaseline(); renderCurrent(); markDirty(true); syncPreviewMode({ immediate: true }); setStatus(t('pageCreated')); els.titleInput.focus(); els.titleInput.select(); }
 async function deleteCurrentPage() { if (!state.current.id) return; const ok = await confirmAction({ title: t('deleteTitle'), message: t('deleteMessage'), okText: t('deleteConfirm'), showPreview: false }); if (!ok) return; try { const oldId = state.current.id; await API.deletePage(oldId, { source: 'delete-current-page' }); await deletePageContentCacheSafe(oldId, { source: 'delete-current-page' }); if (localStorage.getItem(LS.lastPageId) === oldId) localStorage.removeItem(LS.lastPageId); delete state.sidebar.pageCache[oldId]; clearSearchCaches(); await deletePageMeta(oldId); showBlankPage(); refreshSidebarFromLocalCache({ reset: true }); setStatus(t('deleted')); log(t('deleted')); } catch (err) { alert(err.message || String(err)); log(err.message || String(err)); } }
 async function deletePageFromList(id, title) { if (!id || !state.isAdmin) return; const ok = await confirmAction({ title: t('deleteTitle'), message: `${t('deleteMessage')}\n\n${title || id}`, okText: t('deleteConfirm'), showPreview: true, previewId: id, openPreviewId: id }); if (!ok) return; try { await API.deletePage(id, { source: 'delete-page-list' }); await deletePageContentCacheSafe(id, { source: 'delete-page-list' }); if (localStorage.getItem(LS.lastPageId) === id) localStorage.removeItem(LS.lastPageId); delete state.sidebar.pageCache[id]; clearSearchCaches(); await deletePageMeta(id); if (state.current.id === id) showBlankPage(); refreshSidebarFromLocalCache({ reset: true }); if (!els.searchModal.classList.contains('hidden')) await loadSearchResults({ localOnly: true }); if (!els.welcomeSearchResults.classList.contains('hidden')) await loadWelcomeSearchResults({ localOnly: true }); setStatus(t('deleted')); log(`${t('deleted')}: ${title || id}`); } catch (err) { alert(err.message || String(err)); log(err.message || String(err)); } }
 async function savePage(action = 'save') {
   if (state.saving) return false;
+  const blockedReason = saveBlockedReasonForCurrentPage();
+  if (blockedReason) {
+    syncSaveAvailabilityState({ announce: true });
+    return false;
+  }
   const beforeSavePageId = state.current.id || '';
   await flushDraftAutosaveNow();
   updateCurrentFromInputs();
   if (!state.current.title.trim()) { alert(t('validationTitle')); els.titleInput.focus(); return false; }
   state.saving = true;
-  els.saveBtn.disabled = true;
+  syncSaveAvailabilityState();
   setStatus(t('saving'));
   try {
     const saved = await API.savePage(state.current, { source: 'save-page' });
@@ -62,6 +54,7 @@ async function savePage(action = 'save') {
     if (savedDraftKey !== oldDraftKey) await deleteDraftByKey(savedDraftKey);
     await saveHistory(action);
     setCurrentBaseline();
+    markCurrentPageRemoteVerified({ openedFromCache: false, remoteStatus: 'verified' });
     if (typeof clearExternalSyncCandidateForCurrentPage === 'function') clearExternalSyncCandidateForCurrentPage({ clearDismissed: true, clearNotified: true });
     renderCurrent();
     syncCurrentSnapshotBaselineAndDirty({ alignBaseline: true });
@@ -77,7 +70,7 @@ async function savePage(action = 'save') {
     return false;
   } finally {
     state.saving = false;
-    els.saveBtn.disabled = !state.isAdmin;
+    syncSaveAvailabilityState();
   }
 }
 async function renamePage(pageId, nextTitle) {

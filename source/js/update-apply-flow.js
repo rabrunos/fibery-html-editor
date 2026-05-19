@@ -85,6 +85,7 @@ async function applyRemoteUpdate() {
     await savePageMeta(state.current.id, { title: state.current.title, description: state.current.description, lastOpenedAt: now, lastSavedAt: now });
     await saveHistory('update-app');
     setCurrentBaseline();
+    markCurrentPageRemoteVerified({ openedFromCache: false, remoteStatus: 'verified' });
     renderCurrent();
     syncPreviewMode({ immediate: true, forceRealReload: true });
     refreshSidebarFromLocalCache({ reset: true });

@@ -20,6 +20,7 @@ function showBlankPage() {
   state.preview.lastRealUrl = '';
   state.blank = true;
   state.current = { id: '', title: '', description: '', html: '' };
+  resetCachedPageOpenState('');
   setCurrentBaseline();
   if (typeof resetExternalSyncStateForCurrentPage === 'function') resetExternalSyncStateForCurrentPage('');
   markDirty(false);
@@ -38,6 +39,8 @@ function showBlankPage() {
   updateSidebarActiveState();
   renderSidebarProjects();
   updateRecoveryReopenButton();
+  syncSaveAvailabilityState();
+  syncCachedOpenCheckNowButtonLabel();
 }
 function showWorkspace() {
   state.blank = false;
@@ -70,4 +73,6 @@ function renderCurrent() {
   if (els.updateAppBtn) els.updateAppBtn.classList.toggle('hidden', !(state.appPageId && state.current.id === state.appPageId && !state.blank));
   updateSidebarActiveState();
   updateRecoveryReopenButton();
+  syncSaveAvailabilityState();
+  syncCachedOpenCheckNowButtonLabel();
 }

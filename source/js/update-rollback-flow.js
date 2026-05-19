@@ -154,6 +154,7 @@ async function restoreUpdateBackupByKey(key = '') {
     });
     await saveHistory('update-rollback');
     setCurrentBaseline();
+    markCurrentPageRemoteVerified({ openedFromCache: false, remoteStatus: 'verified' });
     renderCurrent();
     syncPreviewMode({ immediate: true, forceRealReload: true });
     refreshSidebarFromLocalCache({ reset: true });

@@ -1,3 +1,32 @@
+## [8.13.0] - 2026-05-19
+
+### Added
+
+* Added cache-first page open flow backed by Last Saved Cache (`pageContentCache`): pages now open immediately from local cache when available, while Fibery verification runs in background.
+* Added dedicated cached-open remote verification state with request-id protection to ignore delayed results from previously opened pages.
+* Added save availability guard states for cached opens (`checking`, `failed`, `conflict`) with explicit save-button blocking and localized status/tooltip messages.
+
+### Fixed
+
+* Preserved local edits while verifying cached opens: remote updates are auto-applied only when no local edits happened since cached baseline.
+* Prevented remote verification from overwriting the wrong page when results arrive late after navigation.
+* Kept draft recovery/manual history behavior intact: cached open, verification, and remote auto-apply do not create manual history entries.
+
+### Technical adjustments
+
+* Added `source/js/save-availability-state.js` and `source/js/cached-page-open-flow.js` and wired them through the manifest build order.
+* Updated `loadPage` to use cache-aware open logic with background `API.loadPage` verification and non-blocking fallback to direct remote load when cache is missing.
+* Updated save/update flows to mark current page as Fibery-confirmed after successful remote save operations.
+* Updated local preview selection/status handling so cached-open verification keeps local preview first and avoids forcing real preview before verification completes.
+* Bumped app version metadata to `8.13.0` via manifest and regenerated single-file deploy artifact.
+
+### Validation
+
+* `npm run build:tmp`
+* `npm run validate:tmp`
+* `npm run build`
+* `npm run validate`
+
 ## [8.12.0] - 2026-05-19
 
 ### Added

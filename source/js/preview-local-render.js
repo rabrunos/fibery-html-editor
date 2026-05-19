@@ -11,7 +11,9 @@ function renderLocalPreview() {
     els.previewStatus.textContent = statusLabel;
     state.preview.localStatusLabel = statusLabel;
     state.preview.lastLocalUsesTailwind = usesTailwind;
-    setStatus(statusLabel);
+    if (!(typeof shouldKeepCachedOpenStatusMessage === 'function' && shouldKeepCachedOpenStatusMessage())) {
+      setStatus(statusLabel);
+    }
     return;
   }
 
@@ -27,7 +29,9 @@ function renderLocalPreview() {
   const statusLabel = localPreviewStatusLabel({ usesTailwind });
   state.preview.localStatusLabel = statusLabel;
   els.previewStatus.textContent = statusLabel;
-  setStatus(statusLabel);
+  if (!(typeof shouldKeepCachedOpenStatusMessage === 'function' && shouldKeepCachedOpenStatusMessage())) {
+    setStatus(statusLabel);
+  }
 
   els.previewFrame.removeAttribute('src');
   els.previewFrame.srcdoc = doc;

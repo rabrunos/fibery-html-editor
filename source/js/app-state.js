@@ -16,6 +16,17 @@ const state = {
     lastAutomaticFiberyCallAt: 0, slowModeUntil: 0, inFlight: {}
   },
   pageLoads: { inFlightById: {} },
+  cachedPageOpen: {
+    pageId: '',
+    openRequestId: '',
+    openedFromCache: false,
+    cacheSignature: '',
+    remoteStatus: 'idle',
+    saveBlockedReason: '',
+    remoteCandidate: null,
+    lastErrorMessage: '',
+    verifiedAt: 0
+  },
   externalSync: {
     enabled: true, automaticEnabled: false, checking: false, timer: null, intervalMs: 600000, minCooldownMs: 600000, lastCheckedAt: 0, lastErrorAt: 0, lastErrorMessage: '',
     remoteCandidate: null, remoteSignature: '', baselineSignatureAtDetection: '', localBaselineSignature: '', dismissedSignature: '', lastNotifiedSignature: '', pageId: '', status: 'idle',

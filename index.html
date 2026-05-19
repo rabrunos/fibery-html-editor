@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.12.0" />
+  <meta name="fibery-html-editor-version" content="8.13.0" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -556,7 +556,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 (() => {
   'use strict';
 
-const APP_VERSION = '8.12.0';
+const APP_VERSION = '8.13.0';
 window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 document.documentElement.dataset.appVersion = APP_VERSION;
 
@@ -750,6 +750,19 @@ Object.assign(I18N.en, {
     externalSyncManualCheckCompletedLog: 'External sync manual check completed',
     externalSyncCheckSkippedLog: 'External sync check skipped',
     externalSyncCheckErrorLog: 'External change check failed',
+    cachedOpenLoadedFromCacheChecking: 'Loaded from local cache · checking Fibery...',
+    cachedOpenVerifiedStatus: 'Fibery version confirmed.',
+    cachedOpenRemoteNewerAppliedStatus: 'Newer Fibery version loaded.',
+    cachedOpenVerifyFailedStatus: 'Could not confirm Fibery version.',
+    cachedOpenVerifyFailedLog: 'Cached-open Fibery verification failed',
+    cachedOpenRetryVerifyNow: 'Try verify again',
+    cachedOpenSaveBlockedPending: 'Waiting for Fibery confirmation',
+    cachedOpenSaveBlockedPendingTooltip: 'We are checking the saved Fibery version before allowing save.',
+    cachedOpenSaveBlockedFailed: 'Save blocked: could not confirm Fibery version.',
+    cachedOpenSaveBlockedFailedTooltip: 'Save is blocked until Fibery version confirmation succeeds.',
+    cachedOpenSaveBlockedConflict: 'Save blocked: external conflict detected.',
+    cachedOpenSaveBlockedConflictTooltip: 'Save is blocked until the external conflict is resolved.',
+    cachedOpenConflictDetectedStatus: 'External conflict detected while editing.',
     apiUsageLast5Min: 'Last 5 min',
     apiUsageFibery: 'Fibery API',
     apiUsagePreview: 'preview loads',
@@ -916,6 +929,19 @@ Object.assign(I18N['pt-BR'], {
     externalSyncManualCheckCompletedLog: 'Verificação manual de sync externo concluída',
     externalSyncCheckSkippedLog: 'Verificação de sync externo ignorada',
     externalSyncCheckErrorLog: 'Falha ao verificar alteração externa',
+    cachedOpenLoadedFromCacheChecking: 'Carregado do cache local · verificando Fibery...',
+    cachedOpenVerifiedStatus: 'Versão do Fibery confirmada.',
+    cachedOpenRemoteNewerAppliedStatus: 'Versão mais recente do Fibery carregada.',
+    cachedOpenVerifyFailedStatus: 'Não foi possível confirmar a versão no Fibery.',
+    cachedOpenVerifyFailedLog: 'Falha na verificação remota da abertura por cache',
+    cachedOpenRetryVerifyNow: 'Tentar verificar novamente',
+    cachedOpenSaveBlockedPending: 'Aguardando confirmação do Fibery',
+    cachedOpenSaveBlockedPendingTooltip: 'Estamos verificando a versão salva no Fibery antes de permitir salvar.',
+    cachedOpenSaveBlockedFailed: 'Salvar bloqueado: não foi possível confirmar a versão no Fibery.',
+    cachedOpenSaveBlockedFailedTooltip: 'Salvar fica bloqueado até confirmar a versão no Fibery.',
+    cachedOpenSaveBlockedConflict: 'Salvar bloqueado: conflito externo detectado.',
+    cachedOpenSaveBlockedConflictTooltip: 'Salvar fica bloqueado até o conflito externo ser resolvido.',
+    cachedOpenConflictDetectedStatus: 'Conflito externo detectado durante a edição.',
     apiUsageLast5Min: 'Últimos 5 min',
     apiUsageFibery: 'API Fibery',
     apiUsagePreview: 'loads de prévia',
@@ -972,6 +998,17 @@ const state = {
     lastAutomaticFiberyCallAt: 0, slowModeUntil: 0, inFlight: {}
   },
   pageLoads: { inFlightById: {} },
+  cachedPageOpen: {
+    pageId: '',
+    openRequestId: '',
+    openedFromCache: false,
+    cacheSignature: '',
+    remoteStatus: 'idle',
+    saveBlockedReason: '',
+    remoteCandidate: null,
+    lastErrorMessage: '',
+    verifiedAt: 0
+  },
   externalSync: {
     enabled: true, automaticEnabled: false, checking: false, timer: null, intervalMs: 600000, minCooldownMs: 600000, lastCheckedAt: 0, lastErrorAt: 0, lastErrorMessage: '',
     remoteCandidate: null, remoteSignature: '', baselineSignatureAtDetection: '', localBaselineSignature: '', dismissedSignature: '', lastNotifiedSignature: '', pageId: '', status: 'idle',
@@ -1608,6 +1645,7 @@ async function applyRemoteUpdate() {
     await savePageMeta(state.current.id, { title: state.current.title, description: state.current.description, lastOpenedAt: now, lastSavedAt: now });
     await saveHistory('update-app');
     setCurrentBaseline();
+    markCurrentPageRemoteVerified({ openedFromCache: false, remoteStatus: 'verified' });
     renderCurrent();
     syncPreviewMode({ immediate: true, forceRealReload: true });
     refreshSidebarFromLocalCache({ reset: true });
@@ -1787,6 +1825,7 @@ async function restoreUpdateBackupByKey(key = '') {
     });
     await saveHistory('update-rollback');
     setCurrentBaseline();
+    markCurrentPageRemoteVerified({ openedFromCache: false, remoteStatus: 'verified' });
     renderCurrent();
     syncPreviewMode({ immediate: true, forceRealReload: true });
     refreshSidebarFromLocalCache({ reset: true });
@@ -2745,7 +2784,9 @@ async function runWithUnsavedPageTransitionGuard(proceed) {
     if (choice === 'save-open') {
       const saved = await savePage('save');
       if (!saved) {
-        setStatus(t('unsavedTransitionSaveFailed'));
+        if (!(typeof isSaveBlockedByRemoteVerification === 'function' && isSaveBlockedByRemoteVerification())) {
+          setStatus(t('unsavedTransitionSaveFailed'));
+        }
         return false;
       }
       await proceed();
@@ -3038,6 +3079,7 @@ async function runExternalSyncManualCheck() {
     await runExternalSyncPollingCycle({ manual: true });
   } finally {
     if (els.externalSyncCheckNowBtn) els.externalSyncCheckNowBtn.disabled = false;
+    if (typeof syncCachedOpenCheckNowButtonLabel === 'function') syncCachedOpenCheckNowButtonLabel();
   }
 }
 
@@ -3055,6 +3097,386 @@ function syncExternalSyncPollingState(options = {}) {
   }
   if (state.externalSync.timer && !forceReschedule) return;
   scheduleExternalSyncPolling(externalSyncNextDelayMs());
+}
+
+
+function currentCachedPageRemoteStatus() {
+  const pageId = String(state.current.id || '');
+  if (!pageId) return 'idle';
+  if (String(state.cachedPageOpen.pageId || '') !== pageId) return 'idle';
+  return String(state.cachedPageOpen.remoteStatus || 'idle');
+}
+
+function shouldForceLocalPreviewForCachedOpen() {
+  const status = currentCachedPageRemoteStatus();
+  if (!String(state.cachedPageOpen.openedFromCache || '')) return false;
+  return status === 'checking' || status === 'failed' || status === 'conflict';
+}
+
+function shouldKeepCachedOpenStatusMessage() {
+  const status = currentCachedPageRemoteStatus();
+  if (!String(state.cachedPageOpen.openedFromCache || '')) return false;
+  return status === 'checking' || status === 'verified' || status === 'stale-applied' || status === 'failed' || status === 'conflict';
+}
+
+function saveBlockedReasonForCurrentPage() {
+  const pageId = String(state.current.id || '');
+  if (!pageId) return '';
+  if (!state.cachedPageOpen.openedFromCache) return '';
+  if (String(state.cachedPageOpen.pageId || '') !== pageId) return '';
+  const status = String(state.cachedPageOpen.remoteStatus || 'idle');
+  if (status === 'checking') return 'pending';
+  if (status === 'failed') return 'failed';
+  if (status === 'conflict') return 'conflict';
+  return '';
+}
+
+function saveBlockedStatusKey(reason = '') {
+  if (reason === 'pending') return 'cachedOpenSaveBlockedPending';
+  if (reason === 'failed') return 'cachedOpenSaveBlockedFailed';
+  if (reason === 'conflict') return 'cachedOpenSaveBlockedConflict';
+  return '';
+}
+
+function saveBlockedTooltipKey(reason = '') {
+  if (reason === 'pending') return 'cachedOpenSaveBlockedPendingTooltip';
+  if (reason === 'failed') return 'cachedOpenSaveBlockedFailedTooltip';
+  if (reason === 'conflict') return 'cachedOpenSaveBlockedConflictTooltip';
+  return '';
+}
+
+function isSaveBlockedByRemoteVerification() {
+  return !!saveBlockedReasonForCurrentPage();
+}
+
+function canRetryCurrentPageRemoteVerification() {
+  const pageId = String(state.current.id || '');
+  if (!pageId) return false;
+  if (!state.cachedPageOpen.openedFromCache) return false;
+  if (String(state.cachedPageOpen.pageId || '') !== pageId) return false;
+  const status = String(state.cachedPageOpen.remoteStatus || 'idle');
+  return status === 'failed' || status === 'conflict';
+}
+
+function syncCachedOpenCheckNowButtonLabel() {
+  if (!els.externalSyncCheckNowBtn) return;
+  const labelKey = canRetryCurrentPageRemoteVerification() ? 'cachedOpenRetryVerifyNow' : 'externalSyncCheckNow';
+  const label = t(labelKey);
+  els.externalSyncCheckNowBtn.textContent = label;
+  els.externalSyncCheckNowBtn.title = label;
+}
+
+function syncSaveAvailabilityState(options = {}) {
+  if (!els.saveBtn) return true;
+  const blockedReason = saveBlockedReasonForCurrentPage();
+  state.cachedPageOpen.saveBlockedReason = blockedReason;
+  const disabled = !state.isAdmin || state.saving || state.blank || !!blockedReason;
+  els.saveBtn.disabled = disabled;
+
+  const blockedTooltipKey = saveBlockedTooltipKey(blockedReason);
+  if (blockedTooltipKey) {
+    els.saveBtn.title = t(blockedTooltipKey);
+  } else if (!state.isAdmin) {
+    els.saveBtn.title = t('readOnly');
+  } else {
+    els.saveBtn.title = t('save');
+  }
+
+  syncCachedOpenCheckNowButtonLabel();
+
+  if (options.announce && blockedReason) {
+    const statusKey = saveBlockedStatusKey(blockedReason);
+    if (statusKey) setStatus(t(statusKey));
+  }
+  return !blockedReason;
+}
+
+async function requestSavePage(action = 'save', options = {}) {
+  if (!state.isAdmin || state.blank) return false;
+  const blockedReason = saveBlockedReasonForCurrentPage();
+  if (blockedReason) {
+    syncSaveAvailabilityState({ announce: options.announce !== false });
+    return false;
+  }
+  return savePage(action);
+}
+
+
+
+function createCachedPageOpenRequestId(pageId = '') {
+  return `${String(pageId || '')}:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function resetCachedPageOpenState(pageId = '') {
+  state.cachedPageOpen.pageId = String(pageId || '');
+  state.cachedPageOpen.openRequestId = '';
+  state.cachedPageOpen.openedFromCache = false;
+  state.cachedPageOpen.cacheSignature = '';
+  state.cachedPageOpen.remoteStatus = 'idle';
+  state.cachedPageOpen.saveBlockedReason = '';
+  state.cachedPageOpen.remoteCandidate = null;
+  state.cachedPageOpen.lastErrorMessage = '';
+  state.cachedPageOpen.verifiedAt = 0;
+  syncSaveAvailabilityState();
+}
+
+function markCurrentPageRemoteVerified(options = {}) {
+  if (state.blank || !state.current.id) return;
+  const verifiedAt = Date.now();
+  const status = String(options.remoteStatus || 'verified');
+  const openedFromCache = !!options.openedFromCache;
+  state.cachedPageOpen.pageId = String(state.current.id || '');
+  state.cachedPageOpen.openRequestId = '';
+  state.cachedPageOpen.openedFromCache = openedFromCache;
+  state.cachedPageOpen.cacheSignature = String(options.signature || snapshotSignature(currentBaselineSnapshot()));
+  state.cachedPageOpen.remoteStatus = status;
+  state.cachedPageOpen.saveBlockedReason = '';
+  state.cachedPageOpen.remoteCandidate = null;
+  state.cachedPageOpen.lastErrorMessage = '';
+  state.cachedPageOpen.verifiedAt = verifiedAt;
+  syncSaveAvailabilityState();
+}
+
+function isActiveCachedPageOpenRequest(pageId = '', requestId = '') {
+  const expectedPageId = String(pageId || '');
+  const expectedRequestId = String(requestId || '');
+  if (!expectedPageId || !expectedRequestId) return false;
+  if (state.blank) return false;
+  if (String(state.current.id || '') !== expectedPageId) return false;
+  if (String(state.cachedPageOpen.pageId || '') !== expectedPageId) return false;
+  if (String(state.cachedPageOpen.openRequestId || '') !== expectedRequestId) return false;
+  return true;
+}
+
+function hasUserEditedSinceCachedOpen(pageId = '') {
+  const currentPageId = String(state.current.id || '');
+  const expectedPageId = String(pageId || '');
+  if (!expectedPageId || currentPageId !== expectedPageId) return false;
+  updateCurrentFromInputs();
+  return !sameSnapshot(currentSnapshotFromState(), currentBaselineSnapshot());
+}
+
+function cachedPageSnapshot(record = {}, pageId = '') {
+  const normalizedPageId = String(record.pageId || pageId || '').trim();
+  return {
+    id: normalizedPageId,
+    title: String(record.title || ''),
+    description: String(record.description || ''),
+    html: String(record.html || '')
+  };
+}
+
+async function loadPageFromRemoteDirect(pageId, promptToken) {
+  setStatus(t('loading'));
+  const page = await API.loadPage(pageId, { source: 'load-page' });
+  state.current = {
+    id: page.id || pageId,
+    title: page.title || '',
+    description: page.description || '',
+    html: page.html || ''
+  };
+  await savePageContentCacheSafe(state.current, { source: 'fibery-load' });
+  cachePagesForSidebar([state.current]);
+  if (typeof resetExternalSyncStateForCurrentPage === 'function') resetExternalSyncStateForCurrentPage(state.current.id);
+  setCurrentBaseline();
+  await savePageMeta(state.current.id, { title: state.current.title, description: state.current.description, lastOpenedAt: Date.now() });
+  renderCurrent();
+  syncCurrentSnapshotBaselineAndDirty({ alignBaseline: true });
+  localStorage.setItem(LS.lastPageId, state.current.id);
+  syncPreviewMode({ immediate: true });
+  markCurrentPageRemoteVerified({ openedFromCache: false });
+  setStatus(t('pageLoaded'));
+  log(`${t('pageLoaded')}: ${state.current.title || state.current.id}`);
+  void maybePromptDraftRecoveryForCurrentPage(promptToken);
+}
+
+async function startCachedPageRemoteVerification(pageId, requestId, options = {}) {
+  const source = String(options.source || 'load-page-cache-verify');
+  const promptToken = Number(options.promptToken || state.drafts.promptToken || 0);
+  if (!pageId || !requestId) return false;
+
+  if (isActiveCachedPageOpenRequest(pageId, requestId)) {
+    state.cachedPageOpen.remoteStatus = 'checking';
+    state.cachedPageOpen.saveBlockedReason = 'pending';
+    state.cachedPageOpen.lastErrorMessage = '';
+    syncSaveAvailabilityState();
+    setStatus(t('cachedOpenLoadedFromCacheChecking'));
+  }
+
+  try {
+    const remote = await API.loadPage(pageId, { source });
+    const remoteSnapshot = {
+      id: String(remote.id || pageId),
+      title: String(remote.title || ''),
+      description: String(remote.description || ''),
+      html: String(remote.html || '')
+    };
+    const verifiedAt = Date.now();
+    const remoteSignature = snapshotSignature(remoteSnapshot);
+    await savePageContentCacheSafe(remoteSnapshot, { pageId, source: 'fibery-load', cachedAt: verifiedAt, verifiedAt, signature: remoteSignature });
+
+    if (!isActiveCachedPageOpenRequest(pageId, requestId)) return true;
+
+    const baselineSignature = snapshotSignature(currentBaselineSnapshot());
+    const cacheSignature = String(state.cachedPageOpen.cacheSignature || baselineSignature);
+    const sameAsCache = remoteSignature === cacheSignature;
+    const userEdited = hasUserEditedSinceCachedOpen(pageId);
+
+    state.cachedPageOpen.lastErrorMessage = '';
+    state.cachedPageOpen.verifiedAt = verifiedAt;
+    state.cachedPageOpen.cacheSignature = remoteSignature;
+
+    if (sameAsCache) {
+      state.cachedPageOpen.remoteStatus = 'verified';
+      state.cachedPageOpen.saveBlockedReason = '';
+      state.cachedPageOpen.remoteCandidate = null;
+      if (typeof clearExternalSyncCandidateForCurrentPage === 'function') {
+        clearExternalSyncCandidateForCurrentPage({ clearDismissed: true, clearNotified: false });
+      }
+      syncSaveAvailabilityState();
+      setStatus(t('cachedOpenVerifiedStatus'));
+      return true;
+    }
+
+    if (!userEdited) {
+      state.current = {
+        id: String(pageId || remoteSnapshot.id || ''),
+        title: remoteSnapshot.title,
+        description: remoteSnapshot.description,
+        html: remoteSnapshot.html
+      };
+      setCurrentBaseline();
+      renderCurrent();
+      syncCurrentSnapshotBaselineAndDirty({ alignBaseline: true });
+      state.cachedPageOpen.remoteStatus = 'stale-applied';
+      state.cachedPageOpen.saveBlockedReason = '';
+      state.cachedPageOpen.remoteCandidate = null;
+      syncSaveAvailabilityState();
+      renderLocalPreview();
+      setStatus(t('cachedOpenRemoteNewerAppliedStatus'));
+      void maybePromptDraftRecoveryForCurrentPage(promptToken);
+      return true;
+    }
+
+    state.cachedPageOpen.remoteStatus = 'conflict';
+    state.cachedPageOpen.saveBlockedReason = 'conflict';
+    state.cachedPageOpen.remoteCandidate = {
+      id: String(pageId || ''),
+      title: remoteSnapshot.title,
+      description: remoteSnapshot.description,
+      html: remoteSnapshot.html,
+      signature: remoteSignature,
+      detectedAt: verifiedAt
+    };
+    if (typeof captureExternalSyncRemoteCandidate === 'function') {
+      captureExternalSyncRemoteCandidate({
+        id: String(pageId || ''),
+        title: remoteSnapshot.title,
+        description: remoteSnapshot.description,
+        html: remoteSnapshot.html
+      });
+    }
+    syncSaveAvailabilityState();
+    setStatus(t('cachedOpenConflictDetectedStatus'));
+    return false;
+  } catch (err) {
+    if (!isActiveCachedPageOpenRequest(pageId, requestId)) return false;
+    const message = String(err?.message || err || '');
+    state.cachedPageOpen.remoteStatus = 'failed';
+    state.cachedPageOpen.saveBlockedReason = 'failed';
+    state.cachedPageOpen.lastErrorMessage = message;
+    syncSaveAvailabilityState();
+    setStatus(t('cachedOpenVerifyFailedStatus'));
+    log(`${t('cachedOpenVerifyFailedLog')}: ${message}`);
+    return false;
+  } finally {
+    if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
+  }
+}
+
+async function openPageFromLastSavedCacheIfAvailable(pageId, promptToken) {
+  let cacheRecord = null;
+  try {
+    cacheRecord = await getPageContentCache(pageId);
+  } catch (err) {
+    log(`Last Saved Cache read failed (${pageId}): ${String(err?.message || err || '')}`);
+    cacheRecord = null;
+  }
+  if (!cacheRecord) return false;
+
+  const requestId = createCachedPageOpenRequestId(pageId);
+  const snapshot = cachedPageSnapshot(cacheRecord, pageId);
+  const signature = String(cacheRecord.signature || snapshotSignature(snapshot));
+
+  state.current = {
+    id: String(snapshot.id || pageId || ''),
+    title: snapshot.title,
+    description: snapshot.description,
+    html: snapshot.html
+  };
+  cachePagesForSidebar([state.current]);
+  if (typeof resetExternalSyncStateForCurrentPage === 'function') resetExternalSyncStateForCurrentPage(state.current.id);
+  setCurrentBaseline();
+  await savePageMeta(state.current.id, { title: state.current.title, description: state.current.description, lastOpenedAt: Date.now() });
+  renderCurrent();
+  syncCurrentSnapshotBaselineAndDirty({ alignBaseline: true });
+  localStorage.setItem(LS.lastPageId, state.current.id);
+
+  state.cachedPageOpen.pageId = String(state.current.id || '');
+  state.cachedPageOpen.openRequestId = requestId;
+  state.cachedPageOpen.openedFromCache = true;
+  state.cachedPageOpen.cacheSignature = signature;
+  state.cachedPageOpen.remoteStatus = 'checking';
+  state.cachedPageOpen.saveBlockedReason = 'pending';
+  state.cachedPageOpen.remoteCandidate = null;
+  state.cachedPageOpen.lastErrorMessage = '';
+  state.cachedPageOpen.verifiedAt = Number(cacheRecord.verifiedAt || 0);
+  syncSaveAvailabilityState();
+
+  syncPreviewMode({ immediate: true });
+  setStatus(t('cachedOpenLoadedFromCacheChecking'));
+  void maybePromptDraftRecoveryForCurrentPage(promptToken);
+  void startCachedPageRemoteVerification(pageId, requestId, { promptToken, source: 'load-page-cache-verify' });
+  return true;
+}
+
+async function loadPageWithCacheAwareFlow(pageId, promptToken) {
+  if (await openPageFromLastSavedCacheIfAvailable(pageId, promptToken)) return;
+  resetCachedPageOpenState(pageId);
+  await loadPageFromRemoteDirect(pageId, promptToken);
+}
+
+async function retryCurrentPageRemoteVerification() {
+  const pageId = String(state.current.id || '');
+  const samePage = pageId && String(state.cachedPageOpen.pageId || '') === pageId;
+  const status = String(state.cachedPageOpen.remoteStatus || '');
+  if (!pageId || !samePage || !state.cachedPageOpen.openedFromCache) return false;
+  if (status === 'checking') {
+    setStatus(t('cachedOpenLoadedFromCacheChecking'));
+    return false;
+  }
+  if (!canRetryCurrentPageRemoteVerification()) return false;
+  const requestId = createCachedPageOpenRequestId(pageId);
+  state.cachedPageOpen.pageId = pageId;
+  state.cachedPageOpen.openRequestId = requestId;
+  state.cachedPageOpen.openedFromCache = true;
+  state.cachedPageOpen.remoteStatus = 'checking';
+  state.cachedPageOpen.saveBlockedReason = 'pending';
+  state.cachedPageOpen.lastErrorMessage = '';
+  syncSaveAvailabilityState();
+  setStatus(t('cachedOpenLoadedFromCacheChecking'));
+  return startCachedPageRemoteVerification(pageId, requestId, { promptToken: state.drafts.promptToken, source: 'load-page-cache-verify-manual' });
+}
+
+async function handleExternalSyncCheckNowAction() {
+  const pageId = String(state.current.id || '');
+  const samePage = pageId && String(state.cachedPageOpen.pageId || '') === pageId;
+  const remoteStatus = String(state.cachedPageOpen.remoteStatus || 'idle');
+  if (samePage && state.cachedPageOpen.openedFromCache && (remoteStatus === 'checking' || remoteStatus === 'failed' || remoteStatus === 'conflict')) {
+    await retryCurrentPageRemoteVerification();
+    return;
+  }
+  await runExternalSyncManualCheck();
 }
 
 
@@ -3176,6 +3598,7 @@ function showBlankPage() {
   state.preview.lastRealUrl = '';
   state.blank = true;
   state.current = { id: '', title: '', description: '', html: '' };
+  resetCachedPageOpenState('');
   setCurrentBaseline();
   if (typeof resetExternalSyncStateForCurrentPage === 'function') resetExternalSyncStateForCurrentPage('');
   markDirty(false);
@@ -3194,6 +3617,8 @@ function showBlankPage() {
   updateSidebarActiveState();
   renderSidebarProjects();
   updateRecoveryReopenButton();
+  syncSaveAvailabilityState();
+  syncCachedOpenCheckNowButtonLabel();
 }
 function showWorkspace() {
   state.blank = false;
@@ -3226,6 +3651,8 @@ function renderCurrent() {
   if (els.updateAppBtn) els.updateAppBtn.classList.toggle('hidden', !(state.appPageId && state.current.id === state.appPageId && !state.blank));
   updateSidebarActiveState();
   updateRecoveryReopenButton();
+  syncSaveAvailabilityState();
+  syncCachedOpenCheckNowButtonLabel();
 }
 
 
@@ -3249,7 +3676,12 @@ function localPreviewStatusLabel({ usesTailwind = false } = {}) { return usesTai
 function htmlUsesTailwindStylesheet(html = '') {
   return /<link\b[^>]*href\s*=\s*["'](?:\.\/|\/)?tailwind\.css["'][^>]*>/i.test(String(html || ''));
 }
-function shouldUseLocalPreview() { if (state.blank) return false; if (!state.current.id) return true; return !sameSnapshot(currentSnapshotFromState(), currentBaselineSnapshot()); }
+function shouldUseLocalPreview() {
+  if (state.blank) return false;
+  if (typeof shouldForceLocalPreviewForCachedOpen === 'function' && shouldForceLocalPreviewForCachedOpen()) return true;
+  if (!state.current.id) return true;
+  return !sameSnapshot(currentSnapshotFromState(), currentBaselineSnapshot());
+}
 function localPreviewRenderSignature(html, baseHref, usesTailwind) {
   return snapshotSignature({
     title: String(baseHref || ''),
@@ -3323,7 +3755,9 @@ function renderLocalPreview() {
     els.previewStatus.textContent = statusLabel;
     state.preview.localStatusLabel = statusLabel;
     state.preview.lastLocalUsesTailwind = usesTailwind;
-    setStatus(statusLabel);
+    if (!(typeof shouldKeepCachedOpenStatusMessage === 'function' && shouldKeepCachedOpenStatusMessage())) {
+      setStatus(statusLabel);
+    }
     return;
   }
 
@@ -3339,7 +3773,9 @@ function renderLocalPreview() {
   const statusLabel = localPreviewStatusLabel({ usesTailwind });
   state.preview.localStatusLabel = statusLabel;
   els.previewStatus.textContent = statusLabel;
-  setStatus(statusLabel);
+  if (!(typeof shouldKeepCachedOpenStatusMessage === 'function' && shouldKeepCachedOpenStatusMessage())) {
+    setStatus(statusLabel);
+  }
 
   els.previewFrame.removeAttribute('src');
   els.previewFrame.srcdoc = doc;
@@ -3406,21 +3842,7 @@ async function loadPage(id) {
     state.loadingPage = true;
     await flushDraftAutosaveNow();
     const promptToken = ++state.drafts.promptToken;
-    setStatus(t('loading'));
-    const page = await API.loadPage(pageId, { source: 'load-page' });
-    state.current = { id: page.id || pageId, title: page.title || '', description: page.description || '', html: page.html || '' };
-    await savePageContentCacheSafe(state.current, { source: 'fibery-load' });
-    cachePagesForSidebar([state.current]);
-    if (typeof resetExternalSyncStateForCurrentPage === 'function') resetExternalSyncStateForCurrentPage(state.current.id);
-    setCurrentBaseline();
-    await savePageMeta(state.current.id, { title: state.current.title, description: state.current.description, lastOpenedAt: Date.now() });
-    renderCurrent();
-    syncCurrentSnapshotBaselineAndDirty({ alignBaseline: true });
-    localStorage.setItem(LS.lastPageId, state.current.id);
-    syncPreviewMode({ immediate: true });
-    setStatus(t('pageLoaded'));
-    log(`${t('pageLoaded')}: ${state.current.title || state.current.id}`);
-    void maybePromptDraftRecoveryForCurrentPage(promptToken);
+    await loadPageWithCacheAwareFlow(pageId, promptToken);
   })();
 
   state.pageLoads.inFlightById[pageId] = loadPromise;
@@ -3429,21 +3851,27 @@ async function loadPage(id) {
   } finally {
     delete state.pageLoads.inFlightById[pageId];
     state.loadingPage = false;
+    syncSaveAvailabilityState();
   }
 }
 async function confirmAction({ title, message, okText = 'OK', showPreview = false, previewId = '', openPreviewId = '' } = {}) { els.confirmTitle.textContent = title || ''; els.confirmMessage.textContent = message || ''; els.confirmOkBtn.textContent = okText; const previewTargetId = previewId || state.current.id; els.confirmOpenPreviewBtn.dataset.previewId = openPreviewId || previewTargetId || ''; els.deletePreviewWrap.classList.toggle('hidden', !showPreview); if (showPreview && previewTargetId) { els.deletePreviewFrame.src = viewUrl(previewTargetId); recordPreviewUsage({ source: 'confirm-preview', pageId: previewTargetId }); } else { els.deletePreviewFrame.removeAttribute('src'); els.confirmOpenPreviewBtn.dataset.previewId = ''; } els.confirmModal.classList.remove('hidden'); return new Promise(resolve => { state.confirmResolver = resolve; }); }
 function closeConfirm(result) { els.confirmModal.classList.add('hidden'); els.deletePreviewFrame.removeAttribute('src'); els.confirmOpenPreviewBtn.dataset.previewId = ''; const resolver = state.confirmResolver; state.confirmResolver = null; if (resolver) resolver(!!result); }
-async function newPage() { const ok = await confirmAction({ title: t('createPageTitle'), message: t('createPageMessage'), okText: t('create') }); if (!ok) return; await flushDraftAutosaveNow(); state.current = { id: '', title: 'Untitled Page', description: '', html: '' }; if (typeof resetExternalSyncStateForCurrentPage === 'function') resetExternalSyncStateForCurrentPage(''); setCurrentBaseline(); renderCurrent(); markDirty(true); syncPreviewMode({ immediate: true }); setStatus(t('pageCreated')); els.titleInput.focus(); els.titleInput.select(); }
+async function newPage() { const ok = await confirmAction({ title: t('createPageTitle'), message: t('createPageMessage'), okText: t('create') }); if (!ok) return; await flushDraftAutosaveNow(); state.current = { id: '', title: 'Untitled Page', description: '', html: '' }; if (typeof resetExternalSyncStateForCurrentPage === 'function') resetExternalSyncStateForCurrentPage(''); resetCachedPageOpenState(''); setCurrentBaseline(); renderCurrent(); markDirty(true); syncPreviewMode({ immediate: true }); setStatus(t('pageCreated')); els.titleInput.focus(); els.titleInput.select(); }
 async function deleteCurrentPage() { if (!state.current.id) return; const ok = await confirmAction({ title: t('deleteTitle'), message: t('deleteMessage'), okText: t('deleteConfirm'), showPreview: false }); if (!ok) return; try { const oldId = state.current.id; await API.deletePage(oldId, { source: 'delete-current-page' }); await deletePageContentCacheSafe(oldId, { source: 'delete-current-page' }); if (localStorage.getItem(LS.lastPageId) === oldId) localStorage.removeItem(LS.lastPageId); delete state.sidebar.pageCache[oldId]; clearSearchCaches(); await deletePageMeta(oldId); showBlankPage(); refreshSidebarFromLocalCache({ reset: true }); setStatus(t('deleted')); log(t('deleted')); } catch (err) { alert(err.message || String(err)); log(err.message || String(err)); } }
 async function deletePageFromList(id, title) { if (!id || !state.isAdmin) return; const ok = await confirmAction({ title: t('deleteTitle'), message: `${t('deleteMessage')}\n\n${title || id}`, okText: t('deleteConfirm'), showPreview: true, previewId: id, openPreviewId: id }); if (!ok) return; try { await API.deletePage(id, { source: 'delete-page-list' }); await deletePageContentCacheSafe(id, { source: 'delete-page-list' }); if (localStorage.getItem(LS.lastPageId) === id) localStorage.removeItem(LS.lastPageId); delete state.sidebar.pageCache[id]; clearSearchCaches(); await deletePageMeta(id); if (state.current.id === id) showBlankPage(); refreshSidebarFromLocalCache({ reset: true }); if (!els.searchModal.classList.contains('hidden')) await loadSearchResults({ localOnly: true }); if (!els.welcomeSearchResults.classList.contains('hidden')) await loadWelcomeSearchResults({ localOnly: true }); setStatus(t('deleted')); log(`${t('deleted')}: ${title || id}`); } catch (err) { alert(err.message || String(err)); log(err.message || String(err)); } }
 async function savePage(action = 'save') {
   if (state.saving) return false;
+  const blockedReason = saveBlockedReasonForCurrentPage();
+  if (blockedReason) {
+    syncSaveAvailabilityState({ announce: true });
+    return false;
+  }
   const beforeSavePageId = state.current.id || '';
   await flushDraftAutosaveNow();
   updateCurrentFromInputs();
   if (!state.current.title.trim()) { alert(t('validationTitle')); els.titleInput.focus(); return false; }
   state.saving = true;
-  els.saveBtn.disabled = true;
+  syncSaveAvailabilityState();
   setStatus(t('saving'));
   try {
     const saved = await API.savePage(state.current, { source: 'save-page' });
@@ -3460,6 +3888,7 @@ async function savePage(action = 'save') {
     if (savedDraftKey !== oldDraftKey) await deleteDraftByKey(savedDraftKey);
     await saveHistory(action);
     setCurrentBaseline();
+    markCurrentPageRemoteVerified({ openedFromCache: false, remoteStatus: 'verified' });
     if (typeof clearExternalSyncCandidateForCurrentPage === 'function') clearExternalSyncCandidateForCurrentPage({ clearDismissed: true, clearNotified: true });
     renderCurrent();
     syncCurrentSnapshotBaselineAndDirty({ alignBaseline: true });
@@ -3475,7 +3904,7 @@ async function savePage(action = 'save') {
     return false;
   } finally {
     state.saving = false;
-    els.saveBtn.disabled = !state.isAdmin;
+    syncSaveAvailabilityState();
   }
 }
 async function renamePage(pageId, nextTitle) {
@@ -4239,7 +4668,7 @@ function toggleLog() {
   if (els.logMenuText) els.logMenuText.textContent = els.logPanel.classList.contains('hidden') ? t('showLog') : t('hideLog');
   renderApiUsageSummary();
 }
-function setAdminMode(isAdmin) { state.isAdmin = isAdmin; els.saveBtn.disabled = !isAdmin; els.newPageBtn.disabled = !isAdmin; if (els.welcomeNewPageBtn) els.welcomeNewPageBtn.disabled = !isAdmin; els.deleteBtn.disabled = !isAdmin || !state.current.id; if (!isAdmin) { setCodeReadOnly(true); els.titleInput.readOnly = true; els.descriptionInput.readOnly = true; setStatus(t('readOnly')); } renderUpdateAppPanel(); }
+function setAdminMode(isAdmin) { state.isAdmin = isAdmin; els.newPageBtn.disabled = !isAdmin; if (els.welcomeNewPageBtn) els.welcomeNewPageBtn.disabled = !isAdmin; els.deleteBtn.disabled = !isAdmin || !state.current.id; if (!isAdmin) { setCodeReadOnly(true); els.titleInput.readOnly = true; els.descriptionInput.readOnly = true; setStatus(t('readOnly')); } syncSaveAvailabilityState(); syncCachedOpenCheckNowButtonLabel(); renderUpdateAppPanel(); }
 function applyI18n() {
   state.lang = preferredLang();
   document.documentElement.lang = state.lang === 'pt-BR' ? 'pt-BR' : 'en';
@@ -4257,6 +4686,8 @@ function applyI18n() {
   renderSidebarPages();
   updateRecoveryReopenButton();
   if (typeof renderExternalSyncNotice === 'function') renderExternalSyncNotice();
+  syncSaveAvailabilityState();
+  syncCachedOpenCheckNowButtonLabel();
   renderApiUsageSummary();
   renderUpdateAppPanel();
 }
@@ -4265,7 +4696,7 @@ function applyI18n() {
 function bindEvents() {
   els.titleInput.addEventListener('input', () => { updateCurrentFromInputs(); markDirty(true); scheduleLocalPreviewRefresh(); });
   els.descriptionInput.addEventListener('input', () => { updateCurrentFromInputs(); markDirty(true); scheduleLocalPreviewRefresh(); });
-  els.saveBtn.addEventListener('click', () => savePage('save'));
+  els.saveBtn.addEventListener('click', () => { void requestSavePage('save'); });
   els.updateAppBtn.addEventListener('click', openUpdateAppModal);
   els.refreshBtn.addEventListener('click', () => { els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); refreshPreview(); });
   els.newPageBtn.addEventListener('click', () => { void runWithUnsavedPageTransitionGuard(async () => { await newPage(); }); });
@@ -4405,7 +4836,7 @@ function bindEvents() {
   els.keepCurrentVersionBtn.addEventListener('click', () => keepCurrentVersionFromDraft());
   els.discardDraftBtn.addEventListener('click', () => discardDraftFromModal());
   if (els.externalSyncDismissBtn) els.externalSyncDismissBtn.addEventListener('click', () => dismissExternalSyncNotice());
-  if (els.externalSyncCheckNowBtn) els.externalSyncCheckNowBtn.addEventListener('click', () => { void runExternalSyncManualCheck(); });
+  if (els.externalSyncCheckNowBtn) els.externalSyncCheckNowBtn.addEventListener('click', () => { void handleExternalSyncCheckNowAction(); });
   els.closeDraftRecoveryBtn.addEventListener('click', () => keepCurrentVersionFromDraft());
   els.draftRecoveryModal.addEventListener('click', (e) => { if (e.target === els.draftRecoveryModal) keepCurrentVersionFromDraft(); });
   els.reopenRecoveryBtn.addEventListener('click', () => openRecoveryFromButton());
@@ -4421,7 +4852,7 @@ function bindEvents() {
   els.unsavedTransitionDiscardBtn.addEventListener('click', () => closeUnsavedTransitionModal('discard'));
   els.unsavedTransitionCancelBtn.addEventListener('click', () => closeUnsavedTransitionModal('cancel'));
   els.unsavedTransitionModal.addEventListener('click', (e) => { if (e.target === els.unsavedTransitionModal) closeUnsavedTransitionModal('cancel'); });
-  window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (!els.unsavedTransitionModal.classList.contains('hidden')) { closeUnsavedTransitionModal('cancel'); return; } if (!els.draftRecoveryModal.classList.contains('hidden')) { keepCurrentVersionFromDraft(); return; } if (state.previewFocus) exitPreviewFocus(); els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); closeSearchModal(); closeSettings(); closeUpdateAppModal(); closeWelcomeSearch(); closeContextMenus(); closeCreateProjectModal(); } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); if (state.isAdmin && !state.blank) savePage('save'); } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearchModal(); } });
+  window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (!els.unsavedTransitionModal.classList.contains('hidden')) { closeUnsavedTransitionModal('cancel'); return; } if (!els.draftRecoveryModal.classList.contains('hidden')) { keepCurrentVersionFromDraft(); return; } if (state.previewFocus) exitPreviewFocus(); els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); closeSearchModal(); closeSettings(); closeUpdateAppModal(); closeWelcomeSearch(); closeContextMenus(); closeCreateProjectModal(); } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); if (state.isAdmin && !state.blank) { void requestSavePage('save'); } } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearchModal(); } });
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       void flushDraftAutosaveNow();
