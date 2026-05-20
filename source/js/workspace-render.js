@@ -12,6 +12,9 @@ function showBlankPage() {
   clearPreviewDebounce();
   revokeLocalPreviewObjectUrl();
   state.preview.mode = 'real';
+  state.preview.paused = false;
+  state.preview.needsSync = false;
+  state.preview.pendingForceRealReload = false;
   state.preview.localStatusLabel = '';
   state.preview.activeRequestId = '';
   state.preview.lastLocalDocSignature = '';
@@ -57,6 +60,7 @@ function setPanelMode(mode, persist = true) {
   const activeBtn = state.panelMode === 'editor' ? els.quickEditorBtn : state.panelMode === 'preview' ? els.quickPreviewBtn : els.quickBothBtn;
   if (activeBtn) activeBtn.classList.add('bg-blue-50','text-blue-700');
   if (persist) localStorage.setItem(LS.panelMode, state.panelMode);
+  syncPreviewVisibilityState({ immediate: true });
   window.setTimeout(() => { try { state.code.editor?.layout(); } catch (_) {} }, 0);
 }
 function renderCurrent() {

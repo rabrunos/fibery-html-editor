@@ -9,6 +9,59 @@ function clearPreviewDebounce() {
   window.clearTimeout(state.preview.debounceTimer);
   state.preview.debounceTimer = null;
 }
+function queuePreviewSync({ forceRealReload = false } = {}) {
+  if (forceRealReload) state.preview.pendingForceRealReload = true;
+  state.preview.needsSync = true;
+}
+function isPreviewPanelVisible() {
+  if (state.blank) return false;
+  if (state.previewFocus) return true;
+  if (String(state.panelMode || 'both') === 'editor') return false;
+  if (!els.splitArea || els.splitArea.classList.contains('hidden')) return false;
+  if (!els.previewPane) return false;
+  try { return els.previewPane.getClientRects().length > 0; } catch (_) { return false; }
+}
+function pausePreviewIfHidden({ markNeedsSync = true } = {}) {
+  if (isPreviewPanelVisible()) return false;
+  clearPreviewDebounce();
+  if (markNeedsSync && !state.blank) queuePreviewSync();
+  if (state.blank || !state.current.id) return true;
+  if (state.preview.paused) return true;
+  state.preview.paused = true;
+  state.preview.mode = 'paused';
+  state.preview.activeRequestId = '';
+  state.preview.localStatusLabel = '';
+  state.preview.lastLocalDocSignature = '';
+  state.preview.lastLocalHtmlSignature = '';
+  state.preview.lastLocalUsesTailwind = false;
+  try {
+    if (els.previewFrame) {
+      els.previewFrame.removeAttribute('srcdoc');
+      if (els.previewFrame.getAttribute('src') !== 'about:blank') els.previewFrame.src = 'about:blank';
+    }
+  } catch (_) {}
+  log(t('previewPausedHiddenLog'));
+  return true;
+}
+function resumePreviewIfVisible({ immediate = true } = {}) {
+  if (!isPreviewPanelVisible()) return false;
+  const wasPaused = !!state.preview.paused;
+  const needsSync = !!state.preview.needsSync;
+  const forceRealReload = !!state.preview.pendingForceRealReload;
+  state.preview.paused = false;
+  state.preview.needsSync = false;
+  state.preview.pendingForceRealReload = false;
+  if (wasPaused) log(t('previewResumedLog'));
+  if (state.blank) return true;
+  if (wasPaused || needsSync || forceRealReload) {
+    syncPreviewMode({ immediate: immediate !== false, forceRealReload });
+  }
+  return true;
+}
+function syncPreviewVisibilityState(options = {}) {
+  if (isPreviewPanelVisible()) return resumePreviewIfVisible(options);
+  return pausePreviewIfHidden({ markNeedsSync: options.markNeedsSync !== false });
+}
 function localPreviewBaseHref() {
   try { return new URL('.', window.location.href).href; } catch (_) {}
   try { return window.location.origin + '/'; } catch (_) {}

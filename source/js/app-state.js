@@ -34,7 +34,7 @@ const state = {
     lastSkipReason: '', lastSkipLoggedAt: 0
   },
   update: { checking: false, applying: false, rollbacking: false, status: 'idle', remoteVersion: '', remoteChangelog: '', changelogLoading: false, backupsLoading: false, backups: [] },
-  preview: { mode: 'real', localObjectUrl: '', localStatusLabel: '', activeRequestId: '', debounceTimer: null, debounceMs: 500, lastLocalDocSignature: '', lastLocalHtmlSignature: '', lastLocalUsesTailwind: false, lastRealUrl: '', lastLoggedMode: '' },
+  preview: { mode: 'real', paused: false, needsSync: false, pendingForceRealReload: false, localObjectUrl: '', localStatusLabel: '', activeRequestId: '', debounceTimer: null, debounceMs: 500, lastLocalDocSignature: '', lastLocalHtmlSignature: '', lastLocalUsesTailwind: false, lastRealUrl: '', lastLoggedMode: '' },
   sidebar: { open: true, pages: [], loading: false, refreshTimer: null, hasMore: false, limit: 20, visibleLimit: 20, pageCache: {}, lastRemoteLoadAt: 0, remoteCacheTtlMs: 300000, autoRefreshEnabled: false, autoRefreshIntervalMs: 600000 },
   projects: { rows: [], items: [], pageToProject: {}, itemsByProject: {} },
   search: { debounce: null, query: '', pages: [], cache: {}, loading: false, remoteQuery: '' }, welcomeSearch: { debounce: null, query: '', pages: [], cache: {}, loading: false, remoteQuery: '' }, panelMode: 'both', previewFocus: false, pageMeta: {}, context: { pageId: '', pageTitle: '', projectId: '', createProjectTargetPageId: '' },

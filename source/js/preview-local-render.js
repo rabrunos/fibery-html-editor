@@ -1,4 +1,7 @@
 function renderLocalPreview() {
+  if (pausePreviewIfHidden()) return;
+  state.preview.paused = false;
+  state.preview.needsSync = false;
   updateCurrentFromInputs();
   const html = getCodeValue();
   const usesTailwind = htmlUsesTailwindStylesheet(html);
@@ -33,10 +36,12 @@ function renderLocalPreview() {
 }
 function scheduleLocalPreviewRefresh() {
   if (state.blank) return;
+  if (pausePreviewIfHidden()) return;
   if (!shouldUseLocalPreview()) { renderRealPreview(); return; }
   clearPreviewDebounce();
   state.preview.debounceTimer = window.setTimeout(() => {
     state.preview.debounceTimer = null;
+    if (pausePreviewIfHidden()) return;
     if (!shouldUseLocalPreview()) { renderRealPreview(); return; }
     renderLocalPreview();
   }, state.preview.debounceMs);

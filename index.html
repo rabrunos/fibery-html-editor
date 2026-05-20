@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.14.4" />
+  <meta name="fibery-html-editor-version" content="8.15.0" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -593,7 +593,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 (() => {
   'use strict';
 
-const APP_VERSION = '8.14.4';
+const APP_VERSION = '8.15.0';
 window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 document.documentElement.dataset.appVersion = APP_VERSION;
 
@@ -691,6 +691,8 @@ Object.assign(I18N.en, {
     localPreviewPocCssMissingShort: 'CSS MISSING',
     localPreviewStatus: 'Local preview',
     localPreviewStatusTailwind: 'Local preview (tailwind)',
+    previewPausedHiddenLog: 'Preview paused while the panel is hidden',
+    previewResumedLog: 'Preview resumed',
     previewModeLocalLog: 'Showing local preview',
     previewModeRealLog: 'Showing real preview',
     localPreviewTailwindBrowserLoaded: 'Local preview Tailwind browser loaded',
@@ -886,6 +888,8 @@ Object.assign(I18N['pt-BR'], {
     localPreviewPocCssMissingShort: 'CSS AUSENTE',
     localPreviewStatus: 'Prévia local',
     localPreviewStatusTailwind: 'Prévia local (tailwind)',
+    previewPausedHiddenLog: 'Prévia pausada enquanto o painel está oculto',
+    previewResumedLog: 'Prévia retomada',
     previewModeLocalLog: 'Mostrando prévia local',
     previewModeRealLog: 'Mostrando prévia real',
     localPreviewTailwindBrowserLoaded: 'Tailwind browser da prévia local carregado',
@@ -1087,7 +1091,7 @@ const state = {
     lastSkipReason: '', lastSkipLoggedAt: 0
   },
   update: { checking: false, applying: false, rollbacking: false, status: 'idle', remoteVersion: '', remoteChangelog: '', changelogLoading: false, backupsLoading: false, backups: [] },
-  preview: { mode: 'real', localObjectUrl: '', localStatusLabel: '', activeRequestId: '', debounceTimer: null, debounceMs: 500, lastLocalDocSignature: '', lastLocalHtmlSignature: '', lastLocalUsesTailwind: false, lastRealUrl: '', lastLoggedMode: '' },
+  preview: { mode: 'real', paused: false, needsSync: false, pendingForceRealReload: false, localObjectUrl: '', localStatusLabel: '', activeRequestId: '', debounceTimer: null, debounceMs: 500, lastLocalDocSignature: '', lastLocalHtmlSignature: '', lastLocalUsesTailwind: false, lastRealUrl: '', lastLoggedMode: '' },
   sidebar: { open: true, pages: [], loading: false, refreshTimer: null, hasMore: false, limit: 20, visibleLimit: 20, pageCache: {}, lastRemoteLoadAt: 0, remoteCacheTtlMs: 300000, autoRefreshEnabled: false, autoRefreshIntervalMs: 600000 },
   projects: { rows: [], items: [], pageToProject: {}, itemsByProject: {} },
   search: { debounce: null, query: '', pages: [], cache: {}, loading: false, remoteQuery: '' }, welcomeSearch: { debounce: null, query: '', pages: [], cache: {}, loading: false, remoteQuery: '' }, panelMode: 'both', previewFocus: false, pageMeta: {}, context: { pageId: '', pageTitle: '', projectId: '', createProjectTargetPageId: '' },
@@ -3970,6 +3974,9 @@ function showBlankPage() {
   clearPreviewDebounce();
   revokeLocalPreviewObjectUrl();
   state.preview.mode = 'real';
+  state.preview.paused = false;
+  state.preview.needsSync = false;
+  state.preview.pendingForceRealReload = false;
   state.preview.localStatusLabel = '';
   state.preview.activeRequestId = '';
   state.preview.lastLocalDocSignature = '';
@@ -4015,6 +4022,7 @@ function setPanelMode(mode, persist = true) {
   const activeBtn = state.panelMode === 'editor' ? els.quickEditorBtn : state.panelMode === 'preview' ? els.quickPreviewBtn : els.quickBothBtn;
   if (activeBtn) activeBtn.classList.add('bg-blue-50','text-blue-700');
   if (persist) localStorage.setItem(LS.panelMode, state.panelMode);
+  syncPreviewVisibilityState({ immediate: true });
   window.setTimeout(() => { try { state.code.editor?.layout(); } catch (_) {} }, 0);
 }
 function renderCurrent() {
@@ -4046,6 +4054,59 @@ function clearPreviewDebounce() {
   if (!state.preview.debounceTimer) return;
   window.clearTimeout(state.preview.debounceTimer);
   state.preview.debounceTimer = null;
+}
+function queuePreviewSync({ forceRealReload = false } = {}) {
+  if (forceRealReload) state.preview.pendingForceRealReload = true;
+  state.preview.needsSync = true;
+}
+function isPreviewPanelVisible() {
+  if (state.blank) return false;
+  if (state.previewFocus) return true;
+  if (String(state.panelMode || 'both') === 'editor') return false;
+  if (!els.splitArea || els.splitArea.classList.contains('hidden')) return false;
+  if (!els.previewPane) return false;
+  try { return els.previewPane.getClientRects().length > 0; } catch (_) { return false; }
+}
+function pausePreviewIfHidden({ markNeedsSync = true } = {}) {
+  if (isPreviewPanelVisible()) return false;
+  clearPreviewDebounce();
+  if (markNeedsSync && !state.blank) queuePreviewSync();
+  if (state.blank || !state.current.id) return true;
+  if (state.preview.paused) return true;
+  state.preview.paused = true;
+  state.preview.mode = 'paused';
+  state.preview.activeRequestId = '';
+  state.preview.localStatusLabel = '';
+  state.preview.lastLocalDocSignature = '';
+  state.preview.lastLocalHtmlSignature = '';
+  state.preview.lastLocalUsesTailwind = false;
+  try {
+    if (els.previewFrame) {
+      els.previewFrame.removeAttribute('srcdoc');
+      if (els.previewFrame.getAttribute('src') !== 'about:blank') els.previewFrame.src = 'about:blank';
+    }
+  } catch (_) {}
+  log(t('previewPausedHiddenLog'));
+  return true;
+}
+function resumePreviewIfVisible({ immediate = true } = {}) {
+  if (!isPreviewPanelVisible()) return false;
+  const wasPaused = !!state.preview.paused;
+  const needsSync = !!state.preview.needsSync;
+  const forceRealReload = !!state.preview.pendingForceRealReload;
+  state.preview.paused = false;
+  state.preview.needsSync = false;
+  state.preview.pendingForceRealReload = false;
+  if (wasPaused) log(t('previewResumedLog'));
+  if (state.blank) return true;
+  if (wasPaused || needsSync || forceRealReload) {
+    syncPreviewMode({ immediate: immediate !== false, forceRealReload });
+  }
+  return true;
+}
+function syncPreviewVisibilityState(options = {}) {
+  if (isPreviewPanelVisible()) return resumePreviewIfVisible(options);
+  return pausePreviewIfHidden({ markNeedsSync: options.markNeedsSync !== false });
 }
 function localPreviewBaseHref() {
   try { return new URL('.', window.location.href).href; } catch (_) {}
@@ -4139,6 +4200,9 @@ function buildLocalPreviewDocument(userHtml, options = {}) {
 
 
 function renderLocalPreview() {
+  if (pausePreviewIfHidden()) return;
+  state.preview.paused = false;
+  state.preview.needsSync = false;
   updateCurrentFromInputs();
   const html = getCodeValue();
   const usesTailwind = htmlUsesTailwindStylesheet(html);
@@ -4173,10 +4237,12 @@ function renderLocalPreview() {
 }
 function scheduleLocalPreviewRefresh() {
   if (state.blank) return;
+  if (pausePreviewIfHidden()) return;
   if (!shouldUseLocalPreview()) { renderRealPreview(); return; }
   clearPreviewDebounce();
   state.preview.debounceTimer = window.setTimeout(() => {
     state.preview.debounceTimer = null;
+    if (pausePreviewIfHidden()) return;
     if (!shouldUseLocalPreview()) { renderRealPreview(); return; }
     renderLocalPreview();
   }, state.preview.debounceMs);
@@ -4185,6 +4251,13 @@ function scheduleLocalPreviewRefresh() {
 
 function viewUrl(id) { if (!id) return 'about:blank'; return new URL('/api/ai-answer/pages/' + encodeURIComponent(id) + '/view', window.location.origin).href; }
 function renderRealPreview({ forceReload = false } = {}) {
+  if (pausePreviewIfHidden()) {
+    if (forceReload) queuePreviewSync({ forceRealReload: true });
+    return;
+  }
+  state.preview.paused = false;
+  state.preview.needsSync = false;
+  if (forceReload) state.preview.pendingForceRealReload = false;
   const previousMode = state.preview.mode;
   clearPreviewDebounce();
   revokeLocalPreviewObjectUrl();
@@ -4216,6 +4289,10 @@ function renderRealPreview({ forceReload = false } = {}) {
 function refreshPreview() { renderRealPreview({ forceReload: true }); }
 function syncPreviewMode({ immediate = false, forceRealReload = false } = {}) {
   if (state.blank) return;
+  if (pausePreviewIfHidden()) {
+    if (forceRealReload) queuePreviewSync({ forceRealReload: true });
+    return;
+  }
   if (shouldUseLocalPreview()) {
     if (immediate) { clearPreviewDebounce(); renderLocalPreview(); return; }
     scheduleLocalPreviewRefresh();
@@ -5047,8 +5124,18 @@ function startInlineRenameProject(projectId) {
 }
 
 
-function enterPreviewFocus() { if (!state.current.id) return; state.previewFocus = true; document.body.classList.add('preview-focus'); }
-function exitPreviewFocus() { state.previewFocus = false; document.body.classList.remove('preview-focus'); window.setTimeout(() => { try { state.code.editor?.layout(); } catch (_) {} }, 0); }
+function enterPreviewFocus() {
+  if (!state.current.id) return;
+  state.previewFocus = true;
+  document.body.classList.add('preview-focus');
+  syncPreviewVisibilityState({ immediate: true });
+}
+function exitPreviewFocus() {
+  state.previewFocus = false;
+  document.body.classList.remove('preview-focus');
+  syncPreviewVisibilityState({ immediate: true });
+  window.setTimeout(() => { try { state.code.editor?.layout(); } catch (_) {} }, 0);
+}
 
 
 function setupResize() { const saved = localStorage.getItem(LS.split); if (saved) setSplit(Number(saved)); let dragging = false; const move = (clientX) => { const rect = els.splitArea.getBoundingClientRect(); const pct = ((clientX - rect.left) / rect.width) * 100; setSplit(pct); }; const onPointerMove = (e) => { if (dragging) { e.preventDefault(); move(e.clientX); } }; const stop = () => { if (!dragging) return; dragging = false; document.body.classList.remove('select-none', 'split-dragging'); els.dragOverlay.classList.add('hidden'); els.previewFrame.classList.remove('pointer-events-none'); }; els.splitter.addEventListener('pointerdown', (e) => { dragging = true; e.preventDefault(); document.body.classList.add('select-none', 'split-dragging'); els.dragOverlay.classList.remove('hidden'); els.previewFrame.classList.add('pointer-events-none'); try { els.splitter.setPointerCapture(e.pointerId); } catch (_) {} move(e.clientX); }); window.addEventListener('pointermove', onPointerMove); window.addEventListener('pointerup', stop); window.addEventListener('pointercancel', stop); els.dragOverlay.addEventListener('pointermove', onPointerMove); els.dragOverlay.addEventListener('pointerup', stop); els.splitter.addEventListener('dblclick', () => setSplit(50)); }

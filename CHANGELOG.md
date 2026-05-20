@@ -1,3 +1,27 @@
+## [8.15.0] - 2026-05-20
+
+### Fixed
+
+* Paused preview lifecycle whenever the preview panel is hidden (including editor-only mode), preventing hidden local render updates and hidden real preview reloads.
+* Canceled pending local preview debounce while preview is hidden and deferred preview synchronization until the panel becomes visible again.
+* Prevented hidden-preview-driven `/api/ai-answer/pages/{id}/view` reloads during save/load/conflict sync paths; preview now resumes only when visible.
+* Preserved the real/local preview decision rules validated in `8.14.4`, including cached-open conflict states and manual-save confirmation flows.
+
+### Technical adjustments
+
+* Added centralized preview visibility lifecycle helpers (`isPreviewPanelVisible`, `pausePreviewIfHidden`, `resumePreviewIfVisible`, `syncPreviewVisibilityState`) and integrated them with panel mode and preview focus transitions.
+* Added deferred preview sync flags (`needsSync`, `pendingForceRealReload`) so hidden-preview updates are queued and applied quickly when preview becomes visible.
+* Neutralized the preview iframe while hidden to reduce background activity from previously rendered content.
+* Added discrete visibility log messages without per-render spam: `Preview paused while the panel is hidden` and `Preview resumed`.
+* Bumped app version metadata to `8.15.0` via manifest and `package.json`, and regenerated the single-file deploy artifact.
+
+### Validation
+
+* `npm run build:tmp`
+* `npm run validate:tmp`
+* `npm run build`
+* `npm run validate`
+
 ## [8.14.4] - 2026-05-20
 
 ### Fixed

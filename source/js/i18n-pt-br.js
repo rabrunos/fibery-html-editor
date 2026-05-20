@@ -57,6 +57,8 @@ Object.assign(I18N['pt-BR'], {
     localPreviewPocCssMissingShort: 'CSS AUSENTE',
     localPreviewStatus: 'Prévia local',
     localPreviewStatusTailwind: 'Prévia local (tailwind)',
+    previewPausedHiddenLog: 'Prévia pausada enquanto o painel está oculto',
+    previewResumedLog: 'Prévia retomada',
     previewModeLocalLog: 'Mostrando prévia local',
     previewModeRealLog: 'Mostrando prévia real',
     localPreviewTailwindBrowserLoaded: 'Tailwind browser da prévia local carregado',

@@ -1,5 +1,12 @@
 function viewUrl(id) { if (!id) return 'about:blank'; return new URL('/api/ai-answer/pages/' + encodeURIComponent(id) + '/view', window.location.origin).href; }
 function renderRealPreview({ forceReload = false } = {}) {
+  if (pausePreviewIfHidden()) {
+    if (forceReload) queuePreviewSync({ forceRealReload: true });
+    return;
+  }
+  state.preview.paused = false;
+  state.preview.needsSync = false;
+  if (forceReload) state.preview.pendingForceRealReload = false;
   const previousMode = state.preview.mode;
   clearPreviewDebounce();
   revokeLocalPreviewObjectUrl();
@@ -31,6 +38,10 @@ function renderRealPreview({ forceReload = false } = {}) {
 function refreshPreview() { renderRealPreview({ forceReload: true }); }
 function syncPreviewMode({ immediate = false, forceRealReload = false } = {}) {
   if (state.blank) return;
+  if (pausePreviewIfHidden()) {
+    if (forceRealReload) queuePreviewSync({ forceRealReload: true });
+    return;
+  }
   if (shouldUseLocalPreview()) {
     if (immediate) { clearPreviewDebounce(); renderLocalPreview(); return; }
     scheduleLocalPreviewRefresh();
