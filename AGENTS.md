@@ -1,40 +1,68 @@
-# AGENTS.md — Fibery HTML Editor
+# AGENTS.md - Fibery HTML Editor
 
 ## Purpose
 
-Instructions for Codex or any coding agent working inside this repository.
+Instructions for Codex and other execution agents working inside this repository.
 
 Respond to the user in **Portuguese (Brazil)**.
 
 Fibery HTML Editor is an internal operational editor for creating, editing, previewing, organizing, and maintaining HTML pages hosted by Fibery. It runs as a Custom HTML Page inside Fibery. It is not a generic public HTML editor and has no owned backend.
 
-## Read First
+## Agent Role
 
-Before changing code, read:
+Codex/agent is the repository executor and deep investigator.
 
-* `AGENTS.md`
-* `source/config/manifest.json`
-* `source/template/index.template.html`
-* relevant files under `source/html/`, `source/css/`, `source/js/`
-* `CHANGELOG.md`
-* relevant GitHub Issues for the requested task
-* `index.html` (generated deploy artifact)
-* `docs/fibery-src/page-api.js`
-* `docs/fibery-src/editor.js`
+Rules:
 
-If the task references an issue number, read that issue first. If the task touches page load/save/delete/validation/admin/preview/Fibery permissions, inspect both Fibery reference files before editing.
+* investigate before changing files;
+* separate hypotheses from confirmed causes;
+* prefer small, reversible patches that match existing architecture;
+* preserve approved behavior unless the prompt explicitly changes it;
+* preserve the app as a single browser frontend delivered to Fibery through generated `index.html`;
+* report local validation separately from anything that still requires real Fibery testing.
+
+## Normal Reading Flow
+
+For normal implementation, review, bug fix, or refactor tasks, read only the context needed for the requested scope.
+
+Always read:
+
+* `AGENTS.md`;
+* the related GitHub issue, if one is referenced or clearly relevant;
+* `source/config/manifest.json`;
+* `source/template/index.template.html`;
+* relevant files under `source/html/`, `source/css/`, and `source/js/`.
+
+Read when applicable:
+
+* `CHANGELOG.md` when the task changes app/runtime/build behavior, UX, validation, release/update behavior, or app-facing maintenance documentation;
+* `index.html` only as generated deploy artifact or baseline comparison;
+* `docs/fibery-src/page-api.js` and `docs/fibery-src/editor.js` when touching page load, save, delete, validation, admin behavior, permissions, preview, or Fibery runtime/API behavior.
+
+If the task references an issue number, read that issue before editing. Roadmap and temporary planning state live in GitHub Issues and comments, not in stable instruction files.
 
 `docs/roadmap.md` is not required. The roadmap is managed through GitHub Issues.
+
+## Documentary Boundaries
+
+The repository has separate documentation zones for different actors:
+
+* `AGENTS.md` is for Codex/agents executing work inside the repository.
+* `docs/.chat/` is for ChatGPT/orchestration: instructions, prompt templates, planning and review support. Codex must not read or edit this folder in normal app tasks. Access it only when the prompt explicitly asks, or when the task is about governance, ChatGPT instructions, prompt templates, or orchestration.
+* `docs/.human/` is for human-facing tools and materials, outside the main app runtime. Codex must not read or edit this folder in normal app tasks. Access it only when the prompt explicitly asks, or when the task is about human tools, test forms, checklists, or test reports.
+* `docs/fibery-src/` contains official/reference files copied from Fibery. Read them when relevant; do not edit them unless explicitly requested.
+
+Do not mix orchestration instructions from `docs/.chat/` or human test tooling from `docs/.human/` into normal app implementation unless the prompt makes that scope explicit.
 
 ## Delivery Model
 
 The app is still delivered to Fibery as a **single `index.html` file**.
 
-The repository now uses a modular development architecture:
+The current development architecture is modular:
 
-* source of truth for development: `source/`
-* final deploy artifact for Fibery: `index.html`
-* build is deterministic and local, with no required backend
+* source of truth for development: `source/`;
+* final deploy artifact for Fibery: `index.html`;
+* deterministic local build with no required backend.
 
 Never change this delivery model without explicit direction.
 
@@ -42,19 +70,39 @@ Never change this delivery model without explicit direction.
 
 Canonical editing paths:
 
-* `source/template/index.template.html` — top-level HTML template and placeholders
-* `source/html/` — body/layout/modals/panels sections
-* `source/css/` — style modules
-* `source/js/` — JavaScript modules by functional area
-* `source/config/manifest.json` — version and deterministic assembly order
+* `source/template/index.template.html` - top-level HTML template and placeholders;
+* `source/html/` - body/layout/modals/panels sections;
+* `source/css/` - style modules;
+* `source/js/` - JavaScript modules by functional area;
+* `source/config/manifest.json` - version and deterministic assembly order.
 
-### JavaScript module naming rules
+### JavaScript Module Rules
 
-* Use descriptive names that reflect functional area; no numeric prefixes (e.g., `preview-base.js`, not `04-preview-base.js`).
+* Use descriptive names that reflect functional area; no numeric prefixes for new JS modules.
 * The concatenation order is defined exclusively by the `js` array in `source/config/manifest.json`; do not rely on filename order.
-* `const` declaration order in the manifest must satisfy lexical dependencies: `app-version.js` → `i18n-base.js` → `i18n-en.js` / `i18n-pt-br.js` → `storage-keys.js` → `dom-refs.js` → `app-state.js`. All `function` declarations are hoisted within the IIFE and are order-independent.
+* `const` declaration order in the manifest must satisfy lexical dependencies: `app-version.js` -> `i18n-base.js` -> `i18n-en.js` / `i18n-pt-br.js` -> `storage-keys.js` -> `dom-refs.js` -> `app-state.js`.
+* Function declarations are hoisted within the IIFE and are order-independent.
 
 `index.html` is generated from these files.
+
+## Current Architecture and Future Transition
+
+Current state:
+
+* `scripts/build.mjs` assembles `index.html` from `source/config/manifest.json`, `source/template/index.template.html`, `source/html/`, `source/css/`, and `source/js/`;
+* `scripts/validate-build.mjs` validates generated HTML and inline JavaScript syntax;
+* `source/config/manifest.json` is the canonical version source and currently controls JS order;
+* `package.json` currently exposes the local build/validation npm scripts.
+
+Roadmap state:
+
+* #61 is the foundation epic for Vite, TypeScript, and local validation improvements;
+* #62 plans a Vite pipeline while keeping generated `index.html` single-file delivery;
+* #63 plans TypeScript migration and central contracts;
+* #64 plans `npm run verify` as a local validation aggregator;
+* #50 should come after that foundation for external cached resources and smaller `index.html`.
+
+Until #62/#63 are implemented, follow the current `source/js` plus manifest architecture. Do not claim Vite, TypeScript, or `npm run verify` are active unless the repository actually contains them. After #62/#63 land, update this file again so JS dependency/order guidance matches the new source of truth.
 
 ## Build and Validation
 
@@ -65,7 +113,7 @@ Primary commands:
 * `node scripts/build.mjs --out index.html`
 * `node scripts/validate-build.mjs index.html`
 
-Optional npm shortcuts (if using npm scripts):
+Optional npm shortcuts:
 
 * `npm run build:tmp`
 * `npm run validate:tmp`
@@ -74,10 +122,13 @@ Optional npm shortcuts (if using npm scripts):
 
 Rules:
 
-* run temporary generation + validation before replacing `index.html` when doing structural/build work;
+* run temporary generation and validation before replacing `index.html` when doing structural/build/runtime work;
 * build must fail on unresolved placeholders, empty critical blocks, version inconsistency, or invalid structure;
-* validation must include JS syntax check of generated inline script;
-* do not commit if build/validation fails.
+* validation must include JavaScript syntax check of the generated inline script;
+* do not commit app/build changes if applicable validation fails;
+* when #64 is implemented and `npm run verify` exists, prefer it as the local aggregator while still separating local validation from real Fibery testing.
+
+Pure governance/documentation changes that do not touch app/runtime/build files do not require app build unless the prompt asks for it.
 
 ## `index.html` Editing Policy
 
@@ -94,17 +145,17 @@ Direct edits to `index.html` are allowed only in strong/emergency cases, with ex
 
 ## Roadmap Through GitHub Issues
 
-GitHub Issues are the project roadmap.
+GitHub Issues are the project roadmap and dynamic planning surface.
 
-Use issues to understand priorities, planned work, dependencies, scope and acceptance criteria.
+Use issues to understand priorities, planned work, dependencies, scope, and acceptance criteria.
 
 Expected labels include:
 
-* `type: epic`, `type: feature`, `type: bug`, `type: research`, `type: polish`, `type: docs`
-* `priority: p0`, `priority: p1`, `priority: p2`, `priority: p3`
-* `area: preview`, `area: autosave-history`, `area: appearance`, `area: editor`, `area: command-palette`, `area: snippets`, `area: diagnostics`, `area: update-app`, `area: snapshots`, `area: mobile`, `area: icons`, `area: docs`, `area: sync`, `area: i18n`
-* `status: roadmap`, `status: needs-research`, `status: needs-fibery-test`, `status: blocked`
-* `size: s`, `size: m`, `size: l`, `size: xl`
+* `type: epic`, `type: feature`, `type: bug`, `type: research`, `type: polish`, `type: docs`;
+* `priority: p0`, `priority: p1`, `priority: p2`, `priority: p3`;
+* `area: preview`, `area: autosave-history`, `area: appearance`, `area: editor`, `area: command-palette`, `area: snippets`, `area: diagnostics`, `area: update-app`, `area: snapshots`, `area: mobile`, `area: icons`, `area: docs`, `area: sync`, `area: i18n`;
+* `status: roadmap`, `status: needs-research`, `status: needs-fibery-test`, `status: blocked`;
+* `size: s`, `size: m`, `size: l`, `size: xl`.
 
 Rules:
 
@@ -126,7 +177,7 @@ Treat them as copied reference/source-of-truth from Fibery, not as project-owned
 Rules:
 
 * do not edit them unless explicitly requested;
-* do not invent endpoints, SDKs, response formats or persistence structures;
+* do not invent endpoints, SDKs, response formats, or persistence structures;
 * do not recreate official helpers for theoretical cleanliness;
 * if the current integration works, do not rewrite it just because it could look cleaner.
 
@@ -138,10 +189,12 @@ Use **IndexedDB** for structured local data:
 
 * page metadata;
 * manual history;
-* autosaves;
+* autosaves/drafts;
 * snapshots;
 * local projects;
-* page-to-project links.
+* page-to-project links;
+* local update backups;
+* resource caches when #50 begins.
 
 Use **localStorage** only for simple preferences:
 
@@ -154,6 +207,22 @@ Use **localStorage** only for simple preferences:
 * theme preferences.
 
 Do not move structured data into localStorage. Do not delete local data without a clear migration or explicit confirmation.
+
+## Current Important Product Concepts
+
+Preserve these concepts unless the task explicitly changes them:
+
+* Fibery is changed only by explicit user actions such as Save or confirmed Update App.
+* Autosave is local only and must not call Fibery APIs.
+* Manual history and autosaves/drafts are separate concepts.
+* Restore from history/autosave applies to the editor and marks dirty, without auto-saving to Fibery.
+* Preview work should avoid API calls while typing.
+* Live preview is local and may use the real preview only when content matches the saved baseline.
+* Tailwind browser/CDN, when used, must be injected only into the generated local preview iframe document and never into editor content saved to Fibery.
+* Local projects are browser organization, not Fibery entities.
+* Renaming, moving, pinning, or archiving pages is local organization and should not count as content editing.
+* Fibery does not provide reliable updated/modified metadata for this app; external-change detection must use content signatures/hashes from title, description, and HTML.
+* Update App must be explicit, with validation and local backup before saving the new app HTML to Fibery.
 
 ## UX Rules
 
@@ -197,11 +266,19 @@ Use:
 
 ## Changelog
 
-`CHANGELOG.md` is part of the release/update discipline.
+`CHANGELOG.md` documents meaningful app/runtime/build/UX changes delivered to users and relevant technical maintenance of the app.
 
-Every implementation, correction, relevant refactor, user-facing change, technical adjustment, or documentation change that matters for future users or maintainers must update `CHANGELOG.md` in the same patch.
+Changelog is required for:
 
-Rules:
+* implementation, correction, refactor, build, validation, runtime, release/update, or UX changes that matter to users or maintainers;
+* documentation that changes app-facing behavior, release/update procedure, validation procedure, or maintainer operation.
+
+Changelog is not required for:
+
+* planning/status updates that belong in GitHub Issues;
+* changes only to internal governance in `AGENTS.md`, `docs/.chat/`, or `docs/.human/`, unless the user explicitly asks for a changelog entry.
+
+Rules when changelog is applicable:
 
 * keep `CHANGELOG.md` in English;
 * do not add an introductory header, explanation, or format guide inside `CHANGELOG.md`;
@@ -232,35 +309,20 @@ Allowed section headings inside each version:
 
 Use only the subsections that have content.
 
-## Current Important Product Concepts
-
-Preserve these concepts unless the task explicitly changes them:
-
-* Fibery is changed only by explicit user actions such as Save or confirmed update.
-* Autosave is local only and must not call Fibery APIs.
-* Manual history and autosaves are separate concepts.
-* Restore from history/autosave should apply to the editor and mark dirty, not auto-save to Fibery unless explicitly requested.
-* Preview work should avoid API calls while typing.
-* Live preview is local and may use the real preview only when content matches the saved baseline.
-* Tailwind browser/CDN, when used, must be injected only into the generated local preview iframe document and never into the editor content saved to Fibery.
-* Local projects are browser organization, not Fibery entities.
-* Renaming/moving/pinning/archiving pages is local organization and should not count as content editing.
-* Fibery does not provide reliable updated/modified metadata for this app; external-change detection must use content signatures/hashes from title, description and HTML.
-
 ## Validation
 
-Before finishing, validate what is possible locally:
+Before finishing, validate what is possible locally for the files actually changed:
 
-* build success (`scripts/build.mjs`);
-* generated HTML validation success (`scripts/validate-build.mjs`);
-* JavaScript syntax;
-* `getElementById` references;
-* event listeners;
-* i18n keys;
-* version metadata consistency;
+* build success (`scripts/build.mjs`) when app/build files changed;
+* generated HTML validation success (`scripts/validate-build.mjs`) when app/build files changed;
+* JavaScript syntax when generated inline JS changed;
+* `getElementById` references when DOM/JS interactions changed;
+* event listeners when event wiring changed;
+* i18n keys when user-facing text changed;
+* version metadata consistency when version changed;
 * changelog entry, when applicable;
-* IndexedDB/localStorage impact;
-* static sidebar/preview/menu regressions.
+* IndexedDB/localStorage impact when persistence changed;
+* static sidebar/preview/menu regressions when UI behavior changed.
 
 Some checks require real Fibery runtime and usually cannot be completed locally:
 
@@ -276,27 +338,28 @@ Separate local validation from manual Fibery tests. Never claim Fibery runtime v
 
 ## Commit and Push
 
-Never commit or push unless the prompt explicitly allows it.
+Commit only when the prompt permits it and applicable validation passes. Some project prompts allow commit by default; respect that permission. Do not push unless the user explicitly asks.
 
-If commit/push is allowed:
+Rules:
 
-* validate first;
-* do not commit or push if validation fails;
-* run `git status`;
+* run `git status` before editing and before finishing;
+* do not commit if applicable validation fails;
 * include only relevant files;
-* include `index.html` whenever modular source files changed;
-* include `CHANGELOG.md` when the change is implementation, correction, technical adjustment, UX adjustment, or documentation relevant to users/maintainers;
+* include `index.html` whenever modular source files changed and the build regenerated it;
+* include `CHANGELOG.md` only when applicable by the changelog rules above;
+* include `package.json` only when version/tooling changes require it;
+* never include `.tmp/`;
+* never touch or stage pre-existing unrelated changes;
 * use a concise commit message;
-* never force-push;
-* report commit and push status.
+* never force-push.
 
-If commit/push is forbidden, leave changes uncommitted and provide commands the user can run later if requested.
+If commit/push is forbidden, leave changes uncommitted and report the state clearly.
 
 ## Final Response
 
 Respond in Portuguese (Brazil). Focus on what changed for the user/frontend, not only code internals.
 
-Use this structure:
+Use this structure unless the user requests a more specific one:
 
 1. O que foi implementado.
 2. O que foi corrigido.
@@ -307,4 +370,4 @@ Use this structure:
 7. Commit/push realizado.
 8. Próxima versão sugerida.
 
-Mention internals only when useful. Prefer explaining behavior in buttons, menus, sidebar, preview, editor, search, projects, settings, autosave or history.
+Mention internals only when useful. Prefer explaining behavior in buttons, menus, sidebar, preview, editor, search, projects, settings, autosave, or history.

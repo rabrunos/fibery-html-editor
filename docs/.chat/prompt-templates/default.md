@@ -6,39 +6,44 @@ Você está trabalhando no repositório:
 Responda ao usuário em português do Brasil.
 
 Issue relacionada:
-<#número e título, ou “nenhuma issue relacionada encontrada/informada”>
+<#número e título, ou "nenhuma issue relacionada encontrada/informada">
 
 Contexto:
-<resumo objetivo do pedido, bug, feature ou revisão>
+<resumo objetivo do pedido, bug, feature, revisão ou atualização documental>
 
 Problema observado:
-<estado atual verificável; não afirmar causa sem investigar>
+<estado atual verificável; separar hipótese de causa confirmada>
 
 Comportamento esperado:
-<resultado final esperado para o usuário/frontend>
+<resultado final esperado para o usuário, frontend, runtime, documentação ou fluxo>
 
 Tarefa:
-<implementar, corrigir, revisar ou documentar de forma objetiva>
+<implementar, corrigir, revisar, documentar ou investigar de forma objetiva>
 
 Arquivos e fluxos para inspecionar:
 
-* `AGENTS.md`
-* `CHANGELOG.md`
-* `source/config/manifest.json`
-* `source/template/index.template.html`
-* arquivos relevantes em `source/html/`, `source/css/`, `source/js/`
-* `index.html` apenas como artefato gerado/comparação
-* issue(s) relacionada(s), se houver
-* `docs/fibery-src/page-api.js` e `docs/fibery-src/editor.js` se tocar load/save/delete/validate/admin/permissões/preview/Fibery
+* `AGENTS.md` obrigatoriamente antes de qualquer execução;
+* issue(s) relacionada(s), se houver;
+* `source/config/manifest.json`;
+* `source/template/index.template.html`;
+* arquivos relevantes em `source/html/`, `source/css/`, `source/js/`;
+* `CHANGELOG.md` quando houver mudança de app/runtime/build/UX/validação/release ou documentação relevante ao app;
+* `index.html` apenas como artefato gerado/comparação;
+* `docs/fibery-src/page-api.js` e `docs/fibery-src/editor.js` se tocar load/save/delete/validate/admin/permissões/preview/Fibery runtime;
+* `docs/.chat/` somente se este prompt pedir explicitamente ou se a tarefa for sobre governança, instruções, templates ou orquestração;
+* `docs/.human/` somente se este prompt pedir explicitamente ou se a tarefa for sobre ferramenta humana, formulário, checklist ou relatório de teste.
 
 Investigação obrigatória:
 
-* confirme a causa antes de alterar;
-* registre hipóteses como hipóteses;
-* verifique se a funcionalidade já existe;
-* prefira o menor patch seguro;
-* não remova funcionalidades aprovadas;
-* não mude UX, layout ou ícones fora do escopo.
+* rodar `git status` antes de qualquer alteração;
+* identificar mudanças pré-existentes e não sobrescrevê-las sem necessidade;
+* confirmar a causa antes de alterar;
+* registrar hipóteses como hipóteses;
+* verificar se a funcionalidade ou regra já existe;
+* preferir o menor patch seguro;
+* não remover funcionalidades aprovadas;
+* não mudar UX, layout ou ícones fora do escopo;
+* verificar referências, caminhos e dependências afetadas.
 
 Escopo:
 
@@ -50,15 +55,19 @@ Não-objetivos:
 
 * <o que não deve ser alterado>
 * <o que deve ficar para outra issue/ciclo>
+* não editar `index.html` diretamente, salvo emergência justificada e reconciliada em `source/`;
+* não acessar `docs/.chat/` ou `docs/.human/` em tarefa normal do app, salvo autorização explícita neste prompt;
+* não fazer push salvo pedido explícito.
 
 Requisitos técnicos:
 
-* manter o app como frontend único, sem backend e sem framework obrigatório;
+* manter o app como frontend único, sem backend e entregue ao Fibery como `index.html` único gerado;
 * editar `source/`, não `index.html` diretamente, salvo emergência justificada;
 * gerar `index.html` somente via build;
 * atualizar `source/config/manifest.json` quando houver novo módulo, mudança de ordem ou versão;
-* manter `package.json.version` alinhado com o manifest quando existir;
-* preservar ordem JS definida pelo manifest, não por nome de arquivo;
+* manter `package.json.version` alinhado com o manifest quando houver mudança de versão;
+* enquanto Vite/TypeScript não estiverem implementados, preservar ordem JS definida pelo manifest, não por nome de arquivo;
+* não afirmar que Vite, TypeScript ou `npm run verify` já existem se o repositório não mostrar isso;
 * usar IndexedDB para dados estruturados e localStorage só para preferências simples;
 * não inventar endpoints, SDKs, formatos de resposta ou persistência Fibery;
 * preservar sidebar sem piscar, seleção estável, preview sem recarga desnecessária e estado local;
@@ -68,19 +77,27 @@ Requisitos técnicos:
 
 Versionamento e changelog:
 
-* decidir patch/minor/major conforme impacto;
-* atualizar `CHANGELOG.md` em inglês quando houver implementação, correção, ajuste técnico, mudança visual ou documentação relevante;
+* decidir patch/minor/major conforme impacto quando houver mudança de app/runtime/build;
+* não alterar versão em mudanças puramente documentais/governança interna, salvo pedido explícito;
+* atualizar `CHANGELOG.md` em inglês quando houver implementação, correção, refactor, build, validação, runtime, release/update, UX ou documentação relevante ao app;
+* não atualizar `CHANGELOG.md` quando a mudança for apenas planejamento por issues ou governança interna em `AGENTS.md`, `docs/.chat/` ou `docs/.human/`, salvo pedido explícito;
 * nova entrada no topo, formato `## [x.y.z] - YYYY-MM-DD`;
 * se a versão do `index.html` mudar, o topo do changelog deve ter a mesma versão;
-* não adicionar “Unreleased” salvo pedido explícito.
+* não adicionar `Unreleased` salvo pedido explícito.
 
 Build e validação local:
-Rodar:
+
+Para mudanças de app/runtime/build/source, rodar:
 
 npm run build:tmp
+
 npm run validate:tmp
+
 npm run build
+
 npm run validate
+
+Para mudanças somente documentais internas, build do app não é obrigatório, salvo se este prompt pedir.
 
 Também verificar, quando aplicável:
 
@@ -91,9 +108,13 @@ Também verificar, quando aplicável:
 * versionamento propagado;
 * changelog;
 * IndexedDB/localStorage;
-* regressões estáticas em sidebar, menus, editor, preview, histórico, autosave e Update App.
+* regressões estáticas em sidebar, menus, editor, preview, histórico, autosave e Update App;
+* caminhos e links citados nos documentos alterados.
+
+Quando #64 estiver implementada e `npm run verify` existir, preferir esse comando como agregador local, sem misturar validação local com teste real no Fibery.
 
 Testes que dependem do Fibery real:
+
 Separar do que foi validado localmente. Não afirmar teste real sem executar no workspace Fibery.
 
 Itens que podem depender do Fibery real:
@@ -104,29 +125,32 @@ Itens que podem depender do Fibery real:
 * runtime da Custom HTML Page;
 * `tailwind.css` hospedado pelo Fibery;
 * preview real;
-* save/load/delete/admin.
+* save/load/delete/admin;
+* Update App aplicado em página real.
 
 Git:
 
 * rodar `git status` antes de finalizar;
-* commitar por padrão se a validação passar;
-* não commitar se validação falhar;
+* commitar por padrão se este prompt permitir commit e a validação aplicável passar;
+* não commitar se validação aplicável falhar;
 * incluir apenas arquivos relevantes;
 * incluir `index.html` gerado quando `source/` mudar;
 * incluir `CHANGELOG.md` quando aplicável;
-* incluir `package.json` quando houver mudança de versão;
+* incluir `package.json` quando houver mudança de versão ou tooling;
 * nunca commitar `.tmp/`;
+* não incluir alterações pré-existentes não relacionadas;
 * não fazer push salvo pedido explícito;
-* respeitar “sem commit” e “sem push” se o usuário tiver pedido.
+* respeitar "sem commit" e "sem push" se o usuário tiver pedido.
 
 Resposta final:
+
 Responder em português do Brasil, com:
 
 1. o que foi implementado/corrigido;
 2. impacto visual/UX, se houver;
 3. arquivos principais alterados;
-4. validações executadas;
+4. validações/document checks executados;
 5. testes manuais no Fibery não executados ou pendentes;
 6. changelog/versionamento;
 7. commit criado ou motivo de não ter criado;
-8. próximos passos ou issue recomendada, se necessário.
+8. próximo passo recomendado ou issue relacionada.
