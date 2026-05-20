@@ -146,13 +146,8 @@ function bindEvents() {
   els.draftRecoveryModal.addEventListener('click', (e) => { if (e.target === els.draftRecoveryModal) keepCurrentVersionFromDraft(); });
   els.reopenRecoveryBtn.addEventListener('click', () => openRecoveryFromButton());
   if (els.conflictCompareOpenBtn) els.conflictCompareOpenBtn.addEventListener('click', () => openConflictCompareModal());
-  if (els.closeConflictCompareBtn) els.closeConflictCompareBtn.addEventListener('click', () => continueEditingFromConflict());
-  if (els.conflictCompareModal) els.conflictCompareModal.addEventListener('click', (e) => { if (e.target === els.conflictCompareModal) continueEditingFromConflict(); });
   if (els.conflictKeepLocalBtn) els.conflictKeepLocalBtn.addEventListener('click', () => keepLocalEditsFromConflict());
   if (els.conflictLoadRemoteBtn) els.conflictLoadRemoteBtn.addEventListener('click', () => { void loadFiberyVersionFromConflict(); });
-  if (els.conflictContinueEditingBtn) els.conflictContinueEditingBtn.addEventListener('click', () => continueEditingFromConflict());
-  if (els.conflictDiffTabRemote) els.conflictDiffTabRemote.addEventListener('click', () => switchConflictDiffTab('remote'));
-  if (els.conflictDiffTabLocal) els.conflictDiffTabLocal.addEventListener('click', () => switchConflictDiffTab('local'));
   document.addEventListener('click', (e) => { if (!els.moreMenu.contains(e.target) && !els.moreBtn.contains(e.target)) { els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); } if (!els.welcomeSearchResults.contains(e.target) && !els.welcomeSearchInput.contains(e.target)) closeWelcomeSearch(); closeContextMenus(); });
   els.closeHistoryBtn.addEventListener('click', closeHistoryModal);
   els.historyModal.addEventListener('click', (e) => { if (e.target === els.historyModal) closeHistoryModal(); });
@@ -165,7 +160,7 @@ function bindEvents() {
   els.unsavedTransitionDiscardBtn.addEventListener('click', () => closeUnsavedTransitionModal('discard'));
   els.unsavedTransitionCancelBtn.addEventListener('click', () => closeUnsavedTransitionModal('cancel'));
   els.unsavedTransitionModal.addEventListener('click', (e) => { if (e.target === els.unsavedTransitionModal) closeUnsavedTransitionModal('cancel'); });
-  window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (!els.unsavedTransitionModal.classList.contains('hidden')) { closeUnsavedTransitionModal('cancel'); return; } if (!els.draftRecoveryModal.classList.contains('hidden')) { keepCurrentVersionFromDraft(); return; } if (els.conflictCompareModal && !els.conflictCompareModal.classList.contains('hidden')) { continueEditingFromConflict(); return; } if (state.previewFocus) exitPreviewFocus(); els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); closeSearchModal(); closeSettings(); closeUpdateAppModal(); closeWelcomeSearch(); closeContextMenus(); closeCreateProjectModal(); } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); if (state.isAdmin && !state.blank) { void requestSavePage('save'); } } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearchModal(); } });
+  window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (!els.unsavedTransitionModal.classList.contains('hidden')) { closeUnsavedTransitionModal('cancel'); return; } if (!els.draftRecoveryModal.classList.contains('hidden')) { keepCurrentVersionFromDraft(); return; } if (els.conflictCompareModal && !els.conflictCompareModal.classList.contains('hidden')) { return; } if (state.previewFocus) exitPreviewFocus(); els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); closeSearchModal(); closeSettings(); closeUpdateAppModal(); closeWelcomeSearch(); closeContextMenus(); closeCreateProjectModal(); } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); if (state.isAdmin && !state.blank) { void requestSavePage('save'); } } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearchModal(); } });
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       void flushDraftAutosaveNow();

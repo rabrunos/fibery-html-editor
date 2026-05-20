@@ -1,3 +1,30 @@
+## [8.14.3] - 2026-05-20
+
+### Fixed
+
+* **Bug 1 — Last Saved Cache premature update**: `savePageContentCacheSafe` was called unconditionally during remote verification, updating the cache with Fibery content even before the user chose. Cache write (and `cacheSignature` update) is now inside the `if (sameAsCache)` branch only. On conflict, the cache is never touched until the user picks "Load Fibery version".
+* **Bug 2 — "Load Fibery version" button broken**: `loadFiberyVersionFromConflict` called `openConfirm()` which rendered behind the conflict modal (z-[60] < z-[80]), making the confirm dialog invisible and blocking the action. The intermediate `openConfirm` step is removed; choosing "Load Fibery version" now applies directly.
+* **Bug 3 — Mandatory comparator**: Removed X button, "Continue editing" button, and ESC/backdrop close handlers from the conflict modal. The modal is now truly modal — the user must pick one of the two explicit actions before proceeding.
+* **Bug 4 — "Compare versions" header button**: The header button is now hidden while the conflict modal is already open, preventing duplicate UI. It reappears if the conflict persists and the modal is closed.
+* **Bug 5 — Simplified comparator layout**: Removed the three-column (Base/Local/Fibery) layout and replaced with two columns: "Cache version" (no local edits) or "Local draft" (with local edits), and "Fibery version". Removed tab switcher; single diff always shows local/cache vs Fibery.
+
+### Technical adjustments
+
+* `cached-page-open-flow.js`: moved `savePageContentCacheSafe` and `state.cachedPageOpen.cacheSignature` assignment inside `if (sameAsCache)` only.
+* `conflict-resolution-flow.js`: removed `openConfirm` from `loadFiberyVersionFromConflict`; removed `renderConflictDiffTabs`, `switchConflictDiffTab`, `continueEditingFromConflict`; simplified `renderConflictCompareContent` to 2-column (local vs remote); updated `openConflictCompareModal` with dynamic button label (`conflictKeepCache` / `conflictKeepDraft`); `syncConflictCompareButtonState` now hides the header button when the modal is visible.
+* `modal-conflict-compare.html`: removed `closeConflictCompareBtn`, `conflictBaseColumn`, `conflictContinueEditingBtn`, tab buttons; grid changed from `lg:grid-cols-3` to `lg:grid-cols-2`.
+* `dom-refs.js`: removed `closeConflictCompareBtn`, `conflictBaseColumn`, `conflictDiffTabRemote`, `conflictDiffTabLocal`, `conflictContinueEditingBtn`.
+* `events-bindings.js`: removed handlers for deleted elements; ESC key now skips (does not close) the conflict modal.
+* i18n (EN + PT-BR): added `conflictCacheLabel`, `conflictDraftLabel`, `conflictKeepCache`, `conflictKeepDraft`; removed `conflictBaseLabel`, `conflictLocalLabel`, `conflictKeepLocal`, `conflictContinueEditing`, `conflictDiffTabRemote`, `conflictDiffTabLocal`, `conflictLoadRemoteConfirmTitle`, `conflictLoadRemoteConfirmMessage`, `conflictLoadRemoteConfirmButton`.
+* Bumped app version metadata to `8.14.3` via manifest and package.json, and regenerated single-file deploy artifact.
+
+### Validation
+
+* `npm run build:tmp`
+* `npm run validate:tmp`
+* `npm run build`
+* `npm run validate`
+
 ## [8.14.2] - 2026-05-20
 
 ### Fixed

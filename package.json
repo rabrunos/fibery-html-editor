@@ -1,6 +1,6 @@
 {
   "name": "fibery-html-editor",
-  "version": "8.14.2",
+  "version": "8.14.3",
   "private": true,
   "description": "Fibery HTML Editor modular source and single-file build",
   "scripts": {

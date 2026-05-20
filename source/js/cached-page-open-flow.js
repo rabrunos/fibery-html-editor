@@ -137,8 +137,6 @@ async function startCachedPageRemoteVerification(pageId, requestId, options = {}
       return true;
     }
 
-    await savePageContentCacheSafe(remoteSnapshot, { pageId, source: 'fibery-load', cachedAt: verifiedAt, verifiedAt, signature: remoteSignature });
-
     const baselineSignature = snapshotSignature(currentBaselineSnapshot());
     const cacheSignature = String(state.cachedPageOpen.cacheSignature || baselineSignature);
     const sameAsCache = remoteSignature === cacheSignature;
@@ -147,9 +145,11 @@ async function startCachedPageRemoteVerification(pageId, requestId, options = {}
 
     state.cachedPageOpen.lastErrorMessage = '';
     state.cachedPageOpen.verifiedAt = verifiedAt;
-    state.cachedPageOpen.cacheSignature = remoteSignature;
 
     if (sameAsCache) {
+      // Only update Last Saved Cache when remote matches — never on conflict
+      await savePageContentCacheSafe(remoteSnapshot, { pageId, source: 'fibery-load', cachedAt: verifiedAt, verifiedAt, signature: remoteSignature });
+      state.cachedPageOpen.cacheSignature = remoteSignature;
       state.cachedPageOpen.remoteStatus = 'verified';
       state.cachedPageOpen.saveBlockedReason = '';
       state.cachedPageOpen.remoteCandidate = null;

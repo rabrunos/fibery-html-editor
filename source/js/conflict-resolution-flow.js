@@ -99,30 +99,10 @@ function renderConflictCodeDiff(leftSnapshot, rightSnapshot) {
   }
 }
 
-function renderConflictDiffTabs(mode) {
-  if (!els.conflictDiffTabRemote || !els.conflictDiffTabLocal) return;
-  els.conflictDiffTabRemote.textContent = t('conflictDiffTabRemote');
-  els.conflictDiffTabLocal.textContent = t('conflictDiffTabLocal');
-  const activeClasses = ['border-blue-300', 'bg-blue-50', 'text-blue-700'];
-  const inactiveClasses = ['border-gray-200', 'bg-white', 'text-gray-600'];
-  if (mode === 'local') {
-    els.conflictDiffTabLocal.classList.remove(...inactiveClasses);
-    els.conflictDiffTabLocal.classList.add(...activeClasses);
-    els.conflictDiffTabRemote.classList.remove(...activeClasses);
-    els.conflictDiffTabRemote.classList.add(...inactiveClasses);
-  } else {
-    els.conflictDiffTabRemote.classList.remove(...inactiveClasses);
-    els.conflictDiffTabRemote.classList.add(...activeClasses);
-    els.conflictDiffTabLocal.classList.remove(...activeClasses);
-    els.conflictDiffTabLocal.classList.add(...inactiveClasses);
-  }
-}
-
 function conflictSnapshotsFromState() {
   const candidate = state.cachedPageOpen.remoteCandidate;
   if (!candidate) return null;
   updateCurrentFromInputs();
-  const baseSnapshot = currentBaselineSnapshot();
   const localSnapshot = currentSnapshotFromState();
   const remoteSnapshot = {
     id: String(candidate.id || state.current.id || ''),
@@ -130,23 +110,19 @@ function conflictSnapshotsFromState() {
     description: String(candidate.description || ''),
     html: String(candidate.html || '')
   };
-  return { baseSnapshot, localSnapshot, remoteSnapshot };
+  return { localSnapshot, remoteSnapshot };
 }
 
-function renderConflictCompareContent(baseSnapshot, localSnapshot, remoteSnapshot) {
-  if (!els.conflictBaseColumn || !els.conflictLocalColumn || !els.conflictRemoteColumn) return;
-  const diffBaseLocal = draftDiffMap(baseSnapshot, localSnapshot);
-  const diffBaseRemote = draftDiffMap(baseSnapshot, remoteSnapshot);
-  const baseTime = Number(state.cachedPageOpen.verifiedAt || 0);
+function renderConflictCompareContent(localSnapshot, remoteSnapshot) {
+  if (!els.conflictLocalColumn || !els.conflictRemoteColumn) return;
+  const userEdited = hasUserEditedSinceCachedOpen(String(state.current.id || ''));
+  const diffLocalRemote = draftDiffMap(localSnapshot, remoteSnapshot);
   const remoteTime = Number(state.cachedPageOpen.remoteCandidate?.detectedAt || 0);
-  const baseSubtitle = baseTime ? draftUpdatedAtLabel(baseTime) : '';
   const remoteSubtitle = remoteTime ? draftUpdatedAtLabel(remoteTime) : '';
-  els.conflictBaseColumn.innerHTML = draftColumnHtml(t('conflictBaseLabel'), baseSnapshot, { title: false, description: false, html: false }, { subtitle: baseSubtitle });
-  els.conflictLocalColumn.innerHTML = draftColumnHtml(t('conflictLocalLabel'), localSnapshot, diffBaseLocal, { subtitle: '' });
-  els.conflictRemoteColumn.innerHTML = draftColumnHtml(t('conflictRemoteLabel'), remoteSnapshot, diffBaseRemote, { subtitle: remoteSubtitle });
-  const mode = state.conflictCompare.diffMode;
-  renderConflictDiffTabs(mode);
-  renderConflictCodeDiff(baseSnapshot, mode === 'local' ? localSnapshot : remoteSnapshot);
+  const localLabel = userEdited ? t('conflictDraftLabel') : t('conflictCacheLabel');
+  els.conflictLocalColumn.innerHTML = draftColumnHtml(localLabel, localSnapshot, { title: false, description: false, html: false }, { subtitle: '' });
+  els.conflictRemoteColumn.innerHTML = draftColumnHtml(t('conflictRemoteLabel'), remoteSnapshot, diffLocalRemote, { subtitle: remoteSubtitle });
+  renderConflictCodeDiff(localSnapshot, remoteSnapshot);
 }
 
 function openConflictCompareModal() {
@@ -155,12 +131,12 @@ function openConflictCompareModal() {
   if (!snapshots) return;
   if (els.conflictCompareTitle) els.conflictCompareTitle.textContent = t('conflictCompareTitle');
   if (els.conflictCompareSubtitle) els.conflictCompareSubtitle.textContent = t('conflictCompareSubtitle');
-  if (els.conflictKeepLocalBtn) els.conflictKeepLocalBtn.textContent = t('conflictKeepLocal');
+  const userEdited = hasUserEditedSinceCachedOpen(String(state.current.id || ''));
+  if (els.conflictKeepLocalBtn) els.conflictKeepLocalBtn.textContent = userEdited ? t('conflictKeepDraft') : t('conflictKeepCache');
   if (els.conflictLoadRemoteBtn) els.conflictLoadRemoteBtn.textContent = t('conflictLoadRemote');
-  if (els.conflictContinueEditingBtn) els.conflictContinueEditingBtn.textContent = t('conflictContinueEditing');
-  state.conflictCompare.diffMode = 'remote';
-  renderConflictCompareContent(snapshots.baseSnapshot, snapshots.localSnapshot, snapshots.remoteSnapshot);
+  renderConflictCompareContent(snapshots.localSnapshot, snapshots.remoteSnapshot);
   els.conflictCompareModal.classList.remove('hidden');
+  syncConflictCompareButtonState();
 }
 
 function closeConflictCompareModal() {
@@ -170,10 +146,10 @@ function closeConflictCompareModal() {
   if (els.conflictCodeDiffFallback) els.conflictCodeDiffFallback.classList.add('hidden');
   if (els.conflictFallbackLeftPane) els.conflictFallbackLeftPane.innerHTML = '';
   if (els.conflictFallbackRightPane) els.conflictFallbackRightPane.innerHTML = '';
-  if (els.conflictBaseColumn) els.conflictBaseColumn.innerHTML = '';
   if (els.conflictLocalColumn) els.conflictLocalColumn.innerHTML = '';
   if (els.conflictRemoteColumn) els.conflictRemoteColumn.innerHTML = '';
   els.conflictCompareModal.classList.add('hidden');
+  syncConflictCompareButtonState();
 }
 
 function keepLocalEditsFromConflict() {
@@ -193,13 +169,6 @@ function keepLocalEditsFromConflict() {
 async function loadFiberyVersionFromConflict() {
   const candidate = state.cachedPageOpen.remoteCandidate;
   if (!candidate) { closeConflictCompareModal(); return; }
-
-  const confirmed = await openConfirm({
-    title: t('conflictLoadRemoteConfirmTitle'),
-    message: t('conflictLoadRemoteConfirmMessage'),
-    okText: t('conflictLoadRemoteConfirmButton')
-  });
-  if (!confirmed) return;
 
   closeConflictCompareModal();
 
@@ -243,24 +212,12 @@ async function loadFiberyVersionFromConflict() {
   log(t('conflictLoadRemoteLog'));
 }
 
-function continueEditingFromConflict() {
-  closeConflictCompareModal();
-}
-
-function switchConflictDiffTab(mode) {
-  if (mode === state.conflictCompare.diffMode) return;
-  state.conflictCompare.diffMode = mode;
-  renderConflictDiffTabs(mode);
-  const snapshots = conflictSnapshotsFromState();
-  if (!snapshots) return;
-  renderConflictCodeDiff(snapshots.baseSnapshot, mode === 'local' ? snapshots.localSnapshot : snapshots.remoteSnapshot);
-}
-
 function syncConflictCompareButtonState() {
   if (!els.conflictCompareOpenBtn) return;
   const isConflict = String(state.cachedPageOpen.remoteStatus || '') === 'conflict';
-  els.conflictCompareOpenBtn.classList.toggle('hidden', !isConflict);
-  if (isConflict) {
+  const modalOpen = els.conflictCompareModal && !els.conflictCompareModal.classList.contains('hidden');
+  els.conflictCompareOpenBtn.classList.toggle('hidden', !isConflict || !!modalOpen);
+  if (isConflict && !modalOpen) {
     els.conflictCompareOpenBtn.textContent = t('conflictCompareOpenBtn');
     els.conflictCompareOpenBtn.title = t('conflictCompareOpenBtn');
   }
