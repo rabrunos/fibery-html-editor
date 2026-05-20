@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.14.3" />
+  <meta name="fibery-html-editor-version" content="8.14.4" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -593,7 +593,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 (() => {
   'use strict';
 
-const APP_VERSION = '8.14.3';
+const APP_VERSION = '8.14.4';
 window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 document.documentElement.dataset.appVersion = APP_VERSION;
 
@@ -691,6 +691,8 @@ Object.assign(I18N.en, {
     localPreviewPocCssMissingShort: 'CSS MISSING',
     localPreviewStatus: 'Local preview',
     localPreviewStatusTailwind: 'Local preview (tailwind)',
+    previewModeLocalLog: 'Showing local preview',
+    previewModeRealLog: 'Showing real preview',
     localPreviewTailwindBrowserLoaded: 'Local preview Tailwind browser loaded',
     localPreviewTailwindBrowserFailed: 'Local preview Tailwind browser failed',
     updateAppTitle: 'Update App',
@@ -884,6 +886,8 @@ Object.assign(I18N['pt-BR'], {
     localPreviewPocCssMissingShort: 'CSS AUSENTE',
     localPreviewStatus: 'Prévia local',
     localPreviewStatusTailwind: 'Prévia local (tailwind)',
+    previewModeLocalLog: 'Mostrando prévia local',
+    previewModeRealLog: 'Mostrando prévia real',
     localPreviewTailwindBrowserLoaded: 'Tailwind browser da prévia local carregado',
     localPreviewTailwindBrowserFailed: 'Tailwind browser da prévia local falhou',
     updateAppTitle: 'Atualizar App',
@@ -1083,7 +1087,7 @@ const state = {
     lastSkipReason: '', lastSkipLoggedAt: 0
   },
   update: { checking: false, applying: false, rollbacking: false, status: 'idle', remoteVersion: '', remoteChangelog: '', changelogLoading: false, backupsLoading: false, backups: [] },
-  preview: { mode: 'real', localObjectUrl: '', localStatusLabel: '', activeRequestId: '', debounceTimer: null, debounceMs: 500, lastLocalDocSignature: '', lastLocalHtmlSignature: '', lastLocalUsesTailwind: false, lastRealUrl: '' },
+  preview: { mode: 'real', localObjectUrl: '', localStatusLabel: '', activeRequestId: '', debounceTimer: null, debounceMs: 500, lastLocalDocSignature: '', lastLocalHtmlSignature: '', lastLocalUsesTailwind: false, lastRealUrl: '', lastLoggedMode: '' },
   sidebar: { open: true, pages: [], loading: false, refreshTimer: null, hasMore: false, limit: 20, visibleLimit: 20, pageCache: {}, lastRemoteLoadAt: 0, remoteCacheTtlMs: 300000, autoRefreshEnabled: false, autoRefreshIntervalMs: 600000 },
   projects: { rows: [], items: [], pageToProject: {}, itemsByProject: {} },
   search: { debounce: null, query: '', pages: [], cache: {}, loading: false, remoteQuery: '' }, welcomeSearch: { debounce: null, query: '', pages: [], cache: {}, loading: false, remoteQuery: '' }, panelMode: 'both', previewFocus: false, pageMeta: {}, context: { pageId: '', pageTitle: '', projectId: '', createProjectTargetPageId: '' },
@@ -3492,6 +3496,7 @@ async function startCachedPageRemoteVerification(pageId, requestId, options = {}
         clearExternalSyncCandidateForCurrentPage({ clearDismissed: true, clearNotified: false });
       }
       syncSaveAvailabilityState();
+      syncPreviewMode({ immediate: true });
       setStatus(t('cachedOpenVerifiedStatus'));
       return true;
     }
@@ -3520,6 +3525,7 @@ async function startCachedPageRemoteVerification(pageId, requestId, options = {}
       });
     }
     syncSaveAvailabilityState();
+    syncPreviewMode({ immediate: true });
     setStatus(t('cachedOpenConflictDetectedStatus'));
     if (typeof openConflictCompareModal === 'function') openConflictCompareModal();
     return false;
@@ -3790,6 +3796,7 @@ function keepLocalEditsFromConflict() {
   state.cachedPageOpen.saveBlockedReason = '';
   state.cachedPageOpen.remoteCandidate = null;
   syncSaveAvailabilityState();
+  syncPreviewMode({ immediate: true });
   closeConflictCompareModal();
   setStatus(t('conflictKeepLocalStatus'));
   log(t('conflictKeepLocalLog'));
@@ -4046,6 +4053,22 @@ function localPreviewBaseHref() {
   return '';
 }
 function localPreviewStatusLabel({ usesTailwind = false } = {}) { return usesTailwind ? t('localPreviewStatusTailwind') : t('localPreviewStatus'); }
+function previewHeaderStatusLabel() {
+  if (state.blank) return '—';
+  return String(state.current.title || state.current.id || t('preview'));
+}
+function updatePreviewHeaderStatus() {
+  if (!els.previewStatus) return;
+  els.previewStatus.textContent = previewHeaderStatusLabel();
+}
+function logPreviewModeChange(nextMode, previousMode) {
+  const next = String(nextMode || '');
+  const previous = String(previousMode || '');
+  if (!next || next === previous) return;
+  if (next === 'real' && !state.current.id) return;
+  state.preview.lastLoggedMode = next;
+  log(t(next === 'local' ? 'previewModeLocalLog' : 'previewModeRealLog'));
+}
 function htmlUsesTailwindStylesheet(html = '') {
   return /<link\b[^>]*href\s*=\s*["'](?:\.\/|\/)?tailwind\.css["'][^>]*>/i.test(String(html || ''));
 }
@@ -4122,33 +4145,28 @@ function renderLocalPreview() {
   const baseHref = localPreviewBaseHref();
   const renderSignature = localPreviewRenderSignature(html, baseHref, usesTailwind);
   const htmlSignature = snapshotSignature({ title: '', description: '', html });
+  updatePreviewHeaderStatus();
 
   if (state.preview.mode === 'local' && state.preview.lastLocalDocSignature === renderSignature) {
     const statusLabel = localPreviewStatusLabel({ usesTailwind });
-    els.previewStatus.textContent = statusLabel;
     state.preview.localStatusLabel = statusLabel;
     state.preview.lastLocalUsesTailwind = usesTailwind;
-    if (!(typeof shouldKeepCachedOpenStatusMessage === 'function' && shouldKeepCachedOpenStatusMessage())) {
-      setStatus(statusLabel);
-    }
     return;
   }
 
+  const previousMode = state.preview.mode;
   const requestId = localPreviewRequestId();
   const doc = buildLocalPreviewDocument(html, { requestId, baseHref, enableTailwindBrowser: usesTailwind });
   clearPreviewDebounce();
   revokeLocalPreviewObjectUrl();
   state.preview.mode = 'local';
+  logPreviewModeChange('local', previousMode);
   state.preview.activeRequestId = requestId;
   state.preview.lastLocalDocSignature = renderSignature;
   state.preview.lastLocalHtmlSignature = htmlSignature;
   state.preview.lastLocalUsesTailwind = usesTailwind;
   const statusLabel = localPreviewStatusLabel({ usesTailwind });
   state.preview.localStatusLabel = statusLabel;
-  els.previewStatus.textContent = statusLabel;
-  if (!(typeof shouldKeepCachedOpenStatusMessage === 'function' && shouldKeepCachedOpenStatusMessage())) {
-    setStatus(statusLabel);
-  }
 
   els.previewFrame.removeAttribute('src');
   els.previewFrame.srcdoc = doc;
@@ -4167,9 +4185,11 @@ function scheduleLocalPreviewRefresh() {
 
 function viewUrl(id) { if (!id) return 'about:blank'; return new URL('/api/ai-answer/pages/' + encodeURIComponent(id) + '/view', window.location.origin).href; }
 function renderRealPreview({ forceReload = false } = {}) {
+  const previousMode = state.preview.mode;
   clearPreviewDebounce();
   revokeLocalPreviewObjectUrl();
   state.preview.mode = 'real';
+  logPreviewModeChange('real', previousMode);
   state.preview.activeRequestId = '';
   state.preview.localStatusLabel = '';
   state.preview.lastLocalDocSignature = '';
@@ -4182,7 +4202,7 @@ function renderRealPreview({ forceReload = false } = {}) {
     return;
   }
   const url = viewUrl(state.current.id);
-  els.previewStatus.textContent = state.current.title || state.current.id;
+  updatePreviewHeaderStatus();
   els.previewFrame.removeAttribute('srcdoc');
   if (forceReload && els.previewFrame.src === url) {
     try { recordPreviewUsage({ source: 'preview-real-reload', pageId: state.current.id }); els.previewFrame.contentWindow.location.reload(); return; } catch (_) {}

@@ -15,6 +15,22 @@ function localPreviewBaseHref() {
   return '';
 }
 function localPreviewStatusLabel({ usesTailwind = false } = {}) { return usesTailwind ? t('localPreviewStatusTailwind') : t('localPreviewStatus'); }
+function previewHeaderStatusLabel() {
+  if (state.blank) return '—';
+  return String(state.current.title || state.current.id || t('preview'));
+}
+function updatePreviewHeaderStatus() {
+  if (!els.previewStatus) return;
+  els.previewStatus.textContent = previewHeaderStatusLabel();
+}
+function logPreviewModeChange(nextMode, previousMode) {
+  const next = String(nextMode || '');
+  const previous = String(previousMode || '');
+  if (!next || next === previous) return;
+  if (next === 'real' && !state.current.id) return;
+  state.preview.lastLoggedMode = next;
+  log(t(next === 'local' ? 'previewModeLocalLog' : 'previewModeRealLog'));
+}
 function htmlUsesTailwindStylesheet(html = '') {
   return /<link\b[^>]*href\s*=\s*["'](?:\.\/|\/)?tailwind\.css["'][^>]*>/i.test(String(html || ''));
 }

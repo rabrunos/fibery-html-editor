@@ -161,6 +161,7 @@ function keepLocalEditsFromConflict() {
   state.cachedPageOpen.saveBlockedReason = '';
   state.cachedPageOpen.remoteCandidate = null;
   syncSaveAvailabilityState();
+  syncPreviewMode({ immediate: true });
   closeConflictCompareModal();
   setStatus(t('conflictKeepLocalStatus'));
   log(t('conflictKeepLocalLog'));

@@ -57,6 +57,8 @@ Object.assign(I18N.en, {
     localPreviewPocCssMissingShort: 'CSS MISSING',
     localPreviewStatus: 'Local preview',
     localPreviewStatusTailwind: 'Local preview (tailwind)',
+    previewModeLocalLog: 'Showing local preview',
+    previewModeRealLog: 'Showing real preview',
     localPreviewTailwindBrowserLoaded: 'Local preview Tailwind browser loaded',
     localPreviewTailwindBrowserFailed: 'Local preview Tailwind browser failed',
     updateAppTitle: 'Update App',

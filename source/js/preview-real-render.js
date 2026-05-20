@@ -1,8 +1,10 @@
 function viewUrl(id) { if (!id) return 'about:blank'; return new URL('/api/ai-answer/pages/' + encodeURIComponent(id) + '/view', window.location.origin).href; }
 function renderRealPreview({ forceReload = false } = {}) {
+  const previousMode = state.preview.mode;
   clearPreviewDebounce();
   revokeLocalPreviewObjectUrl();
   state.preview.mode = 'real';
+  logPreviewModeChange('real', previousMode);
   state.preview.activeRequestId = '';
   state.preview.localStatusLabel = '';
   state.preview.lastLocalDocSignature = '';
@@ -15,7 +17,7 @@ function renderRealPreview({ forceReload = false } = {}) {
     return;
   }
   const url = viewUrl(state.current.id);
-  els.previewStatus.textContent = state.current.title || state.current.id;
+  updatePreviewHeaderStatus();
   els.previewFrame.removeAttribute('srcdoc');
   if (forceReload && els.previewFrame.src === url) {
     try { recordPreviewUsage({ source: 'preview-real-reload', pageId: state.current.id }); els.previewFrame.contentWindow.location.reload(); return; } catch (_) {}

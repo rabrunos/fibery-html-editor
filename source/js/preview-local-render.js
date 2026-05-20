@@ -5,33 +5,28 @@ function renderLocalPreview() {
   const baseHref = localPreviewBaseHref();
   const renderSignature = localPreviewRenderSignature(html, baseHref, usesTailwind);
   const htmlSignature = snapshotSignature({ title: '', description: '', html });
+  updatePreviewHeaderStatus();
 
   if (state.preview.mode === 'local' && state.preview.lastLocalDocSignature === renderSignature) {
     const statusLabel = localPreviewStatusLabel({ usesTailwind });
-    els.previewStatus.textContent = statusLabel;
     state.preview.localStatusLabel = statusLabel;
     state.preview.lastLocalUsesTailwind = usesTailwind;
-    if (!(typeof shouldKeepCachedOpenStatusMessage === 'function' && shouldKeepCachedOpenStatusMessage())) {
-      setStatus(statusLabel);
-    }
     return;
   }
 
+  const previousMode = state.preview.mode;
   const requestId = localPreviewRequestId();
   const doc = buildLocalPreviewDocument(html, { requestId, baseHref, enableTailwindBrowser: usesTailwind });
   clearPreviewDebounce();
   revokeLocalPreviewObjectUrl();
   state.preview.mode = 'local';
+  logPreviewModeChange('local', previousMode);
   state.preview.activeRequestId = requestId;
   state.preview.lastLocalDocSignature = renderSignature;
   state.preview.lastLocalHtmlSignature = htmlSignature;
   state.preview.lastLocalUsesTailwind = usesTailwind;
   const statusLabel = localPreviewStatusLabel({ usesTailwind });
   state.preview.localStatusLabel = statusLabel;
-  els.previewStatus.textContent = statusLabel;
-  if (!(typeof shouldKeepCachedOpenStatusMessage === 'function' && shouldKeepCachedOpenStatusMessage())) {
-    setStatus(statusLabel);
-  }
 
   els.previewFrame.removeAttribute('src');
   els.previewFrame.srcdoc = doc;

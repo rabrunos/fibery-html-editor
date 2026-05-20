@@ -1,3 +1,24 @@
+## [8.14.4] - 2026-05-20
+
+### Fixed
+
+* Fixed preview mode synchronization after cached-open Fibery verification confirms that Fibery and Last Saved Cache match.
+* Kept local preview after choosing Cache/Draft in the mandatory comparator until a manual save confirms that version in Fibery.
+* Preserved real preview after choosing Fibery in the comparator and after successful manual save when editor content matches the confirmed original.
+* Removed local/real preview technical labels from the preview header; the header now stays neutral and page-focused.
+
+### Technical adjustments
+
+* Added discrete preview mode change diagnostics in the log: "Showing local preview" and "Showing real preview", without repeating while the mode is unchanged.
+* Bumped app version metadata to `8.14.4` via manifest and package.json, and regenerated the single-file deploy artifact.
+
+### Validation
+
+* `npm run build:tmp`
+* `npm run validate:tmp`
+* `npm run build`
+* `npm run validate`
+
 ## [8.14.3] - 2026-05-20
 
 ### Fixed

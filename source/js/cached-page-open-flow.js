@@ -157,6 +157,7 @@ async function startCachedPageRemoteVerification(pageId, requestId, options = {}
         clearExternalSyncCandidateForCurrentPage({ clearDismissed: true, clearNotified: false });
       }
       syncSaveAvailabilityState();
+      syncPreviewMode({ immediate: true });
       setStatus(t('cachedOpenVerifiedStatus'));
       return true;
     }
@@ -185,6 +186,7 @@ async function startCachedPageRemoteVerification(pageId, requestId, options = {}
       });
     }
     syncSaveAvailabilityState();
+    syncPreviewMode({ immediate: true });
     setStatus(t('cachedOpenConflictDetectedStatus'));
     if (typeof openConflictCompareModal === 'function') openConflictCompareModal();
     return false;
