@@ -1,3 +1,30 @@
+## [8.14.2] - 2026-05-20
+
+### Fixed
+
+* Mandatory conflict comparison modal now opens automatically whenever the Fibery original differs from the Last Saved Cache, regardless of whether the user has local edits. The comparator is always required; the user must choose explicitly.
+* Removed automatic remote apply (`stale-applied`) when remote differs from cache and no local edit is detected. Remote is never applied without explicit user decision.
+* Explicit choice flow: when the remote candidate differs from cache, the user chooses between "Keep local version" (maintains cache/editor content, save will publish to Fibery) or "Load Fibery version" (applies remote, updates baseline and Last Saved Cache).
+* Last Saved Cache is updated with the remote only when the user chooses "Load Fibery version". "Keep local version" never updates Last Saved Cache with the remote.
+* Preview rule after choosing "Load Fibery version": `syncPreviewMode` is now called instead of `renderLocalPreview`, so real preview is used when the editor equals the confirmed Fibery original.
+* Preview rule after choosing "Keep local version" (no-edit case): `conflict-resolved-local` status now forces local preview in `shouldForceLocalPreviewForCachedOpen` until a manual save confirms the local version to Fibery.
+* Guard in `loadFiberyVersionFromConflict`: draft is only saved before loading Fibery when the user actually has local edits (`hasUserEditedSinceCachedOpen`). In the no-edit case, `saveCurrentDraftNow` was skipped to avoid deleting a pre-existing draft (draft snapshot == baseline triggers deletion in `shouldPersistDraftSnapshot`).
+
+### Technical adjustments
+
+* `startCachedPageRemoteVerification` in `cached-page-open-flow.js`: removed the `!userEdited` branch that applied remote silently; both cases now set `remoteStatus = 'conflict'`, store `remoteCandidate`, and call `openConflictCompareModal()`.
+* `shouldForceLocalPreviewForCachedOpen` in `save-availability-state.js`: added `conflict-resolved-local` to the forced-local-preview conditions.
+* `loadFiberyVersionFromConflict` in `conflict-resolution-flow.js`: replaced `renderLocalPreview()` with `syncPreviewMode({ immediate: true })`.
+* Updated i18n strings (EN and PT-BR) for conflict/divergence scenario: subtitle, status, column labels, button, and log entries updated to be generic (not tied to "while editing" or "my edits").
+* Bumped app version metadata to `8.14.2` via manifest and package.json, and regenerated single-file deploy artifact.
+
+### Validation
+
+* `npm run build:tmp`
+* `npm run validate:tmp`
+* `npm run build`
+* `npm run validate`
+
 ## [8.14.1] - 2026-05-20
 
 ### Fixed

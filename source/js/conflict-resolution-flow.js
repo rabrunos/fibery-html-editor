@@ -203,12 +203,15 @@ async function loadFiberyVersionFromConflict() {
 
   closeConflictCompareModal();
 
-  try {
-    await saveCurrentDraftNow({ force: true });
-    log(t('conflictLoadRemoteDraftSaved'));
-  } catch (_) {}
-
   const pageId = String(state.current.id || candidate.id || '');
+  // Only save draft if user actually has local edits; in the no-edit case (cache == editor)
+  // saveCurrentDraftNow would delete any existing draft since snapshot == baseline.
+  if (hasUserEditedSinceCachedOpen(pageId)) {
+    try {
+      await saveCurrentDraftNow({ force: true });
+      log(t('conflictLoadRemoteDraftSaved'));
+    } catch (_) {}
+  }
   const remoteSnapshot = {
     id: pageId,
     title: String(candidate.title || ''),
@@ -234,7 +237,8 @@ async function loadFiberyVersionFromConflict() {
     clearExternalSyncCandidateForCurrentPage({ clearDismissed: true, clearNotified: false });
   }
   syncSaveAvailabilityState();
-  renderLocalPreview();
+  // Editor == confirmed Fibery original → use real preview; syncPreviewMode decides correctly.
+  syncPreviewMode({ immediate: true });
   setStatus(t('conflictLoadRemoteStatus'));
   log(t('conflictLoadRemoteLog'));
 }

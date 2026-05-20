@@ -161,28 +161,11 @@ async function startCachedPageRemoteVerification(pageId, requestId, options = {}
       return true;
     }
 
-    if (!userEdited) {
-      log('Remote differs from cache; no local edit detected → applying remote');
-      state.current = {
-        id: String(pageId || remoteSnapshot.id || ''),
-        title: remoteSnapshot.title,
-        description: remoteSnapshot.description,
-        html: remoteSnapshot.html
-      };
-      setCurrentBaseline();
-      renderCurrent();
-      syncCurrentSnapshotBaselineAndDirty({ alignBaseline: true });
-      state.cachedPageOpen.remoteStatus = 'stale-applied';
-      state.cachedPageOpen.saveBlockedReason = '';
-      state.cachedPageOpen.remoteCandidate = null;
-      syncSaveAvailabilityState();
-      renderLocalPreview();
-      setStatus(t('cachedOpenRemoteNewerAppliedStatus'));
-      void maybePromptDraftRecoveryForCurrentPage(promptToken);
-      return true;
-    }
-
-    log('Remote differs from cache; local edit detected → conflict');
+    // Remote differs from cache: mandatory comparator regardless of local edits.
+    // Never apply remote automatically — user must choose explicitly.
+    log(userEdited
+      ? 'Remote differs from cache; local edit detected → mandatory conflict comparison'
+      : 'Remote differs from cache; no local edit → mandatory conflict comparison');
     state.cachedPageOpen.remoteStatus = 'conflict';
     state.cachedPageOpen.saveBlockedReason = 'conflict';
     state.cachedPageOpen.remoteCandidate = {
@@ -203,6 +186,7 @@ async function startCachedPageRemoteVerification(pageId, requestId, options = {}
     }
     syncSaveAvailabilityState();
     setStatus(t('cachedOpenConflictDetectedStatus'));
+    if (typeof openConflictCompareModal === 'function') openConflictCompareModal();
     return false;
   } catch (err) {
     if (!isActiveCachedPageOpenRequest(pageId, requestId)) return false;

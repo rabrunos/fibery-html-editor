@@ -8,7 +8,8 @@ function currentCachedPageRemoteStatus() {
 function shouldForceLocalPreviewForCachedOpen() {
   const status = currentCachedPageRemoteStatus();
   if (!String(state.cachedPageOpen.openedFromCache || '')) return false;
-  return status === 'checking' || status === 'failed' || status === 'conflict';
+  // conflict-resolved-local: user chose local/cache; keep local preview until manual save publishes to Fibery.
+  return status === 'checking' || status === 'failed' || status === 'conflict' || status === 'conflict-resolved-local';
 }
 
 

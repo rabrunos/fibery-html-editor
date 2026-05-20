@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.14.1" />
+  <meta name="fibery-html-editor-version" content="8.14.2" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -602,7 +602,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 (() => {
   'use strict';
 
-const APP_VERSION = '8.14.1';
+const APP_VERSION = '8.14.2';
 window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 document.documentElement.dataset.appVersion = APP_VERSION;
 
@@ -808,7 +808,7 @@ Object.assign(I18N.en, {
     cachedOpenSaveBlockedFailedTooltip: 'Save is blocked until Fibery version confirmation succeeds.',
     cachedOpenSaveBlockedConflict: 'Save blocked: external conflict detected.',
     cachedOpenSaveBlockedConflictTooltip: 'Save is blocked until the external conflict is resolved.',
-    cachedOpenConflictDetectedStatus: 'External conflict detected while editing.',
+    cachedOpenConflictDetectedStatus: 'Fibery version differs from local cache. Comparison required.',
     apiUsageLast5Min: 'Last 5 min',
     apiUsageFibery: 'Fibery API',
     apiUsagePreview: 'preview loads',
@@ -818,23 +818,23 @@ Object.assign(I18N.en, {
     apiUsageLogPrefix: 'API usage',
     apiUsageAutomaticSkippedLog: 'Automatic Fibery API call skipped',
     conflictCompareTitle: 'Resolve conflict',
-    conflictCompareSubtitle: 'Fibery was updated while you were editing. Choose how to resolve the conflict before saving.',
+    conflictCompareSubtitle: 'The Fibery version differs from your local version. Review the differences and choose how to proceed before saving.',
     conflictCompareOpenBtn: 'Compare versions',
     conflictBaseLabel: 'Base (from cache)',
-    conflictLocalLabel: 'My edits',
+    conflictLocalLabel: 'Local version',
     conflictRemoteLabel: 'Fibery version',
     conflictDiffTabRemote: 'Fibery changes',
-    conflictDiffTabLocal: 'My changes',
-    conflictKeepLocal: 'Keep my edits',
+    conflictDiffTabLocal: 'Local changes',
+    conflictKeepLocal: 'Keep local version',
     conflictLoadRemote: 'Load Fibery version',
     conflictContinueEditing: 'Continue editing',
-    conflictKeepLocalStatus: 'Keeping local edits. Save will overwrite the Fibery version.',
-    conflictKeepLocalLog: 'Conflict resolved: keeping local edits (save will overwrite Fibery version)',
+    conflictKeepLocalStatus: 'Keeping local version. Save will overwrite the Fibery version.',
+    conflictKeepLocalLog: 'Divergence resolved: keeping local version (save will overwrite Fibery version)',
     conflictLoadRemoteConfirmTitle: 'Load Fibery version?',
-    conflictLoadRemoteConfirmMessage: 'Your local edits will be saved as a draft first. You can recover them later from draft recovery.',
+    conflictLoadRemoteConfirmMessage: 'Your current version will be saved as a draft for recovery. You can restore it later from draft recovery.',
     conflictLoadRemoteConfirmButton: 'Load Fibery version',
     conflictLoadRemoteStatus: 'Fibery version loaded.',
-    conflictLoadRemoteLog: 'Conflict resolved: Fibery version loaded into editor',
+    conflictLoadRemoteLog: 'Divergence resolved: Fibery version loaded into editor',
     conflictLoadRemoteDraftSaved: 'Local edits saved as draft before loading Fibery version'
   });
 
@@ -1006,7 +1006,7 @@ Object.assign(I18N['pt-BR'], {
     cachedOpenSaveBlockedFailedTooltip: 'Salvar fica bloqueado até confirmar a versão no Fibery.',
     cachedOpenSaveBlockedConflict: 'Salvar bloqueado: conflito externo detectado.',
     cachedOpenSaveBlockedConflictTooltip: 'Salvar fica bloqueado até o conflito externo ser resolvido.',
-    cachedOpenConflictDetectedStatus: 'Conflito externo detectado durante a edição.',
+    cachedOpenConflictDetectedStatus: 'Versão do Fibery difere do cache local. Revisão necessária.',
     apiUsageLast5Min: 'Últimos 5 min',
     apiUsageFibery: 'API Fibery',
     apiUsagePreview: 'loads de prévia',
@@ -1016,23 +1016,23 @@ Object.assign(I18N['pt-BR'], {
     apiUsageLogPrefix: 'Uso de API',
     apiUsageAutomaticSkippedLog: 'Chamada automática ao Fibery ignorada',
     conflictCompareTitle: 'Resolver conflito',
-    conflictCompareSubtitle: 'O Fibery foi atualizado enquanto você editava. Escolha como resolver o conflito antes de salvar.',
+    conflictCompareSubtitle: 'A versão do Fibery difere da sua versão local. Revise as diferenças e escolha como prosseguir antes de salvar.',
     conflictCompareOpenBtn: 'Comparar versões',
     conflictBaseLabel: 'Base (do cache)',
-    conflictLocalLabel: 'Minha edição',
+    conflictLocalLabel: 'Versão local',
     conflictRemoteLabel: 'Versão do Fibery',
     conflictDiffTabRemote: 'Alterações do Fibery',
-    conflictDiffTabLocal: 'Minhas alterações',
-    conflictKeepLocal: 'Manter minha edição',
+    conflictDiffTabLocal: 'Alterações locais',
+    conflictKeepLocal: 'Manter versão local',
     conflictLoadRemote: 'Carregar versão do Fibery',
     conflictContinueEditing: 'Continuar editando',
-    conflictKeepLocalStatus: 'Mantendo edição local. Salvar vai sobrescrever a versão do Fibery.',
-    conflictKeepLocalLog: 'Conflito resolvido: mantendo edição local (salvar vai sobrescrever a versão do Fibery)',
+    conflictKeepLocalStatus: 'Mantendo versão local. Salvar vai sobrescrever a versão do Fibery.',
+    conflictKeepLocalLog: 'Divergência resolvida: mantendo versão local (salvar vai sobrescrever a versão do Fibery)',
     conflictLoadRemoteConfirmTitle: 'Carregar versão do Fibery?',
-    conflictLoadRemoteConfirmMessage: 'Suas edições locais serão salvas como rascunho primeiro. Você pode recuperá-las depois pelo recuperador de rascunho.',
+    conflictLoadRemoteConfirmMessage: 'Sua versão atual será salva como rascunho para recuperação. Você pode restaurá-la depois pelo recuperador de rascunho.',
     conflictLoadRemoteConfirmButton: 'Carregar versão do Fibery',
     conflictLoadRemoteStatus: 'Versão do Fibery carregada.',
-    conflictLoadRemoteLog: 'Conflito resolvido: versão do Fibery carregada no editor',
+    conflictLoadRemoteLog: 'Divergência resolvida: versão do Fibery carregada no editor',
     conflictLoadRemoteDraftSaved: 'Edição local salva como rascunho antes de carregar versão do Fibery'
   });
 
@@ -3255,7 +3255,8 @@ function currentCachedPageRemoteStatus() {
 function shouldForceLocalPreviewForCachedOpen() {
   const status = currentCachedPageRemoteStatus();
   if (!String(state.cachedPageOpen.openedFromCache || '')) return false;
-  return status === 'checking' || status === 'failed' || status === 'conflict';
+  // conflict-resolved-local: user chose local/cache; keep local preview until manual save publishes to Fibery.
+  return status === 'checking' || status === 'failed' || status === 'conflict' || status === 'conflict-resolved-local';
 }
 
 
@@ -3514,28 +3515,11 @@ async function startCachedPageRemoteVerification(pageId, requestId, options = {}
       return true;
     }
 
-    if (!userEdited) {
-      log('Remote differs from cache; no local edit detected → applying remote');
-      state.current = {
-        id: String(pageId || remoteSnapshot.id || ''),
-        title: remoteSnapshot.title,
-        description: remoteSnapshot.description,
-        html: remoteSnapshot.html
-      };
-      setCurrentBaseline();
-      renderCurrent();
-      syncCurrentSnapshotBaselineAndDirty({ alignBaseline: true });
-      state.cachedPageOpen.remoteStatus = 'stale-applied';
-      state.cachedPageOpen.saveBlockedReason = '';
-      state.cachedPageOpen.remoteCandidate = null;
-      syncSaveAvailabilityState();
-      renderLocalPreview();
-      setStatus(t('cachedOpenRemoteNewerAppliedStatus'));
-      void maybePromptDraftRecoveryForCurrentPage(promptToken);
-      return true;
-    }
-
-    log('Remote differs from cache; local edit detected → conflict');
+    // Remote differs from cache: mandatory comparator regardless of local edits.
+    // Never apply remote automatically — user must choose explicitly.
+    log(userEdited
+      ? 'Remote differs from cache; local edit detected → mandatory conflict comparison'
+      : 'Remote differs from cache; no local edit → mandatory conflict comparison');
     state.cachedPageOpen.remoteStatus = 'conflict';
     state.cachedPageOpen.saveBlockedReason = 'conflict';
     state.cachedPageOpen.remoteCandidate = {
@@ -3556,6 +3540,7 @@ async function startCachedPageRemoteVerification(pageId, requestId, options = {}
     }
     syncSaveAvailabilityState();
     setStatus(t('cachedOpenConflictDetectedStatus'));
+    if (typeof openConflictCompareModal === 'function') openConflictCompareModal();
     return false;
   } catch (err) {
     if (!isActiveCachedPageOpenRequest(pageId, requestId)) return false;
@@ -3866,12 +3851,15 @@ async function loadFiberyVersionFromConflict() {
 
   closeConflictCompareModal();
 
-  try {
-    await saveCurrentDraftNow({ force: true });
-    log(t('conflictLoadRemoteDraftSaved'));
-  } catch (_) {}
-
   const pageId = String(state.current.id || candidate.id || '');
+  // Only save draft if user actually has local edits; in the no-edit case (cache == editor)
+  // saveCurrentDraftNow would delete any existing draft since snapshot == baseline.
+  if (hasUserEditedSinceCachedOpen(pageId)) {
+    try {
+      await saveCurrentDraftNow({ force: true });
+      log(t('conflictLoadRemoteDraftSaved'));
+    } catch (_) {}
+  }
   const remoteSnapshot = {
     id: pageId,
     title: String(candidate.title || ''),
@@ -3897,7 +3885,8 @@ async function loadFiberyVersionFromConflict() {
     clearExternalSyncCandidateForCurrentPage({ clearDismissed: true, clearNotified: false });
   }
   syncSaveAvailabilityState();
-  renderLocalPreview();
+  // Editor == confirmed Fibery original → use real preview; syncPreviewMode decides correctly.
+  syncPreviewMode({ immediate: true });
   setStatus(t('conflictLoadRemoteStatus'));
   log(t('conflictLoadRemoteLog'));
 }
