@@ -52,6 +52,7 @@ async function savePage(action = 'save') {
     const savedDraftKey = draftKeyForPage(state.current.id || '');
     await deleteDraftByKey(oldDraftKey);
     if (savedDraftKey !== oldDraftKey) await deleteDraftByKey(savedDraftKey);
+    clearEmergencyDraftForPage(beforeSavePageId);
     await saveHistory(action);
     setCurrentBaseline();
     markCurrentPageRemoteVerified({ openedFromCache: false, remoteStatus: 'verified' });

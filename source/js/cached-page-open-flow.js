@@ -2,7 +2,27 @@ function createCachedPageOpenRequestId(pageId = '') {
   return `${String(pageId || '')}:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function cancelCachedPageRemoteVerification() {
+  if (state.cachedPageOpen.remoteVerificationTimer) {
+    clearTimeout(state.cachedPageOpen.remoteVerificationTimer);
+    state.cachedPageOpen.remoteVerificationTimer = null;
+  }
+}
+
+function scheduleCachedPageRemoteVerification(pageId, requestId, options = {}) {
+  cancelCachedPageRemoteVerification();
+  state.cachedPageOpen.remoteVerificationTimer = setTimeout(() => {
+    state.cachedPageOpen.remoteVerificationTimer = null;
+    if (!isActiveCachedPageOpenRequest(pageId, requestId)) {
+      log('Remote verification skipped; request no longer active');
+      return;
+    }
+    void startCachedPageRemoteVerification(pageId, requestId, options);
+  }, 2000);
+}
+
 function resetCachedPageOpenState(pageId = '') {
+  cancelCachedPageRemoteVerification();
   state.cachedPageOpen.pageId = String(pageId || '');
   state.cachedPageOpen.openRequestId = '';
   state.cachedPageOpen.openedFromCache = false;
@@ -17,6 +37,7 @@ function resetCachedPageOpenState(pageId = '') {
 
 function markCurrentPageRemoteVerified(options = {}) {
   if (state.blank || !state.current.id) return;
+  cancelCachedPageRemoteVerification();
   const verifiedAt = Date.now();
   const status = String(options.remoteStatus || 'verified');
   const openedFromCache = !!options.openedFromCache;
@@ -47,6 +68,7 @@ function hasUserEditedSinceCachedOpen(pageId = '') {
   const currentPageId = String(state.current.id || '');
   const expectedPageId = String(pageId || '');
   if (!expectedPageId || currentPageId !== expectedPageId) return false;
+  if (state.dirty) return true;
   updateCurrentFromInputs();
   return !sameSnapshot(currentSnapshotFromState(), currentBaselineSnapshot());
 }
@@ -108,13 +130,19 @@ async function startCachedPageRemoteVerification(pageId, requestId, options = {}
     };
     const verifiedAt = Date.now();
     const remoteSignature = snapshotSignature(remoteSnapshot);
-    await savePageContentCacheSafe(remoteSnapshot, { pageId, source: 'fibery-load', cachedAt: verifiedAt, verifiedAt, signature: remoteSignature });
 
-    if (!isActiveCachedPageOpenRequest(pageId, requestId)) return true;
+    // Check active BEFORE writing to cache to prevent stale requests from updating cache
+    if (!isActiveCachedPageOpenRequest(pageId, requestId)) {
+      log('Remote verification skipped; request no longer active');
+      return true;
+    }
+
+    await savePageContentCacheSafe(remoteSnapshot, { pageId, source: 'fibery-load', cachedAt: verifiedAt, verifiedAt, signature: remoteSignature });
 
     const baselineSignature = snapshotSignature(currentBaselineSnapshot());
     const cacheSignature = String(state.cachedPageOpen.cacheSignature || baselineSignature);
     const sameAsCache = remoteSignature === cacheSignature;
+    // Conservative: check state.dirty as additional local-edit signal
     const userEdited = hasUserEditedSinceCachedOpen(pageId);
 
     state.cachedPageOpen.lastErrorMessage = '';
@@ -134,6 +162,7 @@ async function startCachedPageRemoteVerification(pageId, requestId, options = {}
     }
 
     if (!userEdited) {
+      log('Remote differs from cache; no local edit detected → applying remote');
       state.current = {
         id: String(pageId || remoteSnapshot.id || ''),
         title: remoteSnapshot.title,
@@ -153,6 +182,7 @@ async function startCachedPageRemoteVerification(pageId, requestId, options = {}
       return true;
     }
 
+    log('Remote differs from cache; local edit detected → conflict');
     state.cachedPageOpen.remoteStatus = 'conflict';
     state.cachedPageOpen.saveBlockedReason = 'conflict';
     state.cachedPageOpen.remoteCandidate = {
@@ -231,7 +261,9 @@ async function openPageFromLastSavedCacheIfAvailable(pageId, promptToken) {
   syncPreviewMode({ immediate: true });
   setStatus(t('cachedOpenLoadedFromCacheChecking'));
   void maybePromptDraftRecoveryForCurrentPage(promptToken);
-  void startCachedPageRemoteVerification(pageId, requestId, { promptToken, source: 'load-page-cache-verify' });
+  // Delay remote verification ~2s to avoid API spam on rapid navigation and give
+  // the user a moment to start editing before conflict detection fires
+  scheduleCachedPageRemoteVerification(pageId, requestId, { promptToken, source: 'load-page-cache-verify' });
   return true;
 }
 
@@ -251,6 +283,7 @@ async function retryCurrentPageRemoteVerification() {
     return false;
   }
   if (!canRetryCurrentPageRemoteVerification()) return false;
+  cancelCachedPageRemoteVerification();
   const requestId = createCachedPageOpenRequestId(pageId);
   state.cachedPageOpen.pageId = pageId;
   state.cachedPageOpen.openRequestId = requestId;

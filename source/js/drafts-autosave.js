@@ -1,4 +1,61 @@
 function draftKeyForPage(pageId = '') { return pageId ? `page:${pageId}` : `unsaved:${state.drafts.unsavedId}`; }
+
+function writeEmergencyDraft() {
+  try {
+    if (state.blank || !state.current.id || !state.isAdmin || !state.dirty) return;
+    updateCurrentFromInputs();
+    const snapshot = currentSnapshotFromState();
+    if (sameSnapshot(snapshot, currentBaselineSnapshot())) return;
+    if (!hasAnyDraftContent(snapshot)) return;
+    const record = { pageId: state.current.id, title: snapshot.title, description: snapshot.description, html: snapshot.html, signature: snapshotSignature(snapshot), savedAt: Date.now() };
+    localStorage.setItem(LS.emergencyDraft, JSON.stringify(record));
+  } catch (_) {}
+}
+
+function clearEmergencyDraft() {
+  try { localStorage.removeItem(LS.emergencyDraft); } catch (_) {}
+}
+
+function clearEmergencyDraftForPage(pageId) {
+  try {
+    const raw = localStorage.getItem(LS.emergencyDraft);
+    if (!raw) return;
+    const rec = JSON.parse(raw);
+    if (rec && String(rec.pageId || '') === String(pageId || '')) localStorage.removeItem(LS.emergencyDraft);
+  } catch (_) {}
+}
+
+async function applyEmergencyDraftIfRelevant() {
+  try {
+    const raw = localStorage.getItem(LS.emergencyDraft);
+    if (!raw) return;
+    const record = JSON.parse(raw);
+    if (!record || !record.pageId) { clearEmergencyDraft(); return; }
+    if (Date.now() - Number(record.savedAt || 0) > 3600000) { clearEmergencyDraft(); return; }
+    const pageId = String(record.pageId || '');
+    // Discard if emergency draft is from before the last save for this page
+    const pageMeta = getMetaMap()[pageId] || {};
+    const lastSavedAt = Number(pageMeta.lastSavedAt || 0);
+    if (lastSavedAt && Number(record.savedAt || 0) <= lastSavedAt) { clearEmergencyDraft(); return; }
+    const signature = String(record.signature || snapshotSignature(record));
+    const key = draftKeyForPage(pageId);
+    const existing = state.drafts.byKey[key];
+    if (existing) {
+      const existingSig = existing.signature || snapshotSignature(existing);
+      const existingAt = Number(existing.updatedAt || 0);
+      if (existingSig === signature || existingAt >= Number(record.savedAt || 0)) { clearEmergencyDraft(); return; }
+    }
+    const now = Date.now();
+    const newRecord = { id: key, key, pageId, unsavedId: '', title: String(record.title || ''), description: String(record.description || ''), html: String(record.html || ''), signature, updatedAt: Number(record.savedAt || now), baseSavedAt: 0 };
+    if (state.db) { try { await txPut('drafts', newRecord); } catch (_) {} }
+    state.drafts.byKey[key] = newRecord;
+    state.drafts.lastAutosaveAtByKey[key] = newRecord.updatedAt;
+    clearDismissedRecovery(key);
+    clearEmergencyDraft();
+  } catch (_) {
+    clearEmergencyDraft();
+  }
+}
 function draftSnapshotFromRecord(record) {
   return {
     title: String(record?.title || ''),

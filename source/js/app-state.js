@@ -25,7 +25,8 @@ const state = {
     saveBlockedReason: '',
     remoteCandidate: null,
     lastErrorMessage: '',
-    verifiedAt: 0
+    verifiedAt: 0,
+    remoteVerificationTimer: null
   },
   externalSync: {
     enabled: true, automaticEnabled: false, checking: false, timer: null, intervalMs: 600000, minCooldownMs: 600000, lastCheckedAt: 0, lastErrorAt: 0, lastErrorMessage: '',

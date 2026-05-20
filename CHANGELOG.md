@@ -1,3 +1,32 @@
+## [8.14.1] - 2026-05-20
+
+### Fixed
+
+* Added ~2-second delay before automatic remote verification after cached page open, preventing API spam when navigating rapidly between cached pages and giving the user time to start editing before conflict detection fires.
+* Cancellation of pending remote verification timer when navigating to another page, creating a new page, showing blank page, or completing a save — stale timers no longer fire.
+* Moved `savePageContentCacheSafe` inside the active-request guard so stale remote results from a previous page can no longer update the Last Saved Cache for a page the user has already left.
+* Added `state.dirty` as a conservative fast-path in `hasUserEditedSinceCachedOpen`: if the dirty flag is set for any reason, conflict is preferred over silent remote apply.
+* Added discrete `log()` output when a stale remote verification is skipped and when the conflict/apply decision is made.
+* Added emergency draft in `localStorage` (`fibery-pro-editor.emergencyDraft`) written synchronously on `pagehide`, so F5/reload can no longer silently lose unsaved edits even if the async IndexedDB write did not complete before the page unloaded.
+* On startup, `applyEmergencyDraftIfRelevant` merges the emergency draft into IndexedDB drafts when it is fresher than the stored draft and post-dates the last save, making draft recovery reliable after F5/reload.
+* `markCurrentPageRemoteVerified` now cancels any pending verification timer immediately, preventing a redundant API call after a manual save resolves the page state.
+
+### Technical adjustments
+
+* Added `cancelCachedPageRemoteVerification` and `scheduleCachedPageRemoteVerification` helpers to manage the deferred verification timer via `state.cachedPageOpen.remoteVerificationTimer`.
+* `resetCachedPageOpenState` calls `cancelCachedPageRemoteVerification` so all navigation paths (page switch, new page, show blank) safely cancel the timer.
+* `retryCurrentPageRemoteVerification` (manual "Try verify again") calls `cancelCachedPageRemoteVerification` before issuing a new immediate request.
+* `clearEmergencyDraftForPage` is called after a successful `savePage` to ensure the emergency draft for the saved page is discarded immediately.
+* `writeEmergencyDraft` and `clearEmergencyDraft` functions added to `drafts-autosave.js`; `applyEmergencyDraftIfRelevant` is called once in `init()` after `loadDraftsCache()`.
+* Bumped app version metadata to `8.14.1` via manifest and regenerated single-file deploy artifact.
+
+### Validation
+
+* `npm run build:tmp`
+* `npm run validate:tmp`
+* `npm run build`
+* `npm run validate`
+
 ## [8.14.0] - 2026-05-19
 
 ### Added

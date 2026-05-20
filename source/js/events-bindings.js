@@ -180,6 +180,8 @@ function bindEvents() {
     clearPreviewDebounce();
     revokeLocalPreviewObjectUrl();
     if (typeof stopExternalSyncPolling === 'function') stopExternalSyncPolling();
+    // Synchronous localStorage write so F5/reload does not lose unsaved edits
+    if (typeof writeEmergencyDraft === 'function') writeEmergencyDraft();
   });
   syncBeforeUnloadWarningState();
   renderApiUsageSummary();
