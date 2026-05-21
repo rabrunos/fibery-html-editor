@@ -80,9 +80,9 @@ Canonical editing paths:
 ### JavaScript Module Rules
 
 * Use descriptive names that reflect functional area; no numeric prefixes for new JS modules.
-* Until the TypeScript/import migration in #63, the compatibility bundle still loads `source/js/` files through the `js` array in `source/config/manifest.json`; do not rely on filename order.
+* Until TypeScript migration lands, the compatibility bundle still loads `source/js/` files through the `js` array in `source/config/manifest.json`; do not rely on filename order.
 * `const` declaration order in the manifest must satisfy lexical dependencies: `app-version.js` -> `i18n-base.js` -> `i18n-en.js` / `i18n-pt-br.js` -> `storage-keys.js` -> `dom-refs.js` -> `app-state.js`.
-* Current `source/js/` files still share one bundled script scope. Do not convert them to per-file ES module imports piecemeal unless the task is explicitly part of #63.
+* Current `source/js/` files still share one bundled script scope. Do not convert them to per-file ES module imports piecemeal unless the task is an explicit TypeScript migration.
 * Function declarations are hoisted within the generated bundle scope and are order-independent.
 
 `index.html` is generated from these files.
@@ -95,18 +95,12 @@ Current state:
 * Vite bundles the app JavaScript from `source/app/main.js` through a manifest-backed virtual module in `vite.config.mjs`;
 * the generated Vite bundle is injected inline into the final `index.html`;
 * `scripts/validate-build.mjs` validates generated HTML and inline JavaScript syntax;
-* `source/config/manifest.json` is the canonical version source and still controls compatibility JS order until #63 replaces that bridge with real imports;
+* `source/config/manifest.json` is the canonical version source and still controls compatibility JS order until TypeScript migration replaces that bridge with real imports;
 * `package.json` currently exposes the local build/validation npm scripts.
 
-Roadmap state:
+Vite is active for JavaScript bundling. Do not claim TypeScript or `npm run verify` are active unless the repository actually contains them.
 
-* #61 is the foundation epic for Vite, TypeScript, and local validation improvements;
-* #62 introduced the Vite bundle pipeline while keeping generated `index.html` single-file delivery;
-* #63 plans TypeScript migration and central contracts;
-* #64 plans `npm run verify` as a local validation aggregator;
-* #50 should come after that foundation for external cached resources and smaller `index.html`.
-
-After #62, Vite is active for JavaScript bundling. Do not claim TypeScript or `npm run verify` are active unless the repository actually contains them. After #63 lands, update this file again so JS dependency/order guidance matches the new import-based source of truth.
+Roadmap and execution order live in GitHub Issues. Before suggesting next steps, check open issues and relevant comments.
 
 ## Build and Validation
 
@@ -130,7 +124,7 @@ Rules:
 * build must fail on unresolved placeholders, empty critical blocks, version inconsistency, or invalid structure;
 * validation must include JavaScript syntax check of the generated inline script;
 * do not commit app/build changes if applicable validation fails;
-* when #64 is implemented and `npm run verify` exists, prefer it as the local aggregator while still separating local validation from real Fibery testing.
+* when `npm run verify` exists in the repository, prefer it as the local aggregator while still separating local validation from real Fibery testing.
 
 Pure governance/documentation changes that do not touch app/runtime/build files do not require app build unless the prompt asks for it.
 
@@ -198,7 +192,7 @@ Use **IndexedDB** for structured local data:
 * local projects;
 * page-to-project links;
 * local update backups;
-* resource caches when #50 begins.
+* resource caches when external caching is implemented.
 
 Use **localStorage** only for simple preferences:
 
@@ -352,7 +346,6 @@ Rules:
 * include `index.html` whenever modular source files changed and the build regenerated it;
 * include `CHANGELOG.md` only when applicable by the changelog rules above;
 * include `package.json` only when version/tooling changes require it;
-* never include `.tmp/`;
 * never touch or stage pre-existing unrelated changes;
 * use a concise commit message;
 * never force-push.

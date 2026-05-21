@@ -37,13 +37,12 @@ Investigação obrigatória:
 
 * rodar `git status` antes de qualquer alteração;
 * identificar mudanças pré-existentes e não sobrescrevê-las sem necessidade;
-* confirmar a causa antes de alterar;
-* registrar hipóteses como hipóteses;
-* verificar se a funcionalidade ou regra já existe;
-* preferir o menor patch seguro;
-* não remover funcionalidades aprovadas;
+* confirmar a causa antes de alterar; registrar hipóteses como hipóteses;
+* verificar se a funcionalidade ou regra já existe antes de reescrever;
 * não mudar UX, layout ou ícones fora do escopo;
 * verificar referências, caminhos e dependências afetadas.
+
+Seguir `AGENTS.md` para regras completas de investigação e arquitetura.
 
 Escopo:
 
@@ -61,19 +60,15 @@ Não-objetivos:
 
 Requisitos técnicos:
 
-* manter o app como frontend único, sem backend e entregue ao Fibery como `index.html` único gerado;
-* editar `source/`, não `index.html` diretamente, salvo emergência justificada;
-* gerar `index.html` somente via build;
-* atualizar `source/config/manifest.json` quando houver novo módulo, mudança de ordem ou versão;
-* manter `package.json.version` alinhado com o manifest quando houver mudança de versão;
-* enquanto Vite/TypeScript não estiverem implementados, preservar ordem JS definida pelo manifest, não por nome de arquivo;
-* não afirmar que Vite, TypeScript ou `npm run verify` já existem se o repositório não mostrar isso;
+* app como frontend único, entregue como `index.html` gerado via build; editar `source/`, nunca `index.html` diretamente;
+* atualizar `source/config/manifest.json` quando houver novo módulo, mudança de ordem ou versão; manter `package.json.version` alinhado;
+* verificar no repositório antes de assumir que Vite, TypeScript ou `npm run verify` existem;
 * usar IndexedDB para dados estruturados e localStorage só para preferências simples;
 * não inventar endpoints, SDKs, formatos de resposta ou persistência Fibery;
-* preservar sidebar sem piscar, seleção estável, preview sem recarga desnecessária e estado local;
-* Fibery só deve mudar por ação explícita do usuário;
-* autosave deve continuar local e não chamar API do Fibery;
-* Tailwind browser/CDN, quando usado, deve entrar apenas no iframe de preview local, nunca no HTML salvo.
+* Fibery só muda por ação explícita do usuário; autosave é local e não chama a API do Fibery;
+* Tailwind browser/CDN entra apenas no iframe de preview local, nunca no HTML salvo.
+
+Seguir `AGENTS.md` para regras completas de arquitetura e persistência.
 
 Versionamento e changelog:
 
@@ -99,19 +94,9 @@ npm run validate
 
 Para mudanças somente documentais internas, build do app não é obrigatório, salvo se este prompt pedir.
 
-Também verificar, quando aplicável:
+Também verificar quando aplicável: sintaxe JS, IDs, eventos, i18n, versionamento propagado, changelog, IndexedDB/localStorage, regressões de UI e caminhos citados nos documentos. Detalhes completos em `AGENTS.md`.
 
-* sintaxe JS;
-* IDs e `getElementById`;
-* eventos e `addEventListener`;
-* i18n;
-* versionamento propagado;
-* changelog;
-* IndexedDB/localStorage;
-* regressões estáticas em sidebar, menus, editor, preview, histórico, autosave e Update App;
-* caminhos e links citados nos documentos alterados.
-
-Quando #64 estiver implementada e `npm run verify` existir, preferir esse comando como agregador local, sem misturar validação local com teste real no Fibery.
+Quando `npm run verify` existir no repositório, preferir esse comando como agregador local, sem misturar validação local com teste real no Fibery.
 
 Testes que dependem do Fibery real:
 
@@ -137,7 +122,6 @@ Git:
 * incluir `index.html` gerado quando `source/` mudar;
 * incluir `CHANGELOG.md` quando aplicável;
 * incluir `package.json` quando houver mudança de versão ou tooling;
-* nunca commitar `.tmp/`;
 * não incluir alterações pré-existentes não relacionadas;
 * não fazer push salvo pedido explícito;
 * respeitar "sem commit" e "sem push" se o usuário tiver pedido.

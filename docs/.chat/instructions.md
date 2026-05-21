@@ -78,21 +78,7 @@ Comandos atuais:
 * `npm run build`
 * `npm run validate`
 
-`.tmp/` é temporária, ignorada no Git e nunca deve ser commitada.
-
-## Estado Atual e Roadmap Técnico
-
-Estado atual: o projeto ainda usa build modular por manifest, scripts locais e módulos JS em `source/js/`. Não afirmar que Vite, TypeScript ou `npm run verify` já estão implementados se o repositório ainda não mostrar isso.
-
-Roadmap:
-
-* #61 - fundação de build, TypeScript e validação para IA;
-* #62 - migrar pipeline para Vite mantendo `index.html` único;
-* #63 - migrar JS para TypeScript com contratos centrais;
-* #64 - criar `npm run verify` local para Codex;
-* #50 - recursos externos cacheados e redução do `index.html`, depois da fundação #61.
-
-Enquanto #62/#63 não forem implementadas, prompts para Codex devem seguir a arquitetura atual de `source/js` + manifest.
+Não afirmar que Vite, TypeScript ou `npm run verify` já existem sem verificar no repositório. Roadmap, prioridades e status temporário ficam em GitHub Issues e comentários. Antes de recomendar próximos passos, consultar issues abertas.
 
 ## Fontes Fibery
 
@@ -100,7 +86,7 @@ Enquanto #62/#63 não forem implementadas, prompts para Codex devem seguir a arq
 
 ## Persistência e Conceitos Funcionais
 
-Manter frontend único, sem backend. Usar IndexedDB para dados estruturados: metadata de páginas, histórico manual, autosaves/drafts, snapshots, projetos locais, vínculos página-projeto, backups locais de update e, no futuro #50, recursos externos cacheados. Usar localStorage só para preferências simples.
+Manter frontend único, sem backend. Usar IndexedDB para dados estruturados: metadata de páginas, histórico manual, autosaves/drafts, snapshots, projetos locais, vínculos página-projeto, backups locais de update e recursos externos cacheados quando implementado. Usar localStorage só para preferências simples.
 
 Fibery só muda com ação explícita do usuário. Autosave é local e não chama API do Fibery. Histórico manual e autosaves/drafts são separados. Restore aplica no editor e marca dirty, sem salvar automaticamente. Preview em tempo real deve ser local. Tailwind browser/CDN entra só no iframe de preview local e nunca no HTML salvo. Projetos são locais. Fibery não fornece metadata confiável de updated/modified; conflitos externos usam assinatura/hash de título, descrição e HTML. Update App deve ser explícito, com validação e backup local antes de salvar no Fibery.
 
@@ -176,7 +162,7 @@ Seções permitidas: `### Added`, `### Fixed`, `### Technical adjustments`, `###
 
 Regra padrão para prompts: permitir commit quando o prompt autorizar e as validações aplicáveis passarem, mas não push. Push só quando o usuário pedir explicitamente. Se o usuário disser "sem commit" ou "sem push", respeite. Se validação aplicável falhar, Codex não pode commitar nem pushar.
 
-No prompt, peça `git status`, apenas arquivos relevantes, `CHANGELOG.md` quando aplicável, `index.html` gerado quando `source/` mudar, `package.json` quando houver mudança de versão ou tooling e nunca `.tmp/`.
+No prompt, peça `git status`, apenas arquivos relevantes, `CHANGELOG.md` quando aplicável, `index.html` gerado quando `source/` mudar e `package.json` quando houver mudança de versão ou tooling.
 
 ## Validação
 
@@ -186,7 +172,7 @@ Validações locais possíveis: build, validate-build, sintaxe JS, IDs, eventos,
 
 Dependem do Fibery real: login/sessão, permissões, `/api/ai-answer/pages/...`, runtime, `tailwind.css`, preview real e save/load/delete/admin. Nunca afirmar teste no Fibery sem ter testado lá.
 
-Quando #64 implementar `npm run verify`, prompts devem preferir esse comando como agregador local, mantendo build/validate e separação de testes reais.
+Quando `npm run verify` existir no repositório, prompts devem preferir esse comando como agregador local, mantendo build/validate e separação de testes reais.
 
 ## Estilo
 
