@@ -1,0 +1,65 @@
+function setCodeValue(value: string): void {
+  const next = value || '';
+  state.code.suppress = true;
+  if (state.code.editor) {
+    const editor = state.code.editor as MonacoSingleEditorInstance;
+    const model = editor.getModel();
+    if (model && model.getValue() !== next) model.setValue(next);
+  }
+  els.codeEditorFallback.value = next;
+  state.code.suppress = false;
+  updateCharCount();
+}
+
+function setCodeReadOnly(readOnly: boolean): void {
+  if (state.code.editor) (state.code.editor as MonacoSingleEditorInstance).updateOptions({ readOnly: !!readOnly });
+  els.codeEditorFallback.readOnly = !!readOnly;
+}
+
+function setupCodeEditor(): Promise<boolean> {
+  return new Promise((resolve) => {
+    const fallback = () => {
+      state.code.fallback = true;
+      els.codeEditor.classList.add('hidden');
+      els.codeEditorFallback.classList.remove('hidden');
+      els.codeEditorFallback.addEventListener('input', () => {
+        updateCurrentFromInputs();
+        updateCharCount();
+        markDirty(true);
+        scheduleLocalPreviewRefresh();
+      });
+      log('Monaco not available. Using textarea fallback.');
+      resolve(false);
+    };
+    if (!window.require) return fallback();
+    try {
+      window.require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' } });
+      window.require(['vs/editor/editor.main'], () => {
+        try {
+          state.code.editor = (monaco as MonacoGlobal).editor.create(els.codeEditor, {
+            value: '',
+            language: 'html',
+            theme: 'vs',
+            automaticLayout: true,
+            minimap: { enabled: true },
+            fontSize: 13,
+            lineHeight: 20,
+            tabSize: 2,
+            wordWrap: 'on',
+            scrollBeyondLastLine: false,
+            renderWhitespace: 'selection',
+            bracketPairColorization: { enabled: true }
+          });
+          (state.code.editor as MonacoSingleEditorInstance).onDidChangeModelContent(() => {
+            if (state.code.suppress) return;
+            updateCurrentFromInputs();
+            updateCharCount();
+            markDirty(true);
+            scheduleLocalPreviewRefresh();
+          });
+          resolve(true);
+        } catch (_) { fallback(); }
+      }, fallback);
+    } catch (_) { fallback(); }
+  });
+}

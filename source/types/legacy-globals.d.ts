@@ -63,7 +63,11 @@ declare global {
   type ProjectItemRecord = import('./storage').ProjectItemRecord;
   type ProjectRecord = import('./storage').ProjectRecord;
 
-  interface MonacoEditorModel { dispose(): void; }
+  interface MonacoEditorModel {
+    dispose(): void;
+    getValue(): string;
+    setValue(value: string): void;
+  }
   interface MonacoLineChange {
     originalStartLineNumber: number;
     originalEndLineNumber: number;
@@ -77,11 +81,22 @@ declare global {
     getLineChanges(): MonacoLineChange[] | null;
     layout(): void;
   }
+  interface MonacoSingleEditorInstance {
+    getModel(): MonacoEditorModel | null;
+    updateOptions(options: Record<string, unknown>): void;
+    onDidChangeModelContent(callback: () => void): void;
+  }
   interface MonacoEditorNamespace {
     createModel(value: string, language: string): MonacoEditorModel;
     createDiffEditor(element: HTMLElement, options: Record<string, unknown>): MonacoDiffEditorInstance;
+    create(element: HTMLElement, options: Record<string, unknown>): MonacoSingleEditorInstance;
   }
   interface MonacoGlobal { editor: MonacoEditorNamespace; }
+  interface AmdRequire {
+    (modules: string[], onLoad: () => void, onError?: () => void): void;
+    config(options: { paths: Record<string, string> }): void;
+  }
+  interface Window { require?: AmdRequire; }
 
   const els: {
     createProjectNameInput: HTMLInputElement;
@@ -161,6 +176,8 @@ declare global {
     previewPane: HTMLElement;
     previewStatus: HTMLElement;
     splitArea: HTMLElement;
+    codeEditor: HTMLElement;
+    codeEditorFallback: HTMLTextAreaElement;
     [key: string]: unknown;
   };
   const monaco: MonacoGlobal | undefined;
@@ -237,6 +254,8 @@ declare global {
   function renderCurrent(): void;
   function renderSidebarProjects(): void;
   function setCodeValue(value: string): void;
+  function setCodeReadOnly(readOnly: boolean): void;
+  function setupCodeEditor(): Promise<boolean>;
   function updateSidebarActiveState(): void;
   function showWorkspace(): void;
   function setPanelMode(mode: string, persist?: boolean): void;

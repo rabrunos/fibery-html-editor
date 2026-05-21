@@ -1,3 +1,29 @@
+## [8.34.0] - 2026-05-21
+
+### Technical adjustments
+
+* Migrated Monaco editor bridge to TypeScript (`editor-monaco.ts`), preserving `setCodeValue`, `setCodeReadOnly`, and `setupCodeEditor` globals.
+* Textarea fallback behavior fully preserved: `state.code.fallback`, `hidden` class toggle, `input` event wiring with `updateCurrentFromInputs`, `updateCharCount`, `markDirty(true)`, `scheduleLocalPreviewRefresh`, and log message `Monaco not available. Using textarea fallback.`.
+* Editor dirty/autosave/preview integration preserved: `onDidChangeModelContent` suppression guard, `updateCurrentFromInputs`, `markDirty(true)`, and `scheduleLocalPreviewRefresh` on content change.
+* Monaco CDN (`https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs`), all editor options (`language: 'html'`, `theme: 'vs'`, `automaticLayout`, `minimap`, `fontSize`, `lineHeight`, `tabSize`, `wordWrap`, `scrollBeyondLastLine`, `renderWhitespace`, `bracketPairColorization`), and `window.require` AMD loader pattern preserved unchanged.
+* Extended Monaco type interfaces in `legacy-globals.d.ts`: added `getValue`/`setValue` to `MonacoEditorModel`, new `MonacoSingleEditorInstance` interface, `create()` to `MonacoEditorNamespace`, `AmdRequire` interface, `Window.require` augmentation, and `codeEditor`/`codeEditorFallback` typed `els` entries.
+* Vite single-file build and shared bundle scope preserved; no `import`/`export` introduced in migrated file.
+
+### Notes
+
+* No intentional UX or runtime behavior changes.
+* `state.code.editor` cast to `MonacoSingleEditorInstance` where required by strict TypeScript; `monaco` cast to `MonacoGlobal` inside try/catch (undefined at runtime triggers catch → fallback).
+
+### Validation
+
+* `npm run typecheck`
+* `npm run build:tmp`
+* `npm run validate:tmp`
+* `npm run build`
+* `npm run validate`
+
+---
+
 ## [8.33.0] - 2026-05-21
 
 ### Technical adjustments
