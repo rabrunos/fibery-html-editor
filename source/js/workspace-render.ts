@@ -1,4 +1,4 @@
-function markDirty(value = true) {
+function markDirty(value = true): void {
   state.dirty = !!value;
   els.dirtyBadge.classList.toggle('hidden', !state.dirty);
   if (state.dirty) scheduleDraftAutosave();
@@ -6,9 +6,18 @@ function markDirty(value = true) {
   if (typeof renderExternalSyncNotice === 'function') renderExternalSyncNotice();
   if (typeof syncBeforeUnloadWarningState === 'function') syncBeforeUnloadWarningState();
 }
-function updateCharCount() { els.charCount.textContent = String(getCodeValue().length) + ' chars'; }
-function updateCurrentFromInputs() { state.current.title = els.titleInput.value; state.current.description = els.descriptionInput.value; state.current.html = getCodeValue(); }
-function showBlankPage() {
+
+function updateCharCount(): void {
+  els.charCount.textContent = String(getCodeValue().length) + ' chars';
+}
+
+function updateCurrentFromInputs(): void {
+  state.current.title = els.titleInput.value;
+  state.current.description = els.descriptionInput.value;
+  state.current.html = getCodeValue();
+}
+
+function showBlankPage(): void {
   clearPreviewDebounce();
   revokeLocalPreviewObjectUrl();
   state.preview.mode = 'real';
@@ -45,25 +54,28 @@ function showBlankPage() {
   syncSaveAvailabilityState();
   syncCachedOpenCheckNowButtonLabel();
 }
-function showWorkspace() {
+
+function showWorkspace(): void {
   state.blank = false;
   els.welcomeView.classList.add('hidden');
   els.pageHeader.classList.remove('hidden');
   els.splitArea.classList.remove('hidden');
-  window.setTimeout(() => { try { state.code.editor?.layout(); } catch (_) {} }, 0);
+  window.setTimeout(() => { try { (state.code.editor as { layout(): void } | null)?.layout(); } catch (_) {} }, 0);
 }
-function setPanelMode(mode, persist = true) {
-  state.panelMode = ['both', 'editor', 'preview'].includes(mode) ? mode : 'both';
+
+function setPanelMode(mode: string, persist = true): void {
+  state.panelMode = (['both', 'editor', 'preview'].includes(mode) ? mode : 'both') as PanelMode;
   document.body.classList.toggle('panel-editor-only', state.panelMode === 'editor');
   document.body.classList.toggle('panel-preview-only', state.panelMode === 'preview');
-  [els.quickBothBtn, els.quickEditorBtn, els.quickPreviewBtn].forEach(btn => btn && btn.classList.remove('bg-blue-50','text-blue-700'));
+  [els.quickBothBtn, els.quickEditorBtn, els.quickPreviewBtn].forEach(btn => btn && btn.classList.remove('bg-blue-50', 'text-blue-700'));
   const activeBtn = state.panelMode === 'editor' ? els.quickEditorBtn : state.panelMode === 'preview' ? els.quickPreviewBtn : els.quickBothBtn;
-  if (activeBtn) activeBtn.classList.add('bg-blue-50','text-blue-700');
+  if (activeBtn) activeBtn.classList.add('bg-blue-50', 'text-blue-700');
   if (persist) localStorage.setItem(LS.panelMode, state.panelMode);
   syncPreviewVisibilityState({ immediate: true });
-  window.setTimeout(() => { try { state.code.editor?.layout(); } catch (_) {} }, 0);
+  window.setTimeout(() => { try { (state.code.editor as { layout(): void } | null)?.layout(); } catch (_) {} }, 0);
 }
-function renderCurrent() {
+
+function renderCurrent(): void {
   showWorkspace();
   els.titleInput.value = state.current.title || '';
   els.descriptionInput.value = state.current.description || '';

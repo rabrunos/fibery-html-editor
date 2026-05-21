@@ -1,5 +1,5 @@
 {
-  "version": "8.32.0",
+  "version": "8.33.0",
   "bodyOpenTag": "<body class=\"h-screen overflow-hidden bg-gray-50 text-gray-900 antialiased\">",
   "template": "source/template/index.template.html",
   "appEntry": "source/app/main.ts",
@@ -63,7 +63,7 @@
     "source/js/history-storage.ts",
     "source/js/history-render.ts",
     "source/js/editor-monaco.js",
-    "source/js/workspace-render.js",
+    "source/js/workspace-render.ts",
     "source/js/preview-base.ts",
     "source/js/preview-local-document.ts",
     "source/js/preview-local-render.ts",
@@ -83,8 +83,8 @@
     "source/js/page-context-menu.js",
     "source/js/project-context-menu.js",
     "source/js/inline-rename.js",
-    "source/js/ui-focus-mode.js",
-    "source/js/ui-resize-split.js",
+    "source/js/ui-focus-mode.ts",
+    "source/js/ui-resize-split.ts",
     "source/js/settings-log.js",
     "source/js/events-bindings.js",
     "source/js/lifecycle-init.js"

@@ -2,6 +2,7 @@ import type { AppState } from './app';
 
 declare global {
   type ApiUsageCall = import('./app').ApiUsageCall;
+  type PanelMode = import('./app').PanelMode;
   type ApiUsageEntry = import('./app').ApiUsageEntry;
   type ApiUsageKind = import('./app').ApiUsageKind;
   type ApiUsageMeta = import('./app').ApiUsageMeta;
@@ -116,6 +117,19 @@ declare global {
     confirmOpenPreviewBtn: HTMLButtonElement;
     logPanel: HTMLElement;
     apiUsageSummaryBox: HTMLElement;
+    dirtyBadge: HTMLElement;
+    pageHeader: HTMLElement;
+    welcomeView: HTMLElement;
+    historyBtn: HTMLButtonElement;
+    deleteBtn: HTMLButtonElement;
+    updateAppBtn: HTMLButtonElement;
+    quickBothBtn: HTMLButtonElement;
+    quickEditorBtn: HTMLButtonElement;
+    quickPreviewBtn: HTMLButtonElement;
+    charCount: HTMLElement;
+    openViewMenuBtn: HTMLButtonElement;
+    dragOverlay: HTMLElement;
+    splitter: HTMLElement;
     historyModal: HTMLElement;
     historyList: HTMLElement;
     updateAppModal: HTMLElement;
@@ -222,6 +236,15 @@ declare global {
   function renderRealPreview(options?: RealPreviewRenderOptions): void;
   function renderCurrent(): void;
   function renderSidebarProjects(): void;
+  function setCodeValue(value: string): void;
+  function updateSidebarActiveState(): void;
+  function showWorkspace(): void;
+  function setPanelMode(mode: string, persist?: boolean): void;
+  function updateCharCount(): void;
+  function enterPreviewFocus(): void;
+  function exitPreviewFocus(): void;
+  function setupResize(): void;
+  function setSplit(pct: number): void;
   function openHistoryModal(): Promise<void>;
   function closeHistoryModal(): void;
   function historyRowHtml(row: HistoryRecord): string;

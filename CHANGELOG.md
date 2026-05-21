@@ -1,3 +1,27 @@
+## [8.33.0] - 2026-05-21
+
+### Technical adjustments
+
+* Migrated workspace layout files to TypeScript (`workspace-render.ts`, `ui-focus-mode.ts`, `ui-resize-split.ts`) preserving all runtime behavior: dirty state management, char count, panel mode switching, preview focus, and split resize with localStorage persistence.
+* Added 13 typed `els` properties (`dirtyBadge`, `pageHeader`, `welcomeView`, `historyBtn`, `deleteBtn`, `updateAppBtn`, `quickBothBtn`, `quickEditorBtn`, `quickPreviewBtn`, `charCount`, `openViewMenuBtn`, `dragOverlay`, `splitter`) and 9 global function declarations (`setCodeValue`, `updateSidebarActiveState`, `showWorkspace`, `setPanelMode`, `updateCharCount`, `enterPreviewFocus`, `exitPreviewFocus`, `setupResize`, `setSplit`) to `legacy-globals.d.ts`.
+* Updated compatibility manifest entries from `.js` to `.ts` for all three files, bumped app version to `8.33.0`, and regenerated the single-file deploy artifact.
+
+### Notes
+
+* No intentional UX or runtime behavior changes.
+* `state.code.editor` cast to `{ layout(): void } | null` where required by strict TypeScript; `PanelMode` narrowing via `as PanelMode` assertion.
+* Vite single-file build and shared bundle scope preserved; no `import`/`export` introduced in migrated files.
+
+### Validation
+
+* `npm run typecheck`
+* `npm run build:tmp`
+* `npm run validate:tmp`
+* `npm run build`
+* `npm run validate`
+
+---
+
 ## [8.32.0] - 2026-05-21
 
 ### Technical adjustments
