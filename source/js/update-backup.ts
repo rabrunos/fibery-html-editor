@@ -1,12 +1,19 @@
-async function createUpdateBackupRecord({ pageId, fromVersion, toVersion, title, description, html }) {
+async function createUpdateBackupRecord({
+  pageId,
+  fromVersion,
+  toVersion,
+  title,
+  description,
+  html
+}: CreateUpdateBackupOptions): Promise<UpdateBackupRecord> {
   if (!state.db) throw new Error('db-unavailable');
   const createdAt = Date.now();
-  const snapshot = {
+  const snapshot: PageSnapshot = {
     title: String(title || ''),
     description: String(description || ''),
     html: String(html || '')
   };
-  const record = {
+  const record: UpdateBackupRecord = {
     key: `update-backup:${pageId}:${createdAt}:${Math.random().toString(36).slice(2, 8)}`,
     kind: 'update-backup',
     source: 'update-backup',

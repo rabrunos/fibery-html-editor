@@ -1,17 +1,17 @@
 let updateBackupsLoadToken = 0;
 
-function isSafeUpdateBackupRecord(record = {}) {
+function isSafeUpdateBackupRecord(record: UpdateBackupListRecord = {}): boolean {
   const kind = String(record.kind || '').trim();
   const source = String(record.source || '').trim();
   const action = String(record.action || '').trim();
   return kind === 'update-backup' || source === 'update-backup' || action === 'update-backup';
 }
 
-function getUpdateBackupTargetPageId() {
+function getUpdateBackupTargetPageId(): string {
   return String(state.appPageId || state.current.id || '');
 }
 
-function extractVersionFromUpdateBackupHtml(record = {}) {
+function extractVersionFromUpdateBackupHtml(record: UpdateBackupListRecord = {}): string {
   const source = String(record.html || '');
   const metaVersion = extractRemoteVersionFromHtml(source);
   const metaSemver = parseSemverSimple(metaVersion);
@@ -21,7 +21,7 @@ function extractVersionFromUpdateBackupHtml(record = {}) {
   return appSemver ? appSemver.raw : '';
 }
 
-function formatUpdateBackupVersionLabel(record = {}) {
+function formatUpdateBackupVersionLabel(record: UpdateBackupListRecord = {}): string {
   const fromVersion = String(record.fromVersion || '').trim();
   const toVersion = String(record.toVersion || '').trim();
   if (fromVersion && toVersion) return `${fromVersion} -> ${toVersion}`;
@@ -31,24 +31,24 @@ function formatUpdateBackupVersionLabel(record = {}) {
   return t('updateBackupVersionUnknown');
 }
 
-function formatUpdateBackupCreatedAt(createdAt) {
+function formatUpdateBackupCreatedAt(createdAt: unknown): string {
   const value = Number(createdAt || 0);
   if (!Number.isFinite(value) || value <= 0) return t('updateBackupDateUnknown');
   return new Date(value).toLocaleString(state.lang === 'pt-BR' ? 'pt-BR' : 'en-US');
 }
 
-async function getUpdateBackupRecordByKey(key = '') {
+async function getUpdateBackupRecordByKey(key: string = ''): Promise<UpdateBackupListRecord | null> {
   const normalizedKey = String(key || '').trim();
   if (!normalizedKey) return null;
-  const cached = (state.update.backups || []).find(row => String(row.key || '') === normalizedKey);
+  const cached = (state.update.backups || []).find((row) => String(row.key || '') === normalizedKey);
   if (cached) return cached;
   const pageId = getUpdateBackupTargetPageId();
   if (!state.db || !pageId) return null;
-  const rows = await getHistory(pageId, 'all');
-  return rows.find(row => String(row.key || '') === normalizedKey && isSafeUpdateBackupRecord(row)) || null;
+  const rows = await getHistory(pageId, 'all') as unknown as UpdateBackupListRecord[];
+  return rows.find((row) => String(row.key || '') === normalizedKey && isSafeUpdateBackupRecord(row)) || null;
 }
 
-async function loadUpdateBackupList() {
+async function loadUpdateBackupList(): Promise<void> {
   const pageId = getUpdateBackupTargetPageId();
   const loadToken = ++updateBackupsLoadToken;
   state.update.backupsLoading = true;
@@ -58,14 +58,14 @@ async function loadUpdateBackupList() {
       state.update.backups = [];
       return;
     }
-    const rows = await getHistory(pageId, 'all');
+    const rows = await getHistory(pageId, 'all') as unknown as UpdateBackupListRecord[];
     if (loadToken !== updateBackupsLoadToken) return;
     state.update.backups = rows
-      .filter(row => isSafeUpdateBackupRecord(row) && String(row.pageId || '') === pageId)
+      .filter((row) => isSafeUpdateBackupRecord(row) && String(row.pageId || '') === pageId)
       .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
   } catch (err) {
     state.update.backups = [];
-    log(`${t('updateBackupsLoadFailed')}: ${String(err?.message || err || '')}`);
+    log(`${t('updateBackupsLoadFailed')}: ${String((err as { message?: unknown })?.message || err || '')}`);
   } finally {
     if (loadToken !== updateBackupsLoadToken) return;
     state.update.backupsLoading = false;
@@ -73,7 +73,7 @@ async function loadUpdateBackupList() {
   }
 }
 
-function renderUpdateBackupList() {
+function renderUpdateBackupList(): void {
   if (!els.updateBackupsBox) return;
   els.updateBackupsBox.textContent = '';
   if (state.update.backupsLoading) {

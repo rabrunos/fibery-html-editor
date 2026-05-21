@@ -9,6 +9,58 @@ export interface SemverSimple {
   raw: string;
 }
 
+export interface UpdateRemoteConfig {
+  indexHtmlUrl: string;
+  changelogUrl: string;
+}
+
+export interface FetchRemoteTextOptions {
+  operation?: string;
+  source?: string;
+  automatic?: boolean;
+}
+
+export type UpdateCheckStatus =
+  | 'checking'
+  | 'latest'
+  | 'available'
+  | 'local-newer'
+  | 'invalid'
+  | 'error'
+  | 'applying';
+
+export type UpdateValidationReason =
+  | 'empty'
+  | 'too-short'
+  | 'not-found'
+  | 'not-html'
+  | 'not-editor'
+  | 'missing-meta-version'
+  | 'invalid-meta-version'
+  | 'missing-app-version'
+  | 'version-mismatch'
+  | 'missing-window-version-assign'
+  | 'missing-dataset-version-assign'
+  | 'invalid-local-version'
+  | 'remote-not-newer';
+
+export interface RemoteUpdateValidationFailure {
+  ok: false;
+  reason: UpdateValidationReason;
+  metaVersion?: string;
+  appVersionLiteral?: string;
+}
+
+export interface RemoteUpdateValidationSuccess {
+  ok: true;
+  remoteVersion: string;
+  localVersion: string;
+}
+
+export type RemoteUpdateValidationResult =
+  | RemoteUpdateValidationFailure
+  | RemoteUpdateValidationSuccess;
+
 export interface PageSnapshot {
   title: string;
   description: string;

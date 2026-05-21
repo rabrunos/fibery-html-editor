@@ -1,17 +1,24 @@
-function extractRemoteVersionFromHtml(html = '') {
+function extractRemoteVersionFromHtml(html: string = ''): string {
   const source = String(html || '');
   const match = source.match(/<meta\b[^>]*name=["']fibery-html-editor-version["'][^>]*content=["']([^"']+)["'][^>]*>/i)
     || source.match(/<meta\b[^>]*content=["']([^"']+)["'][^>]*name=["']fibery-html-editor-version["'][^>]*>/i);
   return String(match?.[1] || '').trim();
 }
-async function fetchRemoteText(url, options = {}) {
-  return withApiUsage({ kind: 'github-remote', operation: options.operation || 'fetchRemoteText', source: options.source || 'update-app', automatic: !!options.automatic }, async () => {
+
+async function fetchRemoteText(url: string, options: FetchRemoteTextOptions = {}): Promise<string> {
+  return withApiUsage({
+    kind: 'github-remote',
+    operation: options.operation || 'fetchRemoteText',
+    source: options.source || 'update-app',
+    automatic: !!options.automatic
+  }, async () => {
     const response = await fetch(url, { cache: 'no-store' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return response.text();
   });
 }
-function updateStatusMessage() {
+
+function updateStatusMessage(): string {
   if (state.update.rollbacking) return t('updateRollbackRestoring');
   if (state.update.status === 'checking') return t('updateChecking');
   if (state.update.status === 'applying') return t('updateApplying');
@@ -22,17 +29,20 @@ function updateStatusMessage() {
   if (state.update.status === 'error') return t('updateStatusError');
   return t('updateNotChecked');
 }
-async function checkRemoteUpdateInfo() {
+
+async function checkRemoteUpdateInfo(): Promise<void> {
   if (state.update.checking || state.update.applying || state.update.rollbacking) return;
   state.update.checking = true;
   state.update.status = 'checking';
   state.update.remoteVersion = '';
   state.update.changelogLoading = true;
   renderUpdateAppPanel();
-  const [indexResult, changelogResult] = await Promise.allSettled([
+
+  const [indexResult, changelogResult]: [PromiseSettledResult<string>, PromiseSettledResult<string>] = await Promise.allSettled([
     fetchRemoteText(UPDATE_REMOTE.indexHtmlUrl, { operation: 'updateIndex', source: 'update-app' }),
     fetchRemoteText(UPDATE_REMOTE.changelogUrl, { operation: 'updateChangelog', source: 'update-app' })
-  ]);
+  ]) as [PromiseSettledResult<string>, PromiseSettledResult<string>];
+
   if (indexResult.status === 'fulfilled') {
     const remoteVersionRaw = extractRemoteVersionFromHtml(indexResult.value);
     const localSemver = parseSemverSimple(APP_VERSION);
@@ -52,6 +62,7 @@ async function checkRemoteUpdateInfo() {
     state.update.status = 'error';
     log(`${t('updateCheckErrorLog')}: ${String(indexResult.reason?.message || indexResult.reason || '')}`);
   }
+
   if (changelogResult.status === 'fulfilled') {
     const remoteChangelog = String(changelogResult.value || '').trim();
     state.update.remoteChangelog = remoteChangelog || t('updateChangelogEmpty');
@@ -59,6 +70,7 @@ async function checkRemoteUpdateInfo() {
     state.update.remoteChangelog = '';
     log(`${t('updateChangelogErrorLog')}: ${String(changelogResult.reason?.message || changelogResult.reason || '')}`);
   }
+
   state.update.changelogLoading = false;
   state.update.checking = false;
   renderUpdateAppPanel();

@@ -1,3 +1,27 @@
+## [8.29.0] - 2026-05-21
+
+### Technical adjustments
+
+* Migrated Update App remote config/check modules to TypeScript (`update-remote-config.ts`, `update-remote-check.ts`) while preserving remote URL sources, `fetchRemoteText` behavior (`cache: 'no-store'`), `withApiUsage` metadata (`kind: 'github-remote'`, `operation`, `source`, `automatic`), and `Promise.allSettled` update-check flow.
+* Migrated remote Update App HTML validation module to TypeScript (`update-validate-html.ts`) while preserving version extraction, semver comparisons, and all existing validation reasons/guards before apply.
+* Migrated Update App backup creation/listing modules to TypeScript (`update-backup.ts`, `update-backup-list.ts`) while preserving local backup record shape, safety filters, ordering by `createdAt` desc, localized date/version labels, and restore button dataset wiring.
+* Added central update-related contracts to `source/types/` and updated legacy global declarations required for TypeScript modules to interoperate with remaining JavaScript update modules in shared bundle scope.
+* Updated compatibility manifest entries from `.js` to `.ts` for the migrated Update App modules and bumped app version metadata to `8.29.0`.
+* Regenerated the single-file deploy artifact with the Vite compatibility bridge unchanged.
+
+### Notes
+
+* No intentional UX or runtime behavior changes.
+* Apply/rollback/changelog-render/panel-render modules remain in JavaScript in this migration part by design.
+
+### Validation
+
+* `npm run typecheck`
+* `npm run build:tmp`
+* `npm run validate:tmp`
+* `npm run build`
+* `npm run validate`
+
 ## [8.28.1] - 2026-05-21
 
 ### Fixed

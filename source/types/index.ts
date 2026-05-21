@@ -18,6 +18,11 @@ export type {
   ConflictCandidate,
   ConflictResolution,
   ContentSignature,
+  FetchRemoteTextOptions,
+  UpdateCheckStatus,
+  UpdateRemoteConfig,
+  UpdateValidationReason,
+  RemoteUpdateValidationResult,
   LocalPreviewDocumentOptions,
   LocalPreviewMessagePayload,
   LocalPreviewMessageType,
@@ -62,6 +67,8 @@ export type {
   PageMetaRecord,
   ProjectItemRecord,
   ProjectRecord,
+  CreateUpdateBackupOptions,
+  UpdateBackupListRecord,
   UpdateBackupKind,
   UpdateBackupRecord
 } from './storage';

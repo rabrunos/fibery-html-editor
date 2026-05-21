@@ -4,6 +4,7 @@ import type {
   PreviewMode,
   RemoteStatus,
   SaveBlockedReason,
+  UpdateCheckStatus,
   UnsavedTransitionChoice
 } from './domain';
 import type {
@@ -11,12 +12,13 @@ import type {
   PageContentCacheRecord,
   PageMetaRecord,
   ProjectItemRecord,
-  ProjectRecord
+  ProjectRecord,
+  UpdateBackupListRecord
 } from './storage';
 
 export type AppLanguage = 'en' | 'pt-BR';
 export type PanelMode = 'both' | 'editor' | 'preview';
-export type UpdateStatus = 'idle' | 'checking' | 'latest' | 'available' | 'local-newer' | 'invalid' | 'error' | 'applying';
+export type UpdateStatus = 'idle' | UpdateCheckStatus;
 export type ExternalSyncStatus = 'idle' | 'checking' | 'current' | 'changed' | 'error';
 export type ApiUsageKind = 'fibery-api' | 'fibery-preview' | 'github-remote' | 'unknown';
 export type ApiUsageOperation = string;
@@ -127,7 +129,7 @@ export interface AppState {
     remoteChangelog: string;
     changelogLoading: boolean;
     backupsLoading: boolean;
-    backups: unknown[];
+    backups: UpdateBackupListRecord[];
   };
   preview: {
     mode: PreviewMode;

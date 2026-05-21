@@ -62,6 +62,16 @@ export interface UpdateBackupRecord extends PageSnapshot {
   createdAt: number;
 }
 
+export interface CreateUpdateBackupOptions extends PageSnapshot {
+  pageId: PageId;
+  fromVersion: string;
+  toVersion: string;
+}
+
+export type UpdateBackupListRecord = Partial<UpdateBackupRecord> & Partial<HistoryRecord> & {
+  [key: string]: unknown;
+};
+
 export interface PageMetaRecord {
   id: PageId;
   title?: string;
