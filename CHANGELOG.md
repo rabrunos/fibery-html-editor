@@ -1,3 +1,26 @@
+## [8.17.0] - 2026-05-21
+
+### Technical adjustments
+
+* Added TypeScript as the foundation for gradual migration without enabling full legacy JavaScript checking yet.
+* Added central app, domain, storage, and future resource contracts covering snapshots, Fibery pages, save payloads, cache records, drafts, history, update backups, preview modes, conflicts, and resource records.
+* Renamed the Vite app entry to `source/app/main.ts` and kept the manifest-backed virtual bundle bridge for the existing shared-scope JavaScript.
+* Added `npm run typecheck` for local TypeScript validation while preserving the existing build and validation commands.
+* Bumped app version metadata to `8.17.0` via manifest and `package.json`, and regenerated the single-file deploy artifact.
+
+### Notes
+
+* No intentional UX or runtime behavior changes.
+* The final Fibery deployment remains a single generated `index.html` with the Vite bundle inlined.
+
+### Validation
+
+* `npm run typecheck`
+* `npm run build:tmp`
+* `npm run validate:tmp`
+* `npm run build`
+* `npm run validate`
+
 ## [8.16.0] - 2026-05-21
 
 ### Technical adjustments

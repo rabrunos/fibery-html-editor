@@ -1,8 +1,8 @@
 {
-  "version": "8.16.0",
+  "version": "8.17.0",
   "bodyOpenTag": "<body class=\"h-screen overflow-hidden bg-gray-50 text-gray-900 antialiased\">",
   "template": "source/template/index.template.html",
-  "appEntry": "source/app/main.js",
+  "appEntry": "source/app/main.ts",
   "html": [
     "source/html/layout-main.html",
     "source/html/context-menus.html",

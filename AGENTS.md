@@ -74,16 +74,24 @@ Canonical editing paths:
 * `source/html/` - body/layout/modals/panels sections;
 * `source/css/` - style modules;
 * `source/js/` - JavaScript modules by functional area;
-* `source/app/main.js` - Vite app entry for the JavaScript bundle;
+* `source/app/main.ts` - Vite app entry for the JavaScript bundle;
+* `source/types/` - TypeScript contracts for app, domain, storage, and future resources;
 * `source/config/manifest.json` - version and deterministic assembly order.
 
 ### JavaScript Module Rules
 
 * Use descriptive names that reflect functional area; no numeric prefixes for new JS modules.
-* Until TypeScript migration lands, the compatibility bundle still loads `source/js/` files through the `js` array in `source/config/manifest.json`; do not rely on filename order.
+* During gradual TypeScript migration, the compatibility bundle still loads legacy `source/js/` files through the `js` array in `source/config/manifest.json`; do not rely on filename order.
 * `const` declaration order in the manifest must satisfy lexical dependencies: `app-version.js` -> `i18n-base.js` -> `i18n-en.js` / `i18n-pt-br.js` -> `storage-keys.js` -> `dom-refs.js` -> `app-state.js`.
 * Current `source/js/` files still share one bundled script scope. Do not convert them to per-file ES module imports piecemeal unless the task is an explicit TypeScript migration.
 * Function declarations are hoisted within the generated bundle scope and are order-independent.
+
+### TypeScript Rules
+
+* TypeScript is configured for gradual migration through `tsconfig.json` and `npm run typecheck`.
+* `source/types/` holds central contracts. Prefer importing/exporting these contracts when migrating modules instead of inventing duplicate shapes.
+* Legacy `source/js/` files are not globally checked by TypeScript yet. Do not enable `checkJs` or migrate broad UI/runtime modules unless the task scope explicitly calls for that lot.
+* Keep TypeScript changes small and biased toward pure utilities, storage contracts, and narrow module migrations before touching UI/render/events.
 
 `index.html` is generated from these files.
 
@@ -92,13 +100,14 @@ Canonical editing paths:
 Current state:
 
 * `scripts/build.mjs` assembles `index.html` from `source/config/manifest.json`, `source/template/index.template.html`, `source/html/`, and `source/css/`;
-* Vite bundles the app JavaScript from `source/app/main.js` through a manifest-backed virtual module in `vite.config.mjs`;
+* Vite bundles the app JavaScript from `source/app/main.ts` through a manifest-backed virtual module in `vite.config.mjs`;
 * the generated Vite bundle is injected inline into the final `index.html`;
+* TypeScript is configured with central contracts in `source/types/` and a local `npm run typecheck` script;
 * `scripts/validate-build.mjs` validates generated HTML and inline JavaScript syntax;
-* `source/config/manifest.json` is the canonical version source and still controls compatibility JS order until TypeScript migration replaces that bridge with real imports;
+* `source/config/manifest.json` is the canonical version source and still controls compatibility JS order until later TypeScript migration lots replace that bridge with real imports;
 * `package.json` currently exposes the local build/validation npm scripts.
 
-Vite is active for JavaScript bundling. Do not claim TypeScript or `npm run verify` are active unless the repository actually contains them.
+Vite and TypeScript are active for build/typecheck foundations. Do not claim the app is fully migrated to TypeScript, and do not claim `npm run verify` is active unless the repository actually contains it.
 
 Roadmap and execution order live in GitHub Issues. Before suggesting next steps, check open issues and relevant comments.
 
@@ -110,6 +119,7 @@ Primary commands:
 * `node scripts/validate-build.mjs .tmp/index.generated.html --baseline index.html`
 * `node scripts/build.mjs --out index.html`
 * `node scripts/validate-build.mjs index.html`
+* `npm run typecheck`
 
 Optional npm shortcuts:
 
