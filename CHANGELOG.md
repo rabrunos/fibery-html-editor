@@ -1,3 +1,25 @@
+## [8.21.0] - 2026-05-21
+
+### Technical adjustments
+
+* Migrated local project storage helpers to TypeScript while preserving project creation, collapse state, page links, moves, removals, renames, deletion, and IndexedDB loading behavior.
+* Reused central project storage contracts for project and project-item records where safe.
+* Preserved existing `projects` and `projectItems` stores, project/item key formats, pinned-page ordering, sidebar refresh calls, and project status messages.
+* Bumped app version metadata to `8.21.0` via manifest and `package.json`, and regenerated the single-file deploy artifact.
+
+### Notes
+
+* No intentional UX or runtime behavior changes.
+* The final Fibery deployment remains a single generated `index.html` with the Vite bundle inlined.
+
+### Validation
+
+* `npm run typecheck`
+* `npm run build:tmp`
+* `npm run validate:tmp`
+* `npm run build`
+* `npm run validate`
+
 ## [8.20.0] - 2026-05-21
 
 ### Technical adjustments

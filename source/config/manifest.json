@@ -1,5 +1,5 @@
 {
-  "version": "8.20.0",
+  "version": "8.21.0",
   "bodyOpenTag": "<body class=\"h-screen overflow-hidden bg-gray-50 text-gray-900 antialiased\">",
   "template": "source/template/index.template.html",
   "appEntry": "source/app/main.ts",
@@ -69,7 +69,7 @@
     "source/js/preview-local-render.js",
     "source/js/preview-real-render.js",
     "source/js/page-crud-save-load.js",
-    "source/js/projects-storage.js",
+    "source/js/projects-storage.ts",
     "source/js/projects-render.js",
     "source/js/projects-actions.js",
     "source/js/sidebar-pages-data.js",

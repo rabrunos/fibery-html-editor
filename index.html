@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.20.0" />
+  <meta name="fibery-html-editor-version" content="8.21.0" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -595,7 +595,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 
 (function() {
 	//#region \0virtual:fibery-html-editor/manifest-js
-	const APP_VERSION = "8.20.0";
+	const APP_VERSION = "8.21.0";
 	window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 	document.documentElement.dataset.appVersion = APP_VERSION;
 	var UPDATE_REMOTE = Object.freeze({
@@ -5466,7 +5466,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		state.projects.itemsByProject = itemsByProject;
 	}
 	function projectName(projectId) {
-		return (state.projects.rows || []).find((p) => p.id === projectId)?.name || t("untitledProject");
+		return (state.projects.rows || []).find((project) => project.id === projectId)?.name || t("untitledProject");
 	}
 	async function createProject(nameOverride = "") {
 		const name = String(nameOverride || els.createProjectNameInput.value || "").trim();
@@ -5491,7 +5491,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		return project;
 	}
 	async function toggleProject(projectId) {
-		const project = (state.projects.rows || []).find((p) => p.id === projectId);
+		const project = (state.projects.rows || []).find((row) => row.id === projectId);
 		if (!project) return;
 		project.collapsed = !project.collapsed;
 		project.updatedAt = Date.now();
@@ -5570,7 +5570,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			setStatus(t("renameEmptyIgnored"));
 			return;
 		}
-		const project = (state.projects.rows || []).find((p) => p.id === projectId);
+		const project = (state.projects.rows || []).find((row) => row.id === projectId);
 		if (!project) return;
 		project.name = name;
 		project.updatedAt = Date.now();
@@ -5578,10 +5578,10 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		renderSidebarProjects();
 		setStatus(t("projectRenamed"));
 	}
-	async function deleteProject(projectId, projectName) {
+	async function deleteProject(projectId, projectNameText) {
 		if (!await confirmAction({
 			title: t("deleteProjectTitle"),
-			message: `${t("deleteProjectMessage")}\n\n${projectName || ""}`,
+			message: `${t("deleteProjectMessage")}\n\n${projectNameText || ""}`,
 			okText: t("deleteProject"),
 			showPreview: false
 		})) return;
@@ -5601,7 +5601,8 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			state.projects.items = (await txGetAll("projectItems")).filter((item) => item?.projectId && item?.pageId);
 			rebuildProjectMaps();
 		} catch (err) {
-			log(err.message || String(err));
+			const message = typeof err === "object" && err !== null && "message" in err ? err.message : void 0;
+			log(String(message || err));
 		}
 	}
 	function getPageSnapshot(pageId) {
