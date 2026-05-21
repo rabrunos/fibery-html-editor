@@ -80,7 +80,7 @@ function localPreviewStatusLabel({ usesTailwind = false }: LocalPreviewStatusOpt
 }
 
 function previewHeaderStatusLabel(): string {
-  if (state.blank) return 'â€”';
+  if (state.blank) return '—';
   return String(state.current.title || state.current.id || t('preview'));
 }
 

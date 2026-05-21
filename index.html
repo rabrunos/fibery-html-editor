@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.28.0" />
+  <meta name="fibery-html-editor-version" content="8.28.1" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -595,7 +595,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 
 (function() {
 	//#region \0virtual:fibery-html-editor/manifest-js
-	const APP_VERSION = "8.28.0";
+	const APP_VERSION = "8.28.1";
 	window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 	document.documentElement.dataset.appVersion = APP_VERSION;
 	var UPDATE_REMOTE = Object.freeze({
@@ -4980,7 +4980,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		return usesTailwind ? t("localPreviewStatusTailwind") : t("localPreviewStatus");
 	}
 	function previewHeaderStatusLabel() {
-		if (state.blank) return "â€”";
+		if (state.blank) return "—";
 		return String(state.current.title || state.current.id || t("preview"));
 	}
 	function updatePreviewHeaderStatus() {
@@ -5141,7 +5141,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		if (!state.current.id) {
 			els.previewFrame.removeAttribute("src");
 			els.previewFrame.srcdoc = "<div style=\"font-family:system-ui;padding:24px;color:#6b7280;\">" + t("noPage") + "</div>";
-			els.previewStatus.textContent = "â€”";
+			els.previewStatus.textContent = "—";
 			return;
 		}
 		const url = viewUrl(state.current.id);

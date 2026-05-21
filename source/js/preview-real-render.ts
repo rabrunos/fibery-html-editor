@@ -24,7 +24,7 @@ function renderRealPreview({ forceReload = false }: RealPreviewRenderOptions = {
   if (!state.current.id) {
     els.previewFrame.removeAttribute('src');
     els.previewFrame.srcdoc = '<div style="font-family:system-ui;padding:24px;color:#6b7280;">' + t('noPage') + '</div>';
-    els.previewStatus.textContent = 'â€”';
+    els.previewStatus.textContent = '—';
     return;
   }
   const url = viewUrl(state.current.id);

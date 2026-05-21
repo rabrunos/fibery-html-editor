@@ -1,3 +1,9 @@
+## [8.28.1] - 2026-05-21
+
+### Fixed
+
+* Fixed a mojibake fallback dash in preview status text after the TypeScript preview migration.
+
 ## [8.28.0] - 2026-05-21
 
 ### Technical adjustments
