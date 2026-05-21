@@ -42,5 +42,6 @@ const state: AppState = {
   panelMode: 'both', previewFocus: false, pageMeta: {},
   context: { pageId: '', pageTitle: '', projectId: '', createProjectTargetPageId: '' },
   drafts: { byKey: {}, autosaveTimer: null, autosaveIntervalMs: 60000, unsavedId: 'local-unsaved-main', lastAutosaveAtByKey: {}, promptToken: 0, diffEditor: null, diffOriginalModel: null, diffModifiedModel: null, fallbackSyncing: false, activeDraftKey: '', activeRecovery: null, reopenCandidate: null, dismissedMap: {} },
-  conflictCompare: { diffEditor: null, diffOriginalModel: null, diffModifiedModel: null, diffMode: 'remote', fallbackSyncing: false }
+  conflictCompare: { diffEditor: null, diffOriginalModel: null, diffModifiedModel: null, diffMode: 'remote', fallbackSyncing: false },
+  resources: { loading: false, ready: false, errorMessage: '', requiredMissing: [], manifest: null }
 };

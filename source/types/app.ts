@@ -15,6 +15,7 @@ import type {
   ProjectRecord,
   UpdateBackupListRecord
 } from './storage';
+import type { ResourceManifest } from './resources';
 
 export type AppLanguage = 'en' | 'pt-BR';
 export type PanelMode = 'both' | 'editor' | 'preview';
@@ -200,6 +201,13 @@ export interface AppState {
     diffModifiedModel: unknown;
     diffMode: 'remote';
     fallbackSyncing: boolean;
+  };
+  resources: {
+    loading: boolean;
+    ready: boolean;
+    errorMessage: string;
+    requiredMissing: string[];
+    manifest: ResourceManifest | null;
   };
 }
 

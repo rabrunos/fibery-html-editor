@@ -115,6 +115,21 @@ async function checkI18nKeyAlignment() {
   ok(`i18n-base.ts en/pt-BR keys aligned (${enKeys.size} keys each)`);
 }
 
+async function checkResourceManifest(version) {
+  const rel = `support/${version}/resources-manifest.json`;
+  let content;
+  try { content = await readText(rel); }
+  catch (_) { fail(`${rel} not found — create it for this version`); return; }
+  let data;
+  try { data = JSON.parse(content); }
+  catch (_) { fail(`${rel} is not valid JSON`); return; }
+  if (typeof data !== 'object' || data === null) { fail(`${rel}: root must be an object`); return; }
+  if (typeof data.version !== 'string') { fail(`${rel}: missing or invalid "version" field`); return; }
+  if (!Array.isArray(data.resources)) { fail(`${rel}: "resources" must be an array`); return; }
+  if (data.version !== version) { fail(`${rel}: version field "${data.version}" does not match manifest version "${version}"`); return; }
+  ok(`${rel} valid (version=${data.version}, resources=${data.resources.length})`);
+}
+
 async function main() {
   console.log('Running local checks...');
   const version = await checkVersionAlignment();
@@ -122,6 +137,7 @@ async function main() {
   await checkNoUnexpectedJs();
   await checkI18nFilesOnlyExtend();
   await checkI18nKeyAlignment();
+  await checkResourceManifest(version);
   console.log('\nAll local checks passed.');
 }
 

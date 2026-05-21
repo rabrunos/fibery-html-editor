@@ -63,6 +63,14 @@ declare global {
   type PageMetaRecord = import('./storage').PageMetaRecord;
   type ProjectItemRecord = import('./storage').ProjectItemRecord;
   type ProjectRecord = import('./storage').ProjectRecord;
+  type RequiredResourceStatus = import('./resources').RequiredResourceStatus;
+  type ResourceCacheStatus = import('./resources').ResourceCacheStatus;
+  type ResourceEncoding = import('./resources').ResourceEncoding;
+  type ResourceKind = import('./resources').ResourceKind;
+  type ResourceManifest = import('./resources').ResourceManifest;
+  type ResourceManifestEntry = import('./resources').ResourceManifestEntry;
+  type ResourceRecord = import('./resources').ResourceRecord;
+  type ResourceValidationResult = import('./resources').ResourceValidationResult;
 
   interface MonacoEditorModel {
     dispose(): void;
@@ -247,7 +255,7 @@ declare global {
   function updateValidationReasonText(reason?: UpdateValidationReason | string): string;
   function checkRemoteUpdateInfo(): Promise<void>;
   function t(key: string): string;
-  function txPut<TValue>(storeName: 'versions' | 'pageMeta' | 'projects' | 'projectItems' | 'drafts' | 'pageContentCache', value: TValue): Promise<void>;
+  function txPut<TValue>(storeName: 'versions' | 'pageMeta' | 'projects' | 'projectItems' | 'drafts' | 'pageContentCache' | 'appResources', value: TValue): Promise<void>;
   function updateCurrentFromInputs(): void;
   function viewUrl(id: string): string;
   function updatePreviewHeaderStatus(): void;
@@ -310,6 +318,11 @@ declare global {
   function applyI18n(): void;
   function bindEvents(): void;
   function init(): Promise<void>;
+  function putResourceRecord(record: ResourceRecord): Promise<void>;
+  function getResourceRecord(key: string): Promise<ResourceRecord | null>;
+  function getAllResourceRecords(): Promise<ResourceRecord[]>;
+  function deleteResourceRecord(key: string): Promise<void>;
+  function checkRequiredResources(): Promise<void>;
 
   type SearchState = import('./app').SearchState;
 

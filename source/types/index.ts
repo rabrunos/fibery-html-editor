@@ -75,9 +75,12 @@ export type {
   UpdateBackupRecord
 } from './storage';
 export type {
+  RequiredResourceStatus,
   ResourceCacheStatus,
+  ResourceEncoding,
   ResourceKind,
   ResourceManifest,
   ResourceManifestEntry,
-  ResourceRecord
+  ResourceRecord,
+  ResourceValidationResult
 } from './resources';

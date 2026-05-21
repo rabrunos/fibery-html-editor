@@ -1,3 +1,32 @@
+## [8.38.0] - 2026-05-21
+
+### Added
+
+* `support/8.38.0/resources-manifest.json` — versioned resource manifest (empty `resources: []` nesta fase; base para externalização futura).
+* `appResources` store no IndexedDB (`FiberyHtmlEditorPro` schema v6) com índices `appVersion`, `kind` e `downloadedAt`.
+* `source/types/resources.ts` extendido: `ResourceEncoding`, `ResourceValidationResult`, `RequiredResourceStatus`; campos `sha256`, `encoding`, `version` em `ResourceManifestEntry`; campos `appVersion`, `downloadedAt` em `ResourceRecord`.
+* `source/js/app-resources-storage.ts` — helpers de persistência: `putResourceRecord`, `getResourceRecord`, `getAllResourceRecords`, `deleteResourceRecord`.
+* `source/js/app-resources-loader.ts` — `fetchResourceManifest` (busca e valida shape) e `checkRequiredResources` (boot check não-bloqueante).
+* `state.resources` em `AppState`: `loading`, `ready`, `errorMessage`, `requiredMissing`, `manifest`.
+* Hook de boot em `lifecycle-init.ts`: `void checkRequiredResources()` chamado após `applyEmergencyDraftIfRelevant`, não bloqueia o boot quando `resources: []`.
+* `scripts/checks.mjs` agora valida que `support/<version>/resources-manifest.json` existe, é JSON válido, tem `version` string e `resources` array, e que `version` bate com a versão do manifest.
+
+### Technical adjustments
+
+* `IndexedDbStoreName` union extendida com `'appResources'`; DB bump de versão 5 → 6.
+* `legacy-globals.d.ts` atualizado com type aliases de resources e declarações das novas funções.
+* Nenhum recurso real externalizado nesta fase — i18n, CSS e template permanecem no bundle.
+
+### Notes
+
+* Sem mudanças de UX ou comportamento de runtime nesta versão.
+
+### Validation
+
+* `npm run verify`
+
+---
+
 ## [8.37.0] - 2026-05-21
 
 ### Added

@@ -4,11 +4,12 @@ type IndexedDbStoreName =
   | 'projects'
   | 'projectItems'
   | 'drafts'
-  | 'pageContentCache';
+  | 'pageContentCache'
+  | 'appResources';
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open('FiberyHtmlEditorPro', 5);
+    const req = indexedDB.open('FiberyHtmlEditorPro', 6);
 
     req.onupgradeneeded = () => {
       const db = req.result;
@@ -42,6 +43,12 @@ function openDb(): Promise<IDBDatabase> {
         cache.createIndex('cachedAt', 'cachedAt', { unique: false });
         cache.createIndex('verifiedAt', 'verifiedAt', { unique: false });
         cache.createIndex('source', 'source', { unique: false });
+      }
+      if (!db.objectStoreNames.contains('appResources')) {
+        const res = db.createObjectStore('appResources', { keyPath: 'key' });
+        res.createIndex('appVersion', 'appVersion', { unique: false });
+        res.createIndex('kind', 'kind', { unique: false });
+        res.createIndex('downloadedAt', 'downloadedAt', { unique: false });
       }
     };
 
