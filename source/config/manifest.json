@@ -1,5 +1,5 @@
 {
-  "version": "8.31.0",
+  "version": "8.32.0",
   "bodyOpenTag": "<body class=\"h-screen overflow-hidden bg-gray-50 text-gray-900 antialiased\">",
   "template": "source/template/index.template.html",
   "appEntry": "source/app/main.ts",
@@ -61,7 +61,7 @@
     "source/js/cached-page-open-flow.ts",
     "source/js/conflict-resolution-flow.ts",
     "source/js/history-storage.ts",
-    "source/js/history-render.js",
+    "source/js/history-render.ts",
     "source/js/editor-monaco.js",
     "source/js/workspace-render.js",
     "source/js/preview-base.ts",

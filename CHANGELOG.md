@@ -1,3 +1,25 @@
+## [8.32.0] - 2026-05-21
+
+### Technical adjustments
+
+* Migrated history modal rendering to TypeScript (`history-render.ts`) while preserving `openHistoryModal` (flush autosave, show modal, call `renderHistory`), `closeHistoryModal`, `historyRowHtml` (row HTML with badge and restore button), `renderHistory` (fetch manual history, render section header and rows), and `restoreVersion` (open `openDraftRecoveryModal` in `history-manual` mode with all original options).
+* Added `historyModal` and `historyList` typed entries to the `els` declaration in `legacy-globals.d.ts`; added global function declarations for `openHistoryModal`, `closeHistoryModal`, `historyRowHtml`, `renderHistory`, `restoreVersion`, and `openDraftRecoveryModal`.
+* Updated compatibility manifest entry from `.js` to `.ts` for history rendering, bumped app version to `8.32.0`, and regenerated the single-file deploy artifact.
+
+### Notes
+
+* No intentional UX or runtime behavior changes.
+* Manual history restore flow via `openDraftRecoveryModal` (mode `history-manual`) preserved exactly.
+* Vite single-file build and shared bundle scope preserved; no `import`/`export` introduced in migrated file.
+
+### Validation
+
+* `npm run typecheck`
+* `npm run build:tmp`
+* `npm run validate:tmp`
+* `npm run build`
+* `npm run validate`
+
 ## [8.31.0] - 2026-05-21
 
 ### Technical adjustments

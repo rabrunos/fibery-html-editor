@@ -116,6 +116,8 @@ declare global {
     confirmOpenPreviewBtn: HTMLButtonElement;
     logPanel: HTMLElement;
     apiUsageSummaryBox: HTMLElement;
+    historyModal: HTMLElement;
+    historyList: HTMLElement;
     updateAppModal: HTMLElement;
     closeUpdateAppBtn: HTMLButtonElement;
     updateInstalledVersionValue: HTMLElement;
@@ -220,6 +222,12 @@ declare global {
   function renderRealPreview(options?: RealPreviewRenderOptions): void;
   function renderCurrent(): void;
   function renderSidebarProjects(): void;
+  function openHistoryModal(): Promise<void>;
+  function closeHistoryModal(): void;
+  function historyRowHtml(row: HistoryRecord): string;
+  function renderHistory(): Promise<void>;
+  function restoreVersion(key: string): Promise<void>;
+  function openDraftRecoveryModal(options?: DraftRecoveryModalOptions): void;
   function renderUpdateChangelog(container: HTMLElement, rawChangelog: string, comparison: UpdateVersionComparisonState): void;
   function renderUpdateAppPanel(): void;
   function renderUpdateBackupList(): void;
