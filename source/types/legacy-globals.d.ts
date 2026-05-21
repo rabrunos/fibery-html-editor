@@ -52,6 +52,14 @@ declare global {
     restoreDraftBtn: HTMLButtonElement;
     keepCurrentVersionBtn: HTMLButtonElement;
     discardDraftBtn: HTMLButtonElement;
+    externalSyncNotice: HTMLElement;
+    externalSyncNoticeTitle: HTMLElement;
+    externalSyncNoticeMessage: HTMLElement;
+    externalSyncDismissBtn: HTMLButtonElement;
+    unsavedTransitionModal: HTMLElement;
+    confirmModal: HTMLElement;
+    logPanel: HTMLElement;
+    externalSyncCheckNowBtn: HTMLButtonElement;
     [key: string]: unknown;
   };
   const monaco: MonacoGlobal | undefined;
@@ -73,12 +81,19 @@ declare global {
   function refreshSidebarFromLocalCache(options?: unknown): void;
   function renderCurrent(): void;
   function renderSidebarProjects(): void;
+  function hasRealUnsavedChangesForCurrentPage(options?: { syncFromInputs?: boolean }): boolean;
+  function canRunAutomaticFiberyCall(source: string): boolean;
+  function automaticFiberySkipReason(source: string): string;
   function setStatus(text: string): void;
-  function syncExternalSyncBaselineState(): void;
   function syncBeforeUnloadWarningState(): void;
+  function syncCachedOpenCheckNowButtonLabel(): void;
   function syncPreviewMode(options?: { immediate?: boolean; forceRealReload?: boolean }): void;
   function t(key: string): string;
   function updateCurrentFromInputs(): void;
+
+  const API: {
+    loadPage(id: string, options?: { source?: string; automatic?: boolean }): Promise<FiberyPage | null>;
+  };
 }
 
 export {};

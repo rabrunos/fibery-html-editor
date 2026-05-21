@@ -1,4 +1,9 @@
-function externalSyncSnapshotFromPage(page = {}) {
+interface ClearExternalSyncCandidateOptions {
+  clearDismissed?: boolean;
+  clearNotified?: boolean;
+}
+
+function externalSyncSnapshotFromPage(page: Partial<FiberyPage> = {}): FiberyPage {
   return {
     id: String(page?.id || ''),
     title: String(page?.title || ''),
@@ -7,7 +12,7 @@ function externalSyncSnapshotFromPage(page = {}) {
   };
 }
 
-function clearExternalSyncCandidateForCurrentPage(options = {}) {
+function clearExternalSyncCandidateForCurrentPage(options: ClearExternalSyncCandidateOptions = {}): void {
   state.externalSync.remoteCandidate = null;
   state.externalSync.remoteSignature = '';
   state.externalSync.baselineSignatureAtDetection = '';
@@ -17,7 +22,7 @@ function clearExternalSyncCandidateForCurrentPage(options = {}) {
   if (typeof renderExternalSyncNotice === 'function') renderExternalSyncNotice();
 }
 
-function resetExternalSyncStateForCurrentPage(pageId = '') {
+function resetExternalSyncStateForCurrentPage(pageId: string = ''): void {
   state.externalSync.pageId = String(pageId || '');
   state.externalSync.checking = false;
   state.externalSync.lastCheckedAt = 0;
@@ -32,7 +37,7 @@ function resetExternalSyncStateForCurrentPage(pageId = '') {
   if (!state.externalSync.pageId && typeof stopExternalSyncPolling === 'function') stopExternalSyncPolling();
 }
 
-function syncExternalSyncBaselineState() {
+function syncExternalSyncBaselineState(): void {
   const pageId = state.blank ? '' : String(state.current.id || '');
   if (pageId !== state.externalSync.pageId) resetExternalSyncStateForCurrentPage(pageId);
   if (!pageId) {
@@ -53,7 +58,7 @@ function syncExternalSyncBaselineState() {
   if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
 }
 
-function captureExternalSyncRemoteCandidate(remotePage = {}) {
+function captureExternalSyncRemoteCandidate(remotePage: Partial<FiberyPage> = {}): boolean {
   if (state.blank || !state.current.id) return false;
   if (String(remotePage?.id || state.current.id) !== String(state.current.id || '')) return false;
 

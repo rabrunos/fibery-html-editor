@@ -1,3 +1,21 @@
+## [8.24.0] - 2026-05-21
+
+### Technical adjustments
+
+* Migrated external sync state management to TypeScript (`external-sync-state.ts`): typed snapshot capture, remote candidate detection, baseline sync, and candidate clearing functions; `ConflictCandidate` shape verified structurally against central domain type.
+* Migrated external sync banner to TypeScript (`external-sync-banner.ts`): typed notice visibility check, message key selector, DOM render, and dismiss flow.
+* Migrated external sync polling to TypeScript (`external-sync-polling.ts`): typed cooldown computation, skip-reason logic, polling lifecycle (schedule/stop/sync), manual and automatic check flows, and debug logging; blocking-modal detection preserved.
+* Removed `syncExternalSyncBaselineState` from `legacy-globals.d.ts` (now defined in `external-sync-state.ts`).
+* Added `els` element declarations for external sync notice, title, message, dismiss button, unsaved-transition modal, confirm modal, log panel, and check-now button.
+* Added `hasRealUnsavedChangesForCurrentPage`, `canRunAutomaticFiberyCall`, `automaticFiberySkipReason`, `syncCachedOpenCheckNowButtonLabel`, and `API.loadPage` to `legacy-globals.d.ts`.
+* Bumped app version metadata to `8.24.0` via manifest and `package.json`, and regenerated the single-file deploy artifact.
+
+### Notes
+
+* External sync skip-reason strings, cooldown constants, and polling intervals are preserved exactly; no behavior change.
+
+---
+
 ## [8.23.0] - 2026-05-21
 
 ### Technical adjustments

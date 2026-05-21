@@ -1,4 +1,12 @@
-function hasOpenExternalSyncBlockingModal() {
+interface ExternalSyncSkipOptions {
+  manual?: boolean;
+}
+
+interface ExternalSyncPollingOptions {
+  forceReschedule?: boolean;
+}
+
+function hasOpenExternalSyncBlockingModal(): boolean {
   if (!els.unsavedTransitionModal || !els.confirmModal || !els.draftRecoveryModal) return false;
   if (!els.unsavedTransitionModal.classList.contains('hidden')) return true;
   if (!els.confirmModal.classList.contains('hidden')) return true;
@@ -6,24 +14,24 @@ function hasOpenExternalSyncBlockingModal() {
   return false;
 }
 
-function externalSyncDebugLoggingEnabled() {
+function externalSyncDebugLoggingEnabled(): boolean {
   return !!els.logPanel && !els.logPanel.classList.contains('hidden');
 }
 
-function logExternalSyncDebug(message, options = {}) {
+function logExternalSyncDebug(message: string, options: { force?: boolean } = {}): void {
   if (!message) return;
   if (!options.force && !externalSyncDebugLoggingEnabled()) return;
   log(message);
 }
 
-function externalSyncRemainingCooldownMs(now = Date.now()) {
+function externalSyncRemainingCooldownMs(now: number = Date.now()): number {
   const minCooldownMs = Math.max(300000, Number(state.externalSync.minCooldownMs || 600000));
   const lastCheckedAt = Number(state.externalSync.lastCheckedAt || 0);
   if (!lastCheckedAt) return 0;
   return Math.max(0, minCooldownMs - (now - lastCheckedAt));
 }
 
-function externalSyncSkipReason(options = {}) {
+function externalSyncSkipReason(options: ExternalSyncSkipOptions = {}): string {
   const manual = !!options.manual;
   if (!state.externalSync.enabled) return 'disabled';
   if (!manual && !state.externalSync.automaticEnabled) return 'automatic-disabled';
@@ -43,7 +51,7 @@ function externalSyncSkipReason(options = {}) {
   return '';
 }
 
-function logExternalSyncSkip(reason) {
+function logExternalSyncSkip(reason: string): void {
   if (!reason) return;
   const now = Date.now();
   const sameReason = reason === String(state.externalSync.lastSkipReason || '');
@@ -54,20 +62,20 @@ function logExternalSyncSkip(reason) {
   logExternalSyncDebug(`${t('externalSyncCheckSkippedLog')}: ${reason}`);
 }
 
-function externalSyncNextDelayMs() {
+function externalSyncNextDelayMs(): number {
   const intervalMs = Math.max(600000, Number(state.externalSync.intervalMs || 600000));
   const cooldownMs = externalSyncRemainingCooldownMs();
   if (!cooldownMs) return intervalMs;
   return Math.max(intervalMs, cooldownMs);
 }
 
-function stopExternalSyncPolling() {
+function stopExternalSyncPolling(): void {
   if (!state.externalSync.timer) return;
   window.clearTimeout(state.externalSync.timer);
   state.externalSync.timer = null;
 }
 
-function scheduleExternalSyncPolling(delayMs = externalSyncNextDelayMs()) {
+function scheduleExternalSyncPolling(delayMs: number = externalSyncNextDelayMs()): void {
   stopExternalSyncPolling();
   if (!state.externalSync.enabled || !state.externalSync.automaticEnabled) return;
   const safeDelay = Math.max(600000, Number(delayMs || externalSyncNextDelayMs()));
@@ -77,7 +85,7 @@ function scheduleExternalSyncPolling(delayMs = externalSyncNextDelayMs()) {
   }, safeDelay);
 }
 
-async function checkExternalSyncNow(options = {}) {
+async function checkExternalSyncNow(options: ExternalSyncSkipOptions = {}): Promise<boolean> {
   const manual = !!options.manual;
   const skipReason = externalSyncSkipReason({ manual });
   if (skipReason) {
@@ -92,7 +100,7 @@ async function checkExternalSyncNow(options = {}) {
   try {
     const remotePage = await API.loadPage(pageId, { source: manual ? 'external-sync-manual' : 'external-sync', automatic: !manual });
     if (state.blank || String(state.current.id || '') !== pageId) return false;
-    captureExternalSyncRemoteCandidate(remotePage || {});
+    captureExternalSyncRemoteCandidate(remotePage ?? {});
     state.externalSync.lastCheckedAt = Date.now();
     state.externalSync.lastErrorAt = 0;
     state.externalSync.lastErrorMessage = '';
@@ -102,7 +110,7 @@ async function checkExternalSyncNow(options = {}) {
     return true;
   } catch (err) {
     state.externalSync.lastErrorAt = Date.now();
-    state.externalSync.lastErrorMessage = String(err?.message || err || '');
+    state.externalSync.lastErrorMessage = String((err as Error)?.message || err || '');
     state.externalSync.status = 'error';
     log(`${t('externalSyncCheckErrorLog')}: ${state.externalSync.lastErrorMessage}`);
     return false;
@@ -111,14 +119,14 @@ async function checkExternalSyncNow(options = {}) {
   }
 }
 
-async function runExternalSyncPollingCycle(options = {}) {
+async function runExternalSyncPollingCycle(options: ExternalSyncSkipOptions = {}): Promise<void> {
   if (!state.externalSync.enabled) return;
   const manual = !!options.manual;
   await checkExternalSyncNow({ manual });
   syncExternalSyncPollingState({ forceReschedule: manual });
 }
 
-async function runExternalSyncManualCheck() {
+async function runExternalSyncManualCheck(): Promise<void> {
   if (els.externalSyncCheckNowBtn) els.externalSyncCheckNowBtn.disabled = true;
   try {
     await runExternalSyncPollingCycle({ manual: true });
@@ -128,7 +136,7 @@ async function runExternalSyncManualCheck() {
   }
 }
 
-function syncExternalSyncPollingState(options = {}) {
+function syncExternalSyncPollingState(options: ExternalSyncPollingOptions = {}): void {
   const forceReschedule = !!options.forceReschedule;
   if (!state.externalSync.enabled || !state.externalSync.automaticEnabled) {
     stopExternalSyncPolling();

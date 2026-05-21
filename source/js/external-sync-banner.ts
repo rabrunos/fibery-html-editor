@@ -1,4 +1,4 @@
-function hasVisibleExternalSyncNotice() {
+function hasVisibleExternalSyncNotice(): boolean {
   if (!state.externalSync.enabled) return false;
   if (state.blank || !state.current.id) return false;
   if (!state.externalSync.remoteCandidate || !state.externalSync.remoteSignature) return false;
@@ -9,13 +9,13 @@ function hasVisibleExternalSyncNotice() {
   return true;
 }
 
-function externalSyncNoticeMessageKey() {
+function externalSyncNoticeMessageKey(): string {
   return hasRealUnsavedChangesForCurrentPage({ syncFromInputs: false })
     ? 'externalSyncMessageWithLocalEdits'
     : 'externalSyncMessageNoLocalEdits';
 }
 
-function renderExternalSyncNotice() {
+function renderExternalSyncNotice(): void {
   if (!els.externalSyncNotice || !els.externalSyncNoticeTitle || !els.externalSyncNoticeMessage) return;
   if (!hasVisibleExternalSyncNotice()) {
     els.externalSyncNotice.classList.add('hidden');
@@ -31,7 +31,7 @@ function renderExternalSyncNotice() {
   els.externalSyncNotice.classList.remove('hidden');
 }
 
-function dismissExternalSyncNotice() {
+function dismissExternalSyncNotice(): void {
   if (!state.externalSync.remoteSignature) return;
   state.externalSync.dismissedSignature = state.externalSync.remoteSignature;
   renderExternalSyncNotice();
