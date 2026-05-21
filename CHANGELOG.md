@@ -1,3 +1,32 @@
+## [8.35.0] - 2026-05-21
+
+### Technical adjustments
+
+* Migrated sidebar and search modules to TypeScript (`sidebar-pages-data.ts`, `sidebar-pages-render.ts`, `sidebar-refresh.ts`, `search-global.ts`, `search-welcome.ts`).
+* Migrated project UI and action modules to TypeScript (`projects-render.ts`, `projects-actions.ts`).
+* Migrated floating menus, context menus, and panel actions to TypeScript (`floating-menus.ts`, `editor-panel-actions.ts`, `preview-panel-actions.ts`, `page-context-menu.ts`, `project-context-menu.ts`).
+* Migrated inline rename to TypeScript (`inline-rename.ts`).
+* Migrated settings, log, i18n and admin helpers to TypeScript (`settings-log.ts`).
+* Migrated event bindings and lifecycle initialization to TypeScript (`events-bindings.ts`, `lifecycle-init.ts`).
+* Extended Monaco type interfaces with editor `Range`, `focus`, `setSelection`, `getLineCount`, and `getLineMaxColumn`.
+* Added 50+ typed `els` entries and function declarations to `legacy-globals.d.ts`.
+* Vite single-file build and shared bundle scope preserved; no `import`/`export` introduced in migrated files.
+
+### Notes
+
+* No intentional UX or runtime behavior changes.
+* All event listeners, keyboard shortcuts (Esc, Ctrl/Cmd+S, Ctrl/Cmd+K), `pagehide`, `visibilitychange`, `message` handlers, and emergency draft write preserved exactly.
+
+### Validation
+
+* `npm run typecheck`
+* `npm run build:tmp`
+* `npm run validate:tmp`
+* `npm run build`
+* `npm run validate`
+
+---
+
 ## [8.34.0] - 2026-05-21
 
 ### Technical adjustments

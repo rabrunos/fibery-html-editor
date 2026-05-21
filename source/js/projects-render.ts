@@ -1,9 +1,9 @@
-function getPageSnapshot(pageId) {
+function getPageSnapshot(pageId: string): { id: string; title: string; description: string } {
   const cached = state.sidebar.pageCache?.[pageId];
   const meta = getMetaMap()[pageId];
   return { id: pageId, title: cached?.title || meta?.title || 'Untitled', description: cached?.description || meta?.description || '' };
 }
-function projectPageItemHtml(item) {
+function projectPageItemHtml(item: ProjectItemRecord): string {
   const page = getPageSnapshot(item.pageId);
   if (getMetaMap()[page.id]?.archivedAt) return '';
   const active = page.id === state.current.id && !state.blank;
@@ -14,7 +14,7 @@ function projectPageItemHtml(item) {
     ${pageMenuButton(page.id, page.title, item.projectId)}
   </div>`;
 }
-function renderSidebarProjects() {
+function renderSidebarProjects(): void {
   if (!state.sidebar.open || !els.sidebarProjectsList) return;
   const projects = [...(state.projects.rows || [])].sort((a, b) => Number(b.sortOrder || 0) - Number(a.sortOrder || 0));
   if (!projects.length) {

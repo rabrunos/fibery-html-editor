@@ -1,8 +1,8 @@
-async function init() {
+async function init(): Promise<void> {
   els.langSelect.value = localStorage.getItem(LS.lang) || 'auto';
   els.openLastToggle.checked = (localStorage.getItem(LS.openLast) ?? '1') === '1';
   els.versionLimitSelect.value = localStorage.getItem(LS.versionLimit) || '20';
-  state.panelMode = localStorage.getItem(LS.panelMode) || 'both';
+  state.panelMode = (localStorage.getItem(LS.panelMode) || 'both') as PanelMode;
   applyI18n();
   await setupCodeEditor();
   bindEvents();
@@ -17,11 +17,11 @@ async function init() {
   setSidebarOpen((localStorage.getItem(LS.sidebarOpen) ?? '1') === '1', false);
   const lastId = localStorage.getItem(LS.lastPageId);
   if (els.openLastToggle.checked && lastId) {
-    try { await loadPage(lastId); } catch (err) { log(err.message || String(err)); showBlankPage(); void maybePromptUnsavedDraftRecovery(state.drafts.promptToken); }
+    try { await loadPage(lastId); } catch (err) { log((err as Error).message || String(err)); showBlankPage(); void maybePromptUnsavedDraftRecovery(state.drafts.promptToken); }
   } else {
     showBlankPage();
     void maybePromptUnsavedDraftRecovery(state.drafts.promptToken);
   }
 }
 
-init().catch(err => { console.error(err); alert(err.message || String(err)); });
+init().catch((err: unknown) => { console.error(err); alert((err as Error).message || String(err)); });

@@ -1,6 +1,17 @@
-function normalizePageRows(rows) { return (rows || []).map(p => ({ id: p.id, title: p.title || 'Untitled', description: p.description || '', ...p })); }
-function pageListSignature(pages) { return pages.map(p => [p.id, p.title || '', p.description || ''].join('::')).join('|'); }
-function savedLocalPages() {
+interface SidebarLoadOptions {
+  force?: boolean;
+  append?: boolean;
+  reset?: boolean;
+  automatic?: boolean;
+  source?: string;
+  remote?: boolean;
+}
+
+function normalizePageRows(rows: FiberyPage[]): FiberyPage[] {
+  return (rows || []).map(p => ({ ...p, title: p.title || 'Untitled', description: p.description || '' }));
+}
+function pageListSignature(pages: FiberyPage[]): string { return pages.map(p => [p.id, p.title || '', p.description || ''].join('::')).join('|'); }
+function savedLocalPages(): FiberyPage[] {
   return Object.values(getMetaMap())
     .filter(meta => meta?.id && Number(meta.lastSavedAt || 0) > 0 && !meta.archivedAt)
     .sort((a, b) => {
@@ -8,13 +19,14 @@ function savedLocalPages() {
       if (pinDiff) return pinDiff;
       return Number(b.lastSavedAt || 0) - Number(a.lastSavedAt || 0);
     })
-    .map(meta => ({ id: meta.id, title: meta.title || 'Untitled', description: meta.description || '', __localSaved: true }));
+    .map(meta => ({ id: meta.id, title: meta.title || 'Untitled', description: meta.description || '', html: '', __localSaved: true } as FiberyPage & { __localSaved: boolean }));
 }
 
-function knownLocalPages() {
-  const byId = {};
+function knownLocalPages(): FiberyPage[] {
+  const byId: Record<string, FiberyPage & { __localSaved?: boolean }> = {};
   for (const page of Object.values(state.sidebar.pageCache || {})) {
-    if (page?.id) byId[page.id] = { id: page.id, title: page.title || 'Untitled', description: page.description || '', ...page };
+    const p = page as { id?: string; title?: string; description?: string; html?: string };
+    if (p?.id) byId[p.id] = { ...p as FiberyPage, id: p.id, title: p.title || 'Untitled', description: p.description || '' };
   }
   for (const page of savedLocalPages()) {
     if (page?.id) byId[page.id] = { ...(byId[page.id] || {}), ...page };
@@ -25,25 +37,25 @@ function knownLocalPages() {
       id: state.current.id,
       title: state.current.title || 'Untitled',
       description: state.current.description || ''
-    };
+    } as FiberyPage;
   }
   return Object.values(byId)
     .filter(page => page.id && !getMetaMap()[page.id]?.archivedAt)
     .sort((a, b) => pageTime(b) - pageTime(a));
 }
 
-function sidebarPagesFromCache() {
+function sidebarPagesFromCache(): FiberyPage[] {
   const projectIds = projectPageIds();
   return knownLocalPages().filter(page => page.id && !projectIds.has(page.id));
 }
 
-function cachePagesForSidebar(rows = []) {
+function cachePagesForSidebar(rows: FiberyPage[]): void {
   for (const page of normalizePageRows(rows)) {
     if (page?.id) state.sidebar.pageCache[page.id] = page;
   }
 }
 
-function refreshSidebarFromLocalCache(options = {}) {
+function refreshSidebarFromLocalCache(options: { reset?: boolean; append?: boolean } = {}): void {
   if (!state.sidebar.open) return;
   if (options.reset) state.sidebar.visibleLimit = state.sidebar.limit;
   if (options.append) state.sidebar.visibleLimit += state.sidebar.limit;
@@ -66,15 +78,15 @@ function refreshSidebarFromLocalCache(options = {}) {
   }
 }
 
-function shouldUseRecentSidebarRemoteLoad(options = {}) {
+function shouldUseRecentSidebarRemoteLoad(options: { force?: boolean } = {}): boolean {
   if (options.force) return false;
   const lastRemoteLoadAt = Number(state.sidebar.lastRemoteLoadAt || 0);
   const ttl = Math.max(60000, Number(state.sidebar.remoteCacheTtlMs || 300000));
   return !!lastRemoteLoadAt && (Date.now() - lastRemoteLoadAt) < ttl;
 }
 
-async function loadSidebarPages(options = {}) {
-  const opts = typeof options === 'boolean' ? { force: options, reset: true } : (options || {});
+async function loadSidebarPages(options: SidebarLoadOptions | boolean = {}): Promise<void> {
+  const opts: SidebarLoadOptions = typeof options === 'boolean' ? { force: options, reset: true } : (options || {});
   const force = !!opts.force;
   const append = !!opts.append;
   const reset = !!opts.reset;
@@ -119,10 +131,10 @@ async function loadSidebarPages(options = {}) {
     }
   } catch (err) {
     if (!state.sidebar.pages.length) {
-      els.sidebarPagesList.innerHTML = `<div class="sidebar-label p-4 text-center text-sm text-red-500">${escapeHtml(err.message || err)}</div>`;
+      els.sidebarPagesList.innerHTML = `<div class="sidebar-label p-4 text-center text-sm text-red-500">${escapeHtml((err as Error).message || String(err))}</div>`;
       els.sidebarLoadMoreWrap.classList.add('hidden');
     }
-    log(err.message || String(err));
+    log((err as Error).message || String(err));
   } finally {
     state.sidebar.loading = false;
   }

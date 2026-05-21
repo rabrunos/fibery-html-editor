@@ -1,4 +1,4 @@
-function openPageContextMenu(event, pageId, pageTitle = '', projectId = '') {
+function openPageContextMenu(event: MouseEvent, pageId: string, pageTitle = '', projectId = ''): void {
   event.preventDefault(); event.stopPropagation();
   if (!shouldToggleFloatingMenu(els.pageContextMenu, event.currentTarget)) return;
   state.context.pageId = pageId; state.context.pageTitle = pageTitle || 'Untitled'; state.context.projectId = projectId || state.projects.pageToProject[pageId] || '';
@@ -16,9 +16,9 @@ function openPageContextMenu(event, pageId, pageTitle = '', projectId = '') {
     <button class="context-menu-item context-menu-danger" data-action="delete-page">${escapeHtml(t('deletePage'))}</button>`;
   positionFloatingMenu(els.pageContextMenu, event.clientX, event.clientY);
 }
-function openMoveProjectMenu(anchor) {
+function openMoveProjectMenu(anchor: Element): void {
   const pageId = state.context.pageId;
-  const projects = [...(state.projects.rows || [])].sort((a,b) => Number(b.sortOrder || 0) - Number(a.sortOrder || 0));
+  const projects = [...(state.projects.rows || [])].sort((a, b) => Number(b.sortOrder || 0) - Number(a.sortOrder || 0));
   els.moveProjectMenu.innerHTML = `<button class="context-menu-item" data-project-action="new-project">${escapeHtml(t('newProject'))}</button>${projects.length ? '<div class="my-1 border-t border-gray-100"></div>' : ''}` + projects.map(project => `<button class="context-menu-item" data-project-action="move" data-project-id="${escapeHtml(project.id)}"><span class="truncate">${escapeHtml(project.name || t('untitledProject'))}</span></button>`).join('');
   const rect = anchor.getBoundingClientRect();
   positionFloatingMenu(els.moveProjectMenu, rect.right + 4, rect.top);

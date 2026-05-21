@@ -67,6 +67,8 @@ declare global {
     dispose(): void;
     getValue(): string;
     setValue(value: string): void;
+    getLineCount(): number;
+    getLineMaxColumn(line: number): number;
   }
   interface MonacoLineChange {
     originalStartLineNumber: number;
@@ -85,13 +87,18 @@ declare global {
     getModel(): MonacoEditorModel | null;
     updateOptions(options: Record<string, unknown>): void;
     onDidChangeModelContent(callback: () => void): void;
+    focus(): void;
+    setSelection(range: unknown): void;
   }
   interface MonacoEditorNamespace {
     createModel(value: string, language: string): MonacoEditorModel;
     createDiffEditor(element: HTMLElement, options: Record<string, unknown>): MonacoDiffEditorInstance;
     create(element: HTMLElement, options: Record<string, unknown>): MonacoSingleEditorInstance;
   }
-  interface MonacoGlobal { editor: MonacoEditorNamespace; }
+  interface MonacoGlobal {
+    editor: MonacoEditorNamespace;
+    Range: new (startLineNumber: number, startColumn: number, endLineNumber: number, endColumn: number) => unknown;
+  }
   interface AmdRequire {
     (modules: string[], onLoad: () => void, onError?: () => void): void;
     config(options: { paths: Record<string, string> }): void;
@@ -178,6 +185,60 @@ declare global {
     splitArea: HTMLElement;
     codeEditor: HTMLElement;
     codeEditorFallback: HTMLTextAreaElement;
+    sidebarPagesList: HTMLElement;
+    sidebarLoadMoreWrap: HTMLElement;
+    sidebarLoadMoreBtn: HTMLButtonElement;
+    sidebarScroll: HTMLElement;
+    sidebar: HTMLElement;
+    sidebarCloseIcon: HTMLElement;
+    sidebarOpenIcon: HTMLElement;
+    sidebarProjectsList: HTMLElement;
+    globalSearchInput: HTMLInputElement;
+    globalSearchResults: HTMLElement;
+    closeSearchBtn: HTMLButtonElement;
+    welcomeSearchInput: HTMLInputElement;
+    settingsModal: HTMLElement;
+    moreMenu: HTMLElement;
+    moreBtn: HTMLButtonElement;
+    pageContextMenu: HTMLElement;
+    moveProjectMenu: HTMLElement;
+    projectContextMenu: HTMLElement;
+    editorPanelMenu: HTMLElement;
+    previewPanelMenu: HTMLElement;
+    editorPanelMenuBtn: HTMLButtonElement;
+    previewPanelMenuBtn: HTMLButtonElement;
+    previewFocusBtn: HTMLButtonElement;
+    previewFocusExitBtn: HTMLButtonElement;
+    newPageBtn: HTMLButtonElement;
+    welcomeNewPageBtn: HTMLButtonElement;
+    searchPagesBtn: HTMLButtonElement;
+    refreshBtn: HTMLButtonElement;
+    sidebarSettingsBtn: HTMLButtonElement;
+    logToggleBtn: HTMLButtonElement;
+    toggleSidebarBtn: HTMLButtonElement;
+    brandBtn: HTMLButtonElement;
+    refreshSidebarBtn: HTMLButtonElement;
+    newProjectBtn: HTMLButtonElement;
+    langSelect: HTMLSelectElement;
+    closeSettingsBtn: HTMLButtonElement;
+    closeDraftRecoveryBtn: HTMLButtonElement;
+    closeHistoryBtn: HTMLButtonElement;
+    confirmCancelBtn: HTMLButtonElement;
+    unsavedTransitionSaveBtn: HTMLButtonElement;
+    unsavedTransitionKeepDraftBtn: HTMLButtonElement;
+    unsavedTransitionDiscardBtn: HTMLButtonElement;
+    unsavedTransitionCancelBtn: HTMLButtonElement;
+    confirmCreateProjectBtn: HTMLButtonElement;
+    cancelCreateProjectBtn: HTMLButtonElement;
+    closeCreateProjectBtn: HTMLButtonElement;
+    createProjectModal: HTMLElement;
+    logMenuText: HTMLElement;
+    logBox: HTMLElement;
+    statusText: HTMLElement;
+    openLastToggle: HTMLInputElement;
+    versionLimitSelect: HTMLSelectElement;
+    copyHtmlBtn: HTMLButtonElement;
+    clearLogBtn: HTMLButtonElement;
     [key: string]: unknown;
   };
   const monaco: MonacoGlobal | undefined;
@@ -328,6 +389,68 @@ declare global {
   function updatePreviewHeaderStatus(): void;
 
   const LOCAL_PREVIEW_MESSAGE_SOURCE: string;
+
+  // From utils-core.js (NOT in TS compilation)
+  function showToastNear(target: Element, message: string): void;
+  function copyText(text: string, target: Element, okMessage: string): Promise<void>;
+  function preferredLang(): string;
+
+  // Migrated functions
+  function normalizePageRows(rows: FiberyPage[]): FiberyPage[];
+  function pageListSignature(pages: FiberyPage[]): string;
+  function savedLocalPages(): FiberyPage[];
+  function knownLocalPages(): FiberyPage[];
+  function sidebarPagesFromCache(): FiberyPage[];
+  function shouldUseRecentSidebarRemoteLoad(options?: { force?: boolean }): boolean;
+  function loadSidebarPages(options?: { force?: boolean; append?: boolean; reset?: boolean; automatic?: boolean; source?: string; remote?: boolean } | boolean): Promise<void>;
+  function codeIconSvg(className?: string): string;
+  function appPageBadge(pageId: string): string;
+  function projectPageIds(): Set<string>;
+  function moreIconSvg(className?: string): string;
+  function archivedBadge(pageId: string): string;
+  function pageMenuButton(pageId: string, title: string, projectId?: string): string;
+  function projectMenuButton(projectId: string, projectName: string): string;
+  function pageItemHtml(page: FiberyPage, compact?: boolean): string;
+  function renderSidebarPages(): void;
+  function updateSidebarLoadMore(): void;
+  function startSidebarAutoRefresh(): void;
+  function stopSidebarAutoRefresh(): void;
+  function setSidebarOpen(open: boolean, persist?: boolean): void;
+  function searchCacheEntry(searchState: SearchState, query: string): { at: number; pages: FiberyPage[] } | null;
+  function setSearchCacheEntry(searchState: SearchState, query: string, pages: FiberyPage[]): void;
+  function localSearchRows(query?: string, limit?: number): FiberyPage[];
+  function openSearchModal(): void;
+  function closeSearchModal(): void;
+  function searchRowHtml(page: FiberyPage, compact?: boolean): string;
+  function renderSearchResults(rows: FiberyPage[]): void;
+  function openWelcomeSearch(): void;
+  function closeWelcomeSearch(): void;
+  function renderWelcomeSearchResults(rows: FiberyPage[]): void;
+  function getPageSnapshot(pageId: string): { id: string; title: string; description: string };
+  function projectPageItemHtml(item: ProjectItemRecord): string;
+  function openCreateProjectModal(targetPageId?: string): void;
+  function positionFloatingMenu(menu: HTMLElement, x: number, y: number): void;
+  function closeContextMenus(): void;
+  function shouldToggleFloatingMenu(menu: HTMLElement | null, trigger: Element | EventTarget | null): boolean;
+  function openEditorPanelMenu(event: MouseEvent): void;
+  function selectAllCode(target: Element): void;
+  function pasteReplaceCode(target: Element): Promise<void>;
+  function importHtmlFile(target: Element | null): void;
+  function openPreviewPanelMenu(event: MouseEvent): void;
+  function openPageContextMenu(event: MouseEvent, pageId: string, pageTitle?: string, projectId?: string): void;
+  function openMoveProjectMenu(anchor: Element): void;
+  function openProjectContextMenu(event: MouseEvent, projectId: string, projectTitle?: string): void;
+  function startInlineRenameTitle(pageId: string): void;
+  function startInlineRenameProject(projectId: string): void;
+  function openSettings(): void;
+  function closeSettings(): void;
+  function toggleLog(): void;
+  function setAdminMode(isAdmin: boolean): void;
+  function applyI18n(): void;
+  function bindEvents(): void;
+  function init(): Promise<void>;
+
+  type SearchState = import('./app').SearchState;
 
   var API: {
     checkIsAdmin(options?: FiberyCheckAdminOptions): Promise<boolean>;

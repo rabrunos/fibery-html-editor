@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.34.0" />
+  <meta name="fibery-html-editor-version" content="8.35.0" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -595,7 +595,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 
 (function() {
 	//#region \0virtual:fibery-html-editor/manifest-js
-	const APP_VERSION = "8.34.0";
+	const APP_VERSION = "8.35.0";
 	window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 	document.documentElement.dataset.appVersion = APP_VERSION;
 	var UPDATE_REMOTE = Object.freeze({
@@ -5701,10 +5701,9 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 	}
 	function normalizePageRows(rows) {
 		return (rows || []).map((p) => ({
-			id: p.id,
+			...p,
 			title: p.title || "Untitled",
-			description: p.description || "",
-			...p
+			description: p.description || ""
 		}));
 	}
 	function pageListSignature(pages) {
@@ -5723,17 +5722,21 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			id: meta.id,
 			title: meta.title || "Untitled",
 			description: meta.description || "",
+			html: "",
 			__localSaved: true
 		}));
 	}
 	function knownLocalPages() {
 		const byId = {};
-		for (const page of Object.values(state.sidebar.pageCache || {})) if (page?.id) byId[page.id] = {
-			id: page.id,
-			title: page.title || "Untitled",
-			description: page.description || "",
-			...page
-		};
+		for (const page of Object.values(state.sidebar.pageCache || {})) {
+			const p = page;
+			if (p?.id) byId[p.id] = {
+				...p,
+				id: p.id,
+				title: p.title || "Untitled",
+				description: p.description || ""
+			};
+		}
 		for (const page of savedLocalPages()) if (page?.id) byId[page.id] = {
 			...byId[page.id] || {},
 			...page
@@ -5750,7 +5753,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		const projectIds = projectPageIds();
 		return knownLocalPages().filter((page) => page.id && !projectIds.has(page.id));
 	}
-	function cachePagesForSidebar(rows = []) {
+	function cachePagesForSidebar(rows) {
 		for (const page of normalizePageRows(rows)) if (page?.id) state.sidebar.pageCache[page.id] = page;
 	}
 	function refreshSidebarFromLocalCache(options = {}) {
@@ -5834,7 +5837,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			}
 		} catch (err) {
 			if (!state.sidebar.pages.length) {
-				els.sidebarPagesList.innerHTML = `<div class="sidebar-label p-4 text-center text-sm text-red-500">${escapeHtml(err.message || err)}</div>`;
+				els.sidebarPagesList.innerHTML = `<div class="sidebar-label p-4 text-center text-sm text-red-500">${escapeHtml(err.message || String(err))}</div>`;
 				els.sidebarLoadMoreWrap.classList.add("hidden");
 			}
 			log(err.message || String(err));
@@ -5916,7 +5919,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		}, intervalMs);
 	}
 	function stopSidebarAutoRefresh() {
-		if (state.sidebar.refreshTimer) {
+		if (state.sidebar.refreshTimer !== null) {
 			window.clearTimeout(state.sidebar.refreshTimer);
 			state.sidebar.refreshTimer = null;
 		}
@@ -5937,7 +5940,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 	}
 	function searchCacheEntry(searchState, query) {
 		const key = String(query || "").toLowerCase();
-		const cached = searchState.cache?.[key];
+		const cached = searchState.cache[key];
 		if (!cached) return null;
 		if (Date.now() - Number(cached.at || 0) > 12e4) return null;
 		return cached;
@@ -6000,7 +6003,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 				renderSearchResults(rows);
 			}
 		} catch (err) {
-			if (!localRows.length) els.globalSearchResults.innerHTML = `<div class="p-8 text-center text-sm text-red-500">${escapeHtml(err.message || err)}</div>`;
+			if (!localRows.length) els.globalSearchResults.innerHTML = `<div class="p-8 text-center text-sm text-red-500">${escapeHtml(err.message || String(err))}</div>`;
 			log(err.message || String(err));
 		} finally {
 			if (state.search.remoteQuery === query) {
@@ -6068,7 +6071,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 				renderWelcomeSearchResults(rows);
 			}
 		} catch (err) {
-			if (!localRows.length) els.welcomeSearchResults.innerHTML = `<div class="p-4 text-center text-sm text-red-500">${escapeHtml(err.message || err)}</div>`;
+			if (!localRows.length) els.welcomeSearchResults.innerHTML = `<div class="p-4 text-center text-sm text-red-500">${escapeHtml(err.message || String(err))}</div>`;
 			log(err.message || String(err));
 		} finally {
 			if (state.welcomeSearch.remoteQuery === query) {
@@ -6107,10 +6110,11 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		document.querySelectorAll(".menu-open").forEach((btn) => btn.classList.remove("menu-open"));
 	}
 	function shouldToggleFloatingMenu(menu, trigger) {
-		const sameTriggerOpen = !!trigger?.classList?.contains("menu-open") && menu && !menu.classList.contains("hidden");
+		const triggerEl = trigger;
+		const sameTriggerOpen = !!triggerEl?.classList?.contains("menu-open") && menu !== null && !menu.classList.contains("hidden");
 		closeContextMenus();
 		if (sameTriggerOpen) return false;
-		trigger?.classList?.add("menu-open");
+		triggerEl?.classList?.add("menu-open");
 		return true;
 	}
 	function openEditorPanelMenu(event) {
@@ -6126,12 +6130,13 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 	}
 	function selectAllCode(target) {
 		if (state.code.editor) {
-			const model = state.code.editor.getModel();
-			state.code.editor.focus();
-			if (model && window.monaco) {
+			const editor = state.code.editor;
+			const model = editor.getModel();
+			editor.focus();
+			if (model && monaco) {
 				const lastLine = model.getLineCount();
 				const lastColumn = model.getLineMaxColumn(lastLine);
-				state.code.editor.setSelection(new monaco.Range(1, 1, lastLine, lastColumn));
+				editor.setSelection(new monaco.Range(1, 1, lastLine, lastColumn));
 			}
 		} else {
 			els.codeEditorFallback.focus();
@@ -6221,7 +6226,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		positionFloatingMenu(els.moveProjectMenu, rect.right + 4, rect.top);
 		state.context.pageId = pageId;
 	}
-	function openProjectContextMenu(event, projectId, projectTitle = "") {
+	function openProjectContextMenu(event, projectId, _projectTitle = "") {
 		event.preventDefault();
 		event.stopPropagation();
 		if (!shouldToggleFloatingMenu(els.projectContextMenu, event.currentTarget)) return;
@@ -6402,13 +6407,13 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		state.lang = preferredLang();
 		document.documentElement.lang = state.lang === "pt-BR" ? "pt-BR" : "en";
 		document.querySelectorAll("[data-i18n]").forEach((el) => {
-			el.textContent = t(el.dataset.i18n);
+			el.textContent = t(el.dataset.i18n || "");
 		});
 		document.querySelectorAll("[data-i18n-title]").forEach((el) => {
-			el.title = t(el.dataset.i18nTitle);
+			el.title = t(el.dataset.i18nTitle || "");
 		});
 		document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
-			el.placeholder = t(el.dataset.i18nPlaceholder);
+			el.placeholder = t(el.dataset.i18nPlaceholder || "");
 		});
 		els.globalSearchInput.placeholder = t("searchPages");
 		els.welcomeSearchInput.placeholder = t("welcomeSearch");
@@ -6521,69 +6526,73 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		}));
 		els.newProjectBtn.addEventListener("click", () => openCreateProjectModal(""));
 		els.sidebarProjectsList.addEventListener("click", async (e) => {
-			const pageMenu = e.target.closest(".page-menu");
+			const target = e.target;
+			const pageMenu = target?.closest(".page-menu");
 			if (pageMenu) {
-				openPageContextMenu(e, pageMenu.dataset.pageId, pageMenu.dataset.pageTitle || "", pageMenu.dataset.projectId || "");
+				openPageContextMenu(e, pageMenu.dataset.pageId || "", pageMenu.dataset.pageTitle || "", pageMenu.dataset.projectId || "");
 				return;
 			}
-			const projectMenu = e.target.closest(".project-menu");
+			const projectMenu = target?.closest(".project-menu");
 			if (projectMenu) {
-				openProjectContextMenu(e, projectMenu.dataset.projectId, projectMenu.dataset.projectName || "");
+				openProjectContextMenu(e, projectMenu.dataset.projectId || "", projectMenu.dataset.projectName || "");
 				return;
 			}
-			const toggle = e.target.closest(".project-toggle");
+			const toggle = target?.closest(".project-toggle");
 			if (toggle) {
 				e.preventDefault();
 				e.stopPropagation();
-				await toggleProject(toggle.dataset.projectId);
+				await toggleProject(toggle.dataset.projectId || "");
 				return;
 			}
-			const btn = e.target.closest(".page-open");
+			const btn = target?.closest(".page-open");
 			if (!btn) return;
 			if (!state.blank && btn.dataset.id === state.current.id) return;
 			await runWithUnsavedPageTransitionGuard(async () => {
-				await loadPage(btn.dataset.id);
+				await loadPage(btn.dataset.id || "");
 			});
 		});
 		els.sidebarPagesList.addEventListener("click", async (e) => {
-			const menu = e.target.closest(".page-menu");
+			const target = e.target;
+			const menu = target?.closest(".page-menu");
 			if (menu) {
-				openPageContextMenu(e, menu.dataset.pageId, menu.dataset.pageTitle || "", menu.dataset.projectId || "");
+				openPageContextMenu(e, menu.dataset.pageId || "", menu.dataset.pageTitle || "", menu.dataset.projectId || "");
 				return;
 			}
-			const btn = e.target.closest(".page-open");
+			const btn = target?.closest(".page-open");
 			if (!btn) return;
 			if (!state.blank && btn.dataset.id === state.current.id) return;
 			await runWithUnsavedPageTransitionGuard(async () => {
-				await loadPage(btn.dataset.id);
+				await loadPage(btn.dataset.id || "");
 			});
 		});
 		els.globalSearchInput.addEventListener("input", () => {
-			clearTimeout(state.search.debounce);
+			clearTimeout(state.search.debounce ?? void 0);
 			state.search.query = els.globalSearchInput.value.trim();
-			state.search.debounce = setTimeout(loadSearchResults, 480);
+			state.search.debounce = window.setTimeout(loadSearchResults, 480);
 		});
 		els.globalSearchResults.addEventListener("click", async (e) => {
-			if (e.target.closest("a[href*=\"/view\"]")) {
+			const target = e.target;
+			if (target?.closest("a[href*=\"/view\"]")) {
+				const row = target?.closest("[data-page-row-id]");
 				recordPreviewUsage({
 					source: "search-global-link",
-					pageId: e.target.closest("[data-page-row-id]")?.dataset.pageRowId || ""
+					pageId: row?.dataset.pageRowId || ""
 				});
 				return;
 			}
-			const menu = e.target.closest(".page-menu");
+			const menu = target?.closest(".page-menu");
 			if (menu) {
-				openPageContextMenu(e, menu.dataset.pageId, menu.dataset.pageTitle || "", menu.dataset.projectId || "");
+				openPageContextMenu(e, menu.dataset.pageId || "", menu.dataset.pageTitle || "", menu.dataset.projectId || "");
 				return;
 			}
-			const btn = e.target.closest(".page-open");
+			const btn = target?.closest(".page-open");
 			if (!btn) return;
 			if (!state.blank && btn.dataset.id === state.current.id) {
 				closeSearchModal();
 				return;
 			}
 			await runWithUnsavedPageTransitionGuard(async () => {
-				await loadPage(btn.dataset.id);
+				await loadPage(btn.dataset.id || "");
 				closeSearchModal();
 			});
 		});
@@ -6593,32 +6602,34 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		});
 		els.welcomeSearchInput.addEventListener("focus", openWelcomeSearch);
 		els.welcomeSearchInput.addEventListener("input", () => {
-			clearTimeout(state.welcomeSearch.debounce);
+			clearTimeout(state.welcomeSearch.debounce ?? void 0);
 			state.welcomeSearch.query = els.welcomeSearchInput.value.trim();
-			state.welcomeSearch.debounce = setTimeout(loadWelcomeSearchResults, 480);
+			state.welcomeSearch.debounce = window.setTimeout(loadWelcomeSearchResults, 480);
 			openWelcomeSearch();
 		});
 		els.welcomeSearchResults.addEventListener("click", async (e) => {
-			if (e.target.closest("a[href*=\"/view\"]")) {
+			const target = e.target;
+			if (target?.closest("a[href*=\"/view\"]")) {
+				const row = target?.closest("[data-page-row-id]");
 				recordPreviewUsage({
 					source: "welcome-search-link",
-					pageId: e.target.closest("[data-page-row-id]")?.dataset.pageRowId || ""
+					pageId: row?.dataset.pageRowId || ""
 				});
 				return;
 			}
-			const menu = e.target.closest(".page-menu");
+			const menu = target?.closest(".page-menu");
 			if (menu) {
-				openPageContextMenu(e, menu.dataset.pageId, menu.dataset.pageTitle || "", menu.dataset.projectId || "");
+				openPageContextMenu(e, menu.dataset.pageId || "", menu.dataset.pageTitle || "", menu.dataset.projectId || "");
 				return;
 			}
-			const btn = e.target.closest(".page-open");
+			const btn = target?.closest(".page-open");
 			if (!btn) return;
 			if (!state.blank && btn.dataset.id === state.current.id) {
 				closeWelcomeSearch();
 				return;
 			}
 			await runWithUnsavedPageTransitionGuard(async () => {
-				await loadPage(btn.dataset.id);
+				await loadPage(btn.dataset.id || "");
 				closeWelcomeSearch();
 			});
 		});
@@ -6645,7 +6656,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			applyRemoteUpdate();
 		});
 		els.updateBackupsBox.addEventListener("click", (e) => {
-			const restoreBtn = e.target.closest("[data-update-backup-restore-key]");
+			const restoreBtn = e.target?.closest("[data-update-backup-restore-key]");
 			if (!restoreBtn) return;
 			restoreUpdateBackupByKey(restoreBtn.dataset.updateBackupRestoreKey || "");
 		});
@@ -6665,7 +6676,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		});
 		els.pageContextMenu.addEventListener("click", async (e) => {
 			e.stopPropagation();
-			const actionBtn = e.target.closest("[data-action]");
+			const actionBtn = e.target?.closest("[data-action]");
 			if (!actionBtn) return;
 			const action = actionBtn.dataset.action;
 			const pageId = state.context.pageId;
@@ -6690,17 +6701,17 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		});
 		els.moveProjectMenu.addEventListener("click", async (e) => {
 			e.stopPropagation();
-			const btn = e.target.closest("[data-project-action]");
+			const btn = e.target?.closest("[data-project-action]");
 			if (!btn) return;
 			const action = btn.dataset.projectAction;
 			const pageId = state.context.pageId;
 			closeContextMenus();
 			if (action === "new-project") openCreateProjectModal(pageId);
-			if (action === "move") await movePageToProject(pageId, btn.dataset.projectId);
+			if (action === "move") await movePageToProject(pageId, btn.dataset.projectId || "");
 		});
 		els.projectContextMenu.addEventListener("click", async (e) => {
 			e.stopPropagation();
-			const btn = e.target.closest("[data-action]");
+			const btn = e.target?.closest("[data-action]");
 			if (!btn) return;
 			const action = btn.dataset.action;
 			const projectId = state.context.projectId;
@@ -6711,7 +6722,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		});
 		els.editorPanelMenu.addEventListener("click", async (e) => {
 			e.stopPropagation();
-			const btn = e.target.closest("[data-panel-action]");
+			const btn = e.target?.closest("[data-panel-action]");
 			if (!btn) return;
 			const action = btn.dataset.panelAction;
 			closeContextMenus();
@@ -6721,7 +6732,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		});
 		els.previewPanelMenu.addEventListener("click", (e) => {
 			e.stopPropagation();
-			const btn = e.target.closest("[data-panel-action]");
+			const btn = e.target?.closest("[data-panel-action]");
 			if (!btn) return;
 			const action = btn.dataset.panelAction;
 			closeContextMenus();
@@ -6779,9 +6790,9 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			if (e.target === els.historyModal) closeHistoryModal();
 		});
 		els.historyList.addEventListener("click", async (e) => {
-			const btn = e.target.closest(".restore-version");
+			const btn = e.target?.closest(".restore-version");
 			if (!btn) return;
-			await restoreVersion(btn.dataset.key);
+			await restoreVersion(btn.dataset.key || "");
 		});
 		els.confirmCancelBtn.addEventListener("click", () => closeConfirm(false));
 		els.confirmOkBtn.addEventListener("click", () => closeConfirm(true));

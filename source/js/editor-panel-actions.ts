@@ -1,21 +1,23 @@
-function openEditorPanelMenu(event) {
+function openEditorPanelMenu(event: MouseEvent): void {
   event.preventDefault(); event.stopPropagation();
   if (!shouldToggleFloatingMenu(els.editorPanelMenu, event.currentTarget)) return;
   els.editorPanelMenu.innerHTML = `
     <button class="context-menu-item" data-panel-action="paste-replace">${escapeHtml(t('pasteReplace'))}</button>
     <button class="context-menu-item" data-panel-action="import-html">${escapeHtml(t('importHtml'))}</button>
     <button class="context-menu-item" data-panel-action="select-all-code">${escapeHtml(t('selectAllCode'))}</button>`;
-  const rect = event.currentTarget.getBoundingClientRect();
+  const currentTarget = event.currentTarget as HTMLElement;
+  const rect = currentTarget.getBoundingClientRect();
   positionFloatingMenu(els.editorPanelMenu, rect.right - 208, rect.bottom + 6);
 }
-function selectAllCode(target) {
+function selectAllCode(target: Element): void {
   if (state.code.editor) {
-    const model = state.code.editor.getModel();
-    state.code.editor.focus();
-    if (model && window.monaco) {
+    const editor = state.code.editor as MonacoSingleEditorInstance;
+    const model = editor.getModel();
+    editor.focus();
+    if (model && monaco) {
       const lastLine = model.getLineCount();
       const lastColumn = model.getLineMaxColumn(lastLine);
-      state.code.editor.setSelection(new monaco.Range(1, 1, lastLine, lastColumn));
+      editor.setSelection(new (monaco as MonacoGlobal).Range(1, 1, lastLine, lastColumn));
     }
   } else {
     els.codeEditorFallback.focus();
@@ -23,7 +25,7 @@ function selectAllCode(target) {
   }
   showToastNear(target, t('codeSelected'));
 }
-async function pasteReplaceCode(target) {
+async function pasteReplaceCode(target: Element): Promise<void> {
   let text = '';
   try {
     text = await navigator.clipboard.readText();
@@ -38,7 +40,7 @@ async function pasteReplaceCode(target) {
   scheduleLocalPreviewRefresh();
   showToastNear(target, t('pastedReplaced'));
 }
-function importHtmlFile(target) {
+function importHtmlFile(target: Element | null): void {
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = '.html,.htm,text/html';

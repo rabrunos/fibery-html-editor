@@ -1,4 +1,4 @@
-function openProjectContextMenu(event, projectId, projectTitle = '') {
+function openProjectContextMenu(event: MouseEvent, projectId: string, _projectTitle = ''): void {
   event.preventDefault(); event.stopPropagation();
   if (!shouldToggleFloatingMenu(els.projectContextMenu, event.currentTarget)) return;
   state.context.projectId = projectId;

@@ -1,4 +1,4 @@
-function openCreateProjectModal(targetPageId = '') {
+function openCreateProjectModal(targetPageId = ''): void {
   state.context.createProjectTargetPageId = targetPageId || '';
   els.createProjectNameInput.value = '';
   els.confirmCreateProjectBtn.disabled = true;
@@ -6,7 +6,7 @@ function openCreateProjectModal(targetPageId = '') {
   setTimeout(() => els.createProjectNameInput.focus(), 0);
   closeContextMenus();
 }
-function closeCreateProjectModal() {
+function closeCreateProjectModal(): void {
   els.createProjectModal.classList.add('hidden');
   state.context.createProjectTargetPageId = '';
 }

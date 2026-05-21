@@ -1,4 +1,4 @@
-function startSidebarAutoRefresh() {
+function startSidebarAutoRefresh(): void {
   stopSidebarAutoRefresh();
   if (!state.sidebar.open || !state.sidebar.autoRefreshEnabled) return;
   const intervalMs = Math.max(600000, Number(state.sidebar.autoRefreshIntervalMs || 600000));
@@ -10,8 +10,13 @@ function startSidebarAutoRefresh() {
     startSidebarAutoRefresh();
   }, intervalMs);
 }
-function stopSidebarAutoRefresh() { if (state.sidebar.refreshTimer) { window.clearTimeout(state.sidebar.refreshTimer); state.sidebar.refreshTimer = null; } }
-function setSidebarOpen(open, persist = true) {
+function stopSidebarAutoRefresh(): void {
+  if (state.sidebar.refreshTimer !== null) {
+    window.clearTimeout(state.sidebar.refreshTimer);
+    state.sidebar.refreshTimer = null;
+  }
+}
+function setSidebarOpen(open: boolean, persist = true): void {
   state.sidebar.open = !!open;
   if (els.sidebarScroll) els.sidebarScroll.classList.remove('hidden');
   els.sidebar.style.width = state.sidebar.open ? '288px' : '56px';
