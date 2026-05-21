@@ -1,3 +1,28 @@
+## [8.22.0] - 2026-05-21
+
+### Technical adjustments
+
+* Migrated draft autosave storage helpers to TypeScript while preserving all autosave, emergency draft, and recovery behavior.
+* Reused central draft and emergency draft contracts (`DraftRecord`, `LocalEmergencyDraft`) from `source/types/storage.ts` where safe.
+* Preserved all global functions expected by the legacy bundle: `draftKeyForPage`, `writeEmergencyDraft`, `clearEmergencyDraft`, `clearEmergencyDraftForPage`, `applyEmergencyDraftIfRelevant`, `draftSnapshotFromRecord`, `syncDirtyWithBaseline`, `hasAnyDraftContent`, `isDefaultUnsavedSnapshot`, `shouldPersistDraftSnapshot`, `clearDraftAutosaveTimer`, `loadDismissedRecoveryMap`, `persistDismissedRecoveryMap`, `setDismissedRecovery`, `clearDismissedRecovery`, `updateRecoveryReopenButton`, `deleteDraftByKey`, `getManualHistoryLimit`, `saveCurrentDraftNow`, `scheduleDraftAutosave`, `flushDraftAutosaveNow`, `loadDraftsCache`.
+* Preserved `drafts` IndexedDB store, `LS.emergencyDraft` and `LS.dismissedRecovery` localStorage keys, 1-hour emergency draft expiry, pre-last-save discard rule, no-duplicate-draft rule, autosave timer, and flush behavior.
+* Updated `legacy-globals.d.ts`: added `DraftRecord`, `LocalEmergencyDraft`, `markDirty`, `updateCurrentFromInputs`, and `reopenRecoveryBtn`; removed declarations for functions now defined in TypeScript.
+* Bumped app version metadata to `8.22.0` via manifest and `package.json`, and regenerated the single-file deploy artifact.
+
+### Notes
+
+* No intentional UX or runtime behavior changes.
+* `drafts-recovery-modal.js`, `drafts-diff-utils.js`, and `drafts-diff-render.js` remain in JavaScript — deferred to next lot.
+* The final Fibery deployment remains a single generated `index.html` with the Vite bundle inlined.
+
+### Validation
+
+* `npm run typecheck`
+* `npm run build:tmp`
+* `npm run validate:tmp`
+* `npm run build`
+* `npm run validate`
+
 ## [8.21.0] - 2026-05-21
 
 ### Technical adjustments

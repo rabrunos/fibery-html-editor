@@ -2,7 +2,9 @@ import type { AppState } from './app';
 
 declare global {
   type ContentSignature = import('./domain').ContentSignature;
+  type DraftRecord = import('./storage').DraftRecord;
   type FiberyPage = import('./domain').FiberyPage;
+  type LocalEmergencyDraft = import('./storage').LocalEmergencyDraft;
   type PageId = import('./domain').PageId;
   type PageSnapshot = import('./domain').PageSnapshot;
   type HistoryRecord = import('./storage').HistoryRecord;
@@ -16,6 +18,7 @@ declare global {
 
   const els: {
     createProjectNameInput: HTMLInputElement;
+    reopenRecoveryBtn: HTMLButtonElement;
     [key: string]: unknown;
   };
   const state: AppState;
@@ -29,10 +32,8 @@ declare global {
     previewId?: string;
     openPreviewId?: string;
   }): Promise<boolean>;
-  function deleteDraftByKey(key: string): Promise<void>;
-  function draftKeyForPage(pageId?: string): string;
-  function getManualHistoryLimit(): number;
   function log(message: string): void;
+  function markDirty(value?: boolean): void;
   function rebuildProjectMaps(): void;
   function refreshSidebarFromLocalCache(options?: unknown): void;
   function renderSidebarProjects(): void;
@@ -40,6 +41,7 @@ declare global {
   function syncExternalSyncBaselineState(): void;
   function syncBeforeUnloadWarningState(): void;
   function t(key: string): string;
+  function updateCurrentFromInputs(): void;
 }
 
 export {};

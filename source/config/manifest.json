@@ -1,5 +1,5 @@
 {
-  "version": "8.21.0",
+  "version": "8.22.0",
   "bodyOpenTag": "<body class=\"h-screen overflow-hidden bg-gray-50 text-gray-900 antialiased\">",
   "template": "source/template/index.template.html",
   "appEntry": "source/app/main.ts",
@@ -49,7 +49,7 @@
     "source/js/indexeddb-core.ts",
     "source/js/page-content-cache.ts",
     "source/js/page-meta.ts",
-    "source/js/drafts-autosave.js",
+    "source/js/drafts-autosave.ts",
     "source/js/drafts-diff-utils.js",
     "source/js/drafts-diff-render.js",
     "source/js/drafts-recovery-modal.js",
