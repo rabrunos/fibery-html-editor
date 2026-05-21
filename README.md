@@ -1,176 +1,154 @@
 # Fibery HTML Editor
 
-An operational editor for creating, editing, previewing, organizing, and maintaining HTML pages hosted in Fibery.
+A focused editor for creating, editing, previewing, organizing, and maintaining HTML pages hosted in Fibery.
 
-**Fibery HTML Editor** runs as a **Custom HTML Page** inside Fibery. It is not a generic public HTML editor, it does not have its own backend, and it keeps the deployment model intentionally simple: the final app is a single generated `index.html` file built from modular source files in `source/`.
+**Fibery HTML Editor** runs as a **Custom HTML Page** inside Fibery. It is designed for teams that build internal tools, dashboards, documentation pages, and custom HTML interfaces directly in Fibery.
 
-## Overview
+The app is delivered as a single generated `index.html` file, while the source code is developed in a modular structure under `source/`.
 
-This project was created to solve a practical problem: editing Fibery-hosted HTML pages with more control, safety, and speed than the default workflow allows.
+## How to use
 
-The core idea is to provide an internal editor experience with:
+1. Open [`index.html`](https://raw.githubusercontent.com/rabrunos/fibery-html-editor/main/index.html) from this repository.
 
-* a page sidebar;
-* local project organization;
-* a code editor with preview;
-* fast search;
-* local autosave;
-* manual history;
-* version comparison before restore;
-* conflict protection;
-* safe self-update flow;
-* API usage monitoring.
+2. Copy the full HTML content from the page, or right-click the link and save it locally as an HTML file.
 
-A major design goal is to avoid unnecessary Fibery API usage. The app uses local cache, local preview, and browser-side validation wherever possible, while only changing Fibery through explicit user actions such as **Save** or a confirmed app update.
+3. Open the Fibery Custom HTML Page editor for your workspace:
 
-## Project goals
+   `https://YOUR-WORKSPACE.fibery.io/api/ai-answer/pages/editor.html?id=new`
 
-* Make Fibery HTML pages easier to maintain.
-* Reduce the risk of losing work while editing, reloading, or switching pages.
-* Reduce automatic Fibery API usage.
-* Improve preview behavior without saving the page after every change.
-* Keep deployment simple: one final `index.html` file for Fibery.
-* Improve the technical foundation without turning the project into a backend application.
+   Replace `YOUR-WORKSPACE` with your Fibery workspace subdomain.
 
-## Current features
+4. Paste the full HTML content into the new Custom HTML Page.
 
-### Fibery HTML page editing
+5. Set a clear title, for example `Fibery HTML Editor`, and save the page.
 
-The app lets users create, open, edit, save, and delete HTML pages hosted in Fibery.
+6. Open the saved page in **View** mode.
 
-Editing happens locally in the browser until the user clicks **Save**. Fibery is not updated automatically while the user types.
+7. Bookmark or save that View link wherever it is convenient for your team.
 
-### Code editor
+There is no fixed public editor URL yet. Each Fibery workspace hosts its own copy of the editor as a Custom HTML Page.
 
-The editor uses Monaco when available and keeps a `textarea` fallback for cases where the main editor cannot be loaded.
+## Why this exists
 
-It also includes character counting, a copy HTML action, and editor action menus.
+Fibery can host powerful custom HTML pages, but editing and maintaining those pages can become difficult as they grow.
 
-### Real preview and local preview
+Fibery HTML Editor adds a safer and more productive editing experience:
 
-The preview uses two strategies:
+* edit HTML with a real code editor;
+* preview changes before saving;
+* organize pages locally;
+* recover unsaved work;
+* compare versions before restoring;
+* update the editor itself safely;
+* avoid unnecessary Fibery API usage while editing.
 
-* **Real preview**: loads the Fibery-saved version when the editor content matches the confirmed Fibery baseline.
-* **Local preview**: renders the current editor HTML directly in the browser when there are unsaved changes.
+The goal is not to replace Fibery. The goal is to make custom HTML pages easier to maintain inside Fibery.
 
-This allows users to see changes quickly without saving to Fibery and without calling the API on every keystroke.
+## Key features
 
-The local preview uses debounce to avoid excessive iframe updates and builds a local preview document for rendering. When the preview panel is not visible, preview rendering is paused to reduce background work.
+### HTML page editor
 
-### API usage reduction
+Create, open, edit, save, and delete Fibery-hosted HTML pages from a dedicated editor interface.
 
-The project explicitly cares about reducing Fibery API usage.
+Changes stay local until the user explicitly saves them to Fibery.
 
-Current strategies include:
+### Local-first preview
 
-* local preview while editing, without calling `/view` on every change;
-* pausing preview when the preview panel is hidden;
-* tracking recent API calls;
-* cooldown for automatic API calls;
-* local cache of the last confirmed saved version;
-* fast page opening from cache when possible;
-* background remote verification before allowing save in sensitive scenarios.
+The editor supports both real Fibery preview and local preview:
+
+* when the editor content matches the confirmed saved version, the app can show the real Fibery preview;
+* when the user changes the HTML, the app switches to local preview and renders the current content in the browser.
+
+This means users can get fast visual feedback while editing **without saving on every change** and without repeatedly calling Fibery preview endpoints.
+
+Local preview also tries to support Fibery-style pages by loading Tailwind in the preview document when relevant. If the user’s HTML itself fetches data from Fibery or other APIs, that page behavior may still run inside the preview, but the editor itself does not save or call Fibery just to refresh the preview while typing.
+
+### API-conscious design
+
+A core principle of the project is to avoid unnecessary load on Fibery.
+
+The app reduces API usage through:
+
+* local preview while typing;
+* local autosave instead of remote autosave;
+* local page cache for faster reopening;
+* API usage monitoring;
+* explicit save/update actions instead of background writes.
 
 ### Local autosave and recovery
 
-Autosave is local only and acts as a temporary safety net.
+Autosave is local-only. It protects work in progress without writing to Fibery.
 
-It does not save to Fibery and does not create manual history entries. Its purpose is to protect work in progress if the tab closes, reloads, or the user switches context.
-
-When a relevant draft exists, the app can show a comparison so the user can decide whether to restore it or keep the current version.
+If the browser reloads, the tab closes, or the user returns later, the app can offer a recovery flow with comparison before restoring a draft.
 
 ### Manual history
 
-Manual history stores versions created by intentional saves.
+Manual history is separate from autosave.
 
-It is separate from autosave. This avoids mixing temporary drafts with versions the user explicitly decided to save.
+It stores versions created by intentional saves, so users can review and restore meaningful checkpoints without mixing them with temporary drafts.
 
-### Last Saved Cache
+### Local page cache
 
-The app keeps a local cache of the last fully confirmed version of each page.
+The app keeps a local copy of the last confirmed saved version of pages.
 
-This cache helps large pages open faster and provides a baseline for detecting whether the Fibery version has changed later.
-
-The cache is local, does not replace Fibery, and should not be confused with manual history.
+This helps large pages open faster and gives the editor a reliable baseline for comparison and conflict protection.
 
 ### Conflict protection
 
-When the app detects a divergence between the local/cache version and the real Fibery version, it avoids overwriting content automatically.
+The editor avoids overwriting Fibery content silently.
 
-The user is guided through a comparison flow and must explicitly choose which version to keep.
-
-Important rules:
-
-* never apply a remote version automatically when there is a meaningful divergence;
-* do not save over Fibery while the remote version is still unverified;
-* do not delete drafts without a clear user decision;
-* keep local preview active until the current version is confirmed in Fibery.
+When local content, cached content, and the current Fibery version differ, the app guides the user through an explicit comparison and decision flow.
 
 ### Local projects
 
-In addition to recent pages, the app lets users organize pages into local projects.
+Pages can be organized into local projects in the sidebar.
 
-These projects exist only in the user’s browser. They do not create Fibery entities and do not change page content.
+Projects are browser-local organization only. They do not create Fibery entities and do not modify page content.
 
 ### Search and navigation
 
-The app includes page search, a welcome search view, and a sidebar with recent pages.
+The app includes page search, recent pages, project navigation, and a clean sidebar for moving quickly between pages.
 
-The sidebar also includes refresh actions, incremental loading, local projects, and settings.
+### Safe app update
 
-### Safe app update flow
+The editor can check a remote version of itself from GitHub and apply updates through a protected flow:
 
-The app includes a flow to check and apply a remote version of its own `index.html` from GitHub.
-
-This flow is explicit and protected:
-
-* checks the remote version;
-* validates the remote HTML;
-* asks for confirmation;
-* creates a local backup before applying;
-* saves through the normal Fibery save flow;
-* records local history;
-* supports backup-based recovery/rollback.
-
-### Remote changelog
-
-The app uses the repository `CHANGELOG.md` to help users understand what changed between versions.
-
-### Internationalization
-
-The interface includes English and Brazilian Portuguese text.
-
-Translations currently live in JavaScript modules, but there is a planned roadmap item to move translations into remote/cacheable JSON files.
+* version check;
+* remote HTML validation;
+* user confirmation;
+* local backup before applying;
+* Fibery save through the normal save flow;
+* recovery/rollback path when available.
 
 ## Current stack
 
-* HTML, CSS, and JavaScript on the frontend.
+* HTML, CSS, and JavaScript.
 * Monaco Editor for code editing, with a `textarea` fallback.
 * IndexedDB for structured local data.
 * localStorage for simple preferences.
-* Vite as the internal JavaScript bundling step.
-* Custom build and validation scripts to generate the final `index.html`.
-* GitHub as the source for code, changelog, and remote app updates.
-* Fibery Custom HTML Page as the final runtime environment.
+* Vite for the internal JavaScript bundle.
+* Custom build scripts for the final single-file `index.html`.
+* GitHub for source code, changelog, and remote app updates.
+* Fibery Custom HTML Page as the runtime environment.
 
-## Delivery architecture
+## Architecture
 
-The app is still delivered to Fibery as a single file:
+The final app deployed to Fibery is:
 
 * `index.html`
 
-During development, the codebase is modular:
+The development source is modular:
 
-* `source/config/manifest.json` defines the app version and deterministic assembly order;
-* `source/template/index.template.html` contains the main HTML template;
-* `source/html/` contains layout, modals, panels, and menus;
-* `source/css/` contains style modules;
-* `source/js/` contains functional modules;
-* `source/app/main.js` is the current bundle entry;
-* `scripts/build.mjs` generates the final HTML;
-* `scripts/validate-build.mjs` validates the generated HTML.
+* `source/config/manifest.json` — app version and build manifest;
+* `source/template/index.template.html` — main HTML template;
+* `source/html/` — layout, modals, panels, and menus;
+* `source/css/` — CSS modules;
+* `source/js/` — application modules;
+* `source/app/main.js` — current bundle entry;
+* `scripts/build.mjs` — generates the final HTML;
+* `scripts/validate-build.mjs` — validates generated HTML.
 
-The `index.html` file is a generated artifact. Under normal conditions, changes should be made in `source/` and then reflected through the build process.
+`index.html` is a generated artifact. Normal development should happen in `source/`, followed by build and validation.
 
 ## Local development
 
@@ -179,10 +157,15 @@ Requirements:
 * Node.js;
 * npm.
 
-Basic setup and validation:
+Install dependencies:
 
 ```bash
 npm install
+```
+
+Build and validate:
+
+```bash
 npm run build:tmp
 npm run validate:tmp
 npm run build
@@ -194,52 +177,32 @@ Available scripts:
 | Command                | Purpose                                                     |
 | ---------------------- | ----------------------------------------------------------- |
 | `npm run build:tmp`    | Generates a temporary build at `.tmp/index.generated.html`. |
-| `npm run validate:tmp` | Validates the temporary build against the current baseline. |
+| `npm run validate:tmp` | Validates the temporary build.                              |
 | `npm run build`        | Generates the final `index.html`.                           |
 | `npm run validate`     | Validates the final `index.html`.                           |
 
-There is currently no consolidated `npm run verify` command. It is planned in the roadmap.
-
-## Recommended development flow
-
-1. Change files in `source/`.
-2. Generate a temporary build.
-3. Validate the temporary build.
-4. Generate the final `index.html`.
-5. Validate the final `index.html`.
-6. Test in the real Fibery environment when the change touches runtime behavior, API access, permissions, real preview, save/load/delete, or app update flows.
-
-Commands:
-
-```bash
-npm run build:tmp
-npm run validate:tmp
-npm run build
-npm run validate
-```
-
 ## Deploying to Fibery
 
-The expected deployment flow is to copy the generated `index.html` content into the corresponding Fibery Custom HTML Page.
+The generated `index.html` can be copied into the Fibery Custom HTML Page used to host the editor.
 
-The app also includes its own **Update App** flow, which fetches the remote `index.html`, validates it, creates a backup, and applies the update only after user confirmation.
+The app also includes its own **Update App** flow, which can fetch the remote `index.html`, validate it, create a local backup, and apply the update only after user confirmation.
 
-## Local data
+## Data storage
 
-The app uses browser storage to protect user work and improve performance.
+The editor stores user-side data in the browser.
 
 ### IndexedDB
 
-Used for structured local data such as:
+Used for structured data such as:
 
 * page metadata;
-* drafts/autosaves;
+* drafts;
 * manual history;
-* Last Saved Cache;
-* local projects;
+* local page cache;
+* projects;
 * page-to-project links;
 * update backups;
-* future cached external resources.
+* future cached resources.
 
 ### localStorage
 
@@ -250,159 +213,53 @@ Used for simple preferences such as:
 * sidebar state;
 * editor/preview mode;
 * panel split size;
-* history limits;
-* simple recovery signals.
+* history limits.
 
 ## Product principles
 
-* Fibery only changes through explicit user actions.
-* Autosave is local and does not call the Fibery API.
-* Preview while editing should be local whenever possible.
-* Manual history and autosave are separate concepts.
-* Local cache does not replace the real Fibery version.
-* Conflicts must be resolved through explicit user decisions.
-* The app must remain a single frontend with no owned backend.
-* Structural changes must preserve the final single-file `index.html` delivery model.
+* **Explicit writes only** — Fibery is changed only when the user chooses to save or apply an update.
+* **Respect Fibery API usage** — the editor avoids unnecessary API calls and background writes.
+* **Local safety net** — drafts, cache, and history protect user work without replacing Fibery.
+* **User-controlled conflict resolution** — conflicting versions should be compared and chosen explicitly.
+* **Single-file deployment** — the app should remain easy to install and update as a Fibery Custom HTML Page.
+* **No owned backend** — the project should stay frontend-only unless the product direction changes explicitly.
 
 ## Roadmap
 
-The project roadmap is managed through GitHub Issues. Below is a summary of the main planned areas.
+The roadmap is managed through GitHub Issues. Current priorities are:
 
-### Technical foundation
-
-* Consolidate Vite as the build pipeline.
-* Gradually migrate JavaScript modules to TypeScript.
-* Create central contracts for app state and records.
-* Add `npm run verify` with typecheck, small tests, build, and validation.
-
-Related issues: #61, #62, #63, #64.
-
-### Smaller `index.html` through cached external resources
-
-* Create an external resources manifest.
-* Cache required resources in IndexedDB.
-* Move translations into remote/cacheable JSON files.
-* Integrate changelog/release notes into the resource cache.
-* Externalize non-critical CSS.
-* Externalize HTML templates for modals and panels.
-* Evaluate external/cacheable scripts in a separate PoC without breaking Fibery CSP.
-
-Related issues: #50, #51, #52, #53, #54, #55, #56, #38.
-
-### Appearance and themes
-
-* Light, dark, and system theme modes.
-* Editor themes independent from the app theme.
-* Contrast polish for buttons, menus, diffs, history, and modals.
-
-Related issues: #7, #8, #9, #10.
-
-### Command Palette
-
-* Initial command palette.
-* Fast keyboard actions.
-* Future integration with search, pages, projects, and commands.
-
-Related issues: #11, #12, #13.
-
-### Snippets and templates
-
-* Basic HTML snippets.
-* Page templates for faster starts.
-* Cursor insertion with Monaco and fallback support.
-
-Related issues: #14, #15, #16.
-
-### Diagnostics and formatter
-
-* Non-blocking problems panel.
-* Basic HTML/CSS/JS diagnostics.
-* Conservative HTML formatter.
-
-Related issues: #17, #18, #19.
-
-### Advanced Update App flow
-
-* Improved remote version flow.
-* Better integrated remote changelog.
-* Safe update application with backup.
-* Snapshot-based rollback.
-
-Related issues: #20, #21, #22, #23, #37.
-
-### Advanced snapshots
-
-* Named snapshots.
-* Comparisons between current content, snapshots, autosaves, history, and saved versions.
-* Safe restore without automatic save.
-
-Related issues: #24, #25, #26.
-
-### External sync and conflicts
-
-* Detect external Fibery changes by content signature.
-* Warn before saving over external changes.
-* Compare local and remote versions.
-* Record detected external versions locally.
-* Plan assisted merge without blind automatic merging.
-
-Related issues: #40, #41, #42, #43, #44, #45, #58.
-
-### Split HTML/CSS/JS editor
-
-* Base for a three-pane editor.
-* Combined preview from HTML, CSS, and JS.
-* Smart importer to split full HTML pages when safe.
-
-Related issues: #27, #28, #29, #30.
-
-### Mobile and touch
-
-* Vertical layout for smaller screens.
-* Better touch interactions.
-* Preserve the desktop workflow.
-
-Related issues: #31, #32, #33.
-
-### Icons and visual polish
-
-* Isolated SVG, sizing, and alignment fixes.
-* Visual consistency without mixing icon work with new features.
-
-Related issues: #34, #35.
-
-### Future research
-
-* PWA/installability inside Fibery Custom HTML Page.
-* CodeMirror 6 as an alternative or companion to Monaco, especially on mobile.
-* Web Components for organizing modals and panels without adopting a full framework.
-* Filters and categories in the app log panel.
-
-Related issues: #39, #60, #65, #66.
+| Priority | Area                      | Description                                                                                                                                                    |
+| -------- | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P0       | Technical foundation      | Improve the build pipeline, continue the TypeScript migration, and add a stronger local verification command.                                                  |
+| P0       | Cached resources          | Reduce the final `index.html` size by moving safe non-executable resources, such as i18n, CSS, templates, and changelog data, into versioned cached resources. |
+| P0       | Preview experience        | Continue improving local/real preview behavior, Tailwind support, and clear preview limitations without increasing Fibery API usage.                           |
+| P1       | Sync and conflicts        | Improve detection of external Fibery changes and make conflict decisions safer and clearer.                                                                    |
+| P1       | Appearance and themes     | Add light/dark/system themes and editor theme options.                                                                                                         |
+| P1       | Command Palette           | Add fast keyboard-driven actions and navigation.                                                                                                               |
+| P2       | Snippets and templates    | Add reusable HTML snippets and starter page templates.                                                                                                         |
+| P2       | Diagnostics and formatter | Add non-blocking code diagnostics and safer formatting tools.                                                                                                  |
+| P2       | Snapshots                 | Add named restore points and richer comparisons between versions.                                                                                              |
+| P2       | Mobile and touch          | Improve smaller-screen layouts and touch interactions.                                                                                                         |
+| Research | PWA/installability        | Investigate what is possible inside Fibery Custom HTML Page constraints.                                                                                       |
+| Research | Editor engine             | Evaluate CodeMirror 6 as a possible alternative or companion to Monaco.                                                                                        |
+| Research | UI architecture           | Evaluate selective Web Components for modals and panels.                                                                                                       |
 
 ## Current status
 
 Current app version: `8.16.0`.
 
-Version `8.16.0` introduced Vite as the internal JavaScript bundling pipeline while keeping the final output as a single generated `index.html`. It did not intentionally change UX or runtime behavior.
+Version `8.16.0` introduced Vite as the internal JavaScript bundling pipeline while keeping the final output as a single generated `index.html`.
 
 ## Contributing
 
-This is an operational project guided by real Fibery usage needs.
+This project is driven by real Fibery usage needs.
 
-Before implementing changes, check:
-
-* `AGENTS.md`;
-* related GitHub Issues;
-* `source/config/manifest.json`;
-* relevant files in `source/`;
-* `CHANGELOG.md` when the change affects app behavior, runtime, build, UX, validation, or release/update flow.
+Before changing the app, check the repository instructions, the related GitHub Issues, and the relevant files in `source/`.
 
 Changes should preserve:
 
-* single-frontend architecture;
-* deterministic build;
-* manifest-centered versioning;
+* the single-file Fibery deployment model;
+* careful Fibery API usage;
 * local validation where possible;
 * clear separation between local validation and real Fibery testing.
 
