@@ -1,3 +1,31 @@
+## [8.23.0] - 2026-05-21
+
+### Technical adjustments
+
+* Migrated draft diff utilities to TypeScript (`drafts-diff-utils.ts`): typed diff-map, column HTML builders, line-diff algorithm, and all helper functions.
+* Migrated draft diff rendering to TypeScript (`drafts-diff-render.ts`): typed Monaco diff editor wrappers, fallback line-diff renderer, scroll sync, and legend builder; Monaco availability check and fallback behavior preserved.
+* Migrated draft recovery modal to TypeScript (`drafts-recovery-modal.ts`): typed modal open/close, keep-current, discard, restore, and recovery-prompt flows; `history-manual` mode preserved.
+* Defined minimal Monaco editor type interfaces (`MonacoGlobal`, `MonacoDiffEditorInstance`, `MonacoEditorModel`, `MonacoLineChange`, `MonacoEditorNamespace`) in `legacy-globals.d.ts` to type Monaco interactions without installing external type packages.
+* Added `els` element declarations for all draft recovery modal DOM references.
+* Added `escapeHtml`, `renderCurrent`, and `syncPreviewMode` to `legacy-globals.d.ts`.
+* Widened `draftSnapshotFromRecord` parameter in `drafts-autosave.ts` from `Partial<DraftRecord>` to `Partial<PageSnapshot>` to accept `HistoryRecord` (history-manual restore path).
+* Reused central contracts `DraftRecord`, `HistoryRecord`, `PageSnapshot`, `ContentSignature`, `PageId` where safe.
+* Bumped app version metadata to `8.23.0` via manifest and `package.json`, and regenerated the single-file deploy artifact.
+
+### Notes
+
+* No intentional UX or runtime behavior changes.
+* Monaco diff editor behavior, fallback diff, scroll sync, and recovery modal actions are functionally identical to the JavaScript originals.
+* The final Fibery deployment remains a single generated `index.html` with the Vite bundle inlined.
+
+### Validation
+
+* `npm run typecheck`
+* `npm run build:tmp`
+* `npm run validate:tmp`
+* `npm run build`
+* `npm run validate`
+
 ## [8.22.0] - 2026-05-21
 
 ### Technical adjustments

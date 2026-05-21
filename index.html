@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.22.0" />
+  <meta name="fibery-html-editor-version" content="8.23.0" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -595,7 +595,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 
 (function() {
 	//#region \0virtual:fibery-html-editor/manifest-js
-	const APP_VERSION = "8.22.0";
+	const APP_VERSION = "8.23.0";
 	window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 	document.documentElement.dataset.appVersion = APP_VERSION;
 	var UPDATE_REMOTE = Object.freeze({
@@ -3279,7 +3279,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 					leftNo: "",
 					rightNo,
 					leftLine: "",
-					rightLine,
+					rightLine: rightLine ?? "",
 					leftType: "empty",
 					rightType: "added"
 				});
@@ -3293,7 +3293,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 				rows.push({
 					leftNo,
 					rightNo: "",
-					leftLine,
+					leftLine: leftLine ?? "",
 					rightLine: "",
 					leftType: "removed",
 					rightType: "empty"
@@ -3337,7 +3337,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 				leftNo: "",
 				rightNo,
 				leftLine: "",
-				rightLine,
+				rightLine: rightLine ?? "",
 				leftType: "empty",
 				rightType: "added"
 			});
@@ -3429,14 +3429,15 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		renderDraftCodeLegend(fallback.stats);
 		els.draftCodeDiffMonaco.classList.add("hidden");
 		els.draftCodeDiffFallback.classList.add("hidden");
-		if (!(window.monaco && window.monaco.editor && els.draftCodeDiffMonaco)) {
+		const m = monaco;
+		if (!m?.editor) {
 			renderDraftFallbackDiff(fallback.rows, fallback.stats);
 			return;
 		}
 		try {
-			state.drafts.diffOriginalModel = monaco.editor.createModel(currentHtml, "html");
-			state.drafts.diffModifiedModel = monaco.editor.createModel(draftHtml, "html");
-			state.drafts.diffEditor = monaco.editor.createDiffEditor(els.draftCodeDiffMonaco, {
+			state.drafts.diffOriginalModel = m.editor.createModel(currentHtml, "html");
+			state.drafts.diffModifiedModel = m.editor.createModel(draftHtml, "html");
+			state.drafts.diffEditor = m.editor.createDiffEditor(els.draftCodeDiffMonaco, {
 				automaticLayout: true,
 				readOnly: true,
 				originalEditable: false,
@@ -3450,15 +3451,16 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 				fontSize: 12,
 				lineHeight: 20
 			});
-			state.drafts.diffEditor.setModel({
+			const editor = state.drafts.diffEditor;
+			editor.setModel({
 				original: state.drafts.diffOriginalModel,
 				modified: state.drafts.diffModifiedModel
 			});
 			els.draftCodeDiffMonaco.classList.remove("hidden");
 			const refreshLegend = () => {
-				const editor = state.drafts.diffEditor;
-				if (!editor) return;
-				const changes = editor.getLineChanges() || [];
+				const ed = state.drafts.diffEditor;
+				if (!ed) return;
+				const changes = ed.getLineChanges() || [];
 				if (!changes.length) {
 					renderDraftCodeLegend(currentHtml === draftHtml ? {
 						added: 0,
@@ -3469,9 +3471,9 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 				}
 				renderDraftCodeLegend(monacoDiffStatsFromChanges(changes));
 			};
-			state.drafts.diffEditor.onDidUpdateDiff(refreshLegend);
+			editor.onDidUpdateDiff(refreshLegend);
 			refreshLegend();
-			state.drafts.diffEditor.layout();
+			editor.layout();
 			return;
 		} catch (err) {
 			log(err.message || String(err));
@@ -3493,7 +3495,8 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		if (!draftRecord) return;
 		const draftSnapshot = draftSnapshotFromRecord(draftRecord);
 		const diff = draftDiffMap(currentSnapshot, draftSnapshot);
-		const draftUpdatedLabel = draftUpdatedAtLabel(Number(draftRecord.updatedAt || draftRecord.createdAt || 0));
+		const recordAny = draftRecord;
+		const draftUpdatedLabel = draftUpdatedAtLabel(Number(recordAny.updatedAt || recordAny.createdAt || 0));
 		const computedLeftSubtitle = leftSubtitle || (mode === "draft" ? t("draftLoadedFromFibery") : "");
 		const computedRightSubtitle = rightSubtitle || `${t("draftUpdatedAt")}: ${draftUpdatedLabel || "-"}`;
 		els.draftRecoveryTitle.textContent = t(titleKey);
@@ -3504,10 +3507,10 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		els.restoreDraftBtn.textContent = t(restoreTextKey);
 		els.keepCurrentVersionBtn.textContent = t("keepCurrentVersion");
 		els.discardDraftBtn.classList.toggle("hidden", !showDiscard);
-		state.drafts.activeDraftKey = key;
+		state.drafts.activeDraftKey = key || "";
 		state.drafts.activeRecovery = {
 			mode,
-			key,
+			key: key || "",
 			pageId: pageId || "",
 			record: draftRecord
 		};

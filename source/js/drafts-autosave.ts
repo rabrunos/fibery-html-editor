@@ -77,7 +77,7 @@ async function applyEmergencyDraftIfRelevant(): Promise<void> {
   }
 }
 
-function draftSnapshotFromRecord(record: Partial<DraftRecord> | null | undefined): PageSnapshot {
+function draftSnapshotFromRecord(record: Partial<PageSnapshot> | null | undefined): PageSnapshot {
   return {
     title: String(record?.title || ''),
     description: String(record?.description || ''),
