@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.19.0" />
+  <meta name="fibery-html-editor-version" content="8.20.0" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -595,7 +595,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 
 (function() {
 	//#region \0virtual:fibery-html-editor/manifest-js
-	const APP_VERSION = "8.19.0";
+	const APP_VERSION = "8.20.0";
 	window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 	document.documentElement.dataset.appVersion = APP_VERSION;
 	var UPDATE_REMOTE = Object.freeze({
@@ -2867,7 +2867,10 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		};
 		map[id] = record;
 		setMetaMap(map);
-		if (state.db) savePageMetaRecord(record).catch((err) => log(err.message || String(err)));
+		if (state.db) savePageMetaRecord(record).catch((err) => {
+			const message = typeof err === "object" && err !== null && "message" in err ? err.message : void 0;
+			log(String(message || err));
+		});
 		return record;
 	}
 	async function savePageMeta(id, data = {}) {
@@ -2911,8 +2914,9 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		const groups =  new Map();
 		for (const page of rows) {
 			const label = groupLabel(pageTime(page));
-			if (!groups.has(label)) groups.set(label, []);
-			groups.get(label).push(page);
+			const group = groups.get(label);
+			if (group) group.push(page);
+			else groups.set(label, [page]);
 		}
 		return Array.from(groups.entries());
 	}
@@ -2925,11 +2929,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		try {
 			const local = JSON.parse(localStorage.getItem(LS.pageMeta) || "{}") || {};
 			for (const [id, meta] of Object.entries(local)) if (!map[id] && meta && typeof meta === "object") {
-				const record = {
-					id,
-					...meta,
-					id: meta.id || id
-				};
+				const record = Object.assign({ id }, meta, { id: meta.id || id });
 				map[id] = record;
 				await txPut("pageMeta", record);
 			}
@@ -4652,7 +4652,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		return new Promise((resolve, reject) => {
 			const tx = state.db.transaction("versions", "readwrite");
 			tx.objectStore("versions").delete(key);
-			tx.oncomplete = resolve;
+			tx.oncomplete = () => resolve();
 			tx.onerror = () => reject(tx.error);
 		});
 	}

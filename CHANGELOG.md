@@ -1,3 +1,25 @@
+## [8.20.0] - 2026-05-21
+
+### Technical adjustments
+
+* Migrated page metadata storage helpers to TypeScript while preserving localStorage mirroring, IndexedDB fallback migration, date grouping, and page/project cleanup behavior.
+* Migrated manual history storage helpers to TypeScript while preserving the `versions` store usage, `kind: 'manual'` records, autosave history filtering, and manual history limit enforcement.
+* Reused central storage/domain contracts for page metadata, history records, manual history kind, snapshots, and page identifiers where safe.
+* Bumped app version metadata to `8.20.0` via manifest and `package.json`, and regenerated the single-file deploy artifact.
+
+### Notes
+
+* No intentional UX or runtime behavior changes.
+* The final Fibery deployment remains a single generated `index.html` with the Vite bundle inlined.
+
+### Validation
+
+* `npm run typecheck`
+* `npm run build:tmp`
+* `npm run validate:tmp`
+* `npm run build`
+* `npm run validate`
+
 ## [8.19.0] - 2026-05-21
 
 ### Technical adjustments
