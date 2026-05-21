@@ -1,11 +1,14 @@
 ﻿import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { build as viteBuild } from 'vite';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 const manifestPath = path.join(rootDir, 'source', 'config', 'manifest.json');
+const viteConfigPath = path.join(rootDir, 'vite.config.mjs');
+const viteOutputDir = path.join(rootDir, '.tmp', 'vite');
 
 const REQUIRED_TEMPLATE_PLACEHOLDERS = [
   '__INLINE_CSS__',
@@ -29,11 +32,56 @@ function isSemver(version) {
   return /^\d+\.\d+\.\d+$/.test(String(version || '').trim());
 }
 
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 async function readText(filePath, label) {
   const content = await fs.readFile(filePath, 'utf8');
   const normalized = normalizeLf(content);
   assert(normalized.trim().length > 0, `${label} is empty: ${filePath}`);
   return normalized;
+}
+
+async function pathExists(filePath) {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+async function findSingleViteBundle(outDir) {
+  const entries = await fs.readdir(outDir, { withFileTypes: true });
+  const jsFiles = entries
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.js'))
+    .map((entry) => entry.name);
+
+  assert(jsFiles.length === 1, `Expected one Vite JS bundle in ${outDir}, found ${jsFiles.length}: ${jsFiles.join(', ') || 'none'}`);
+  return path.join(outDir, jsFiles[0]);
+}
+
+function normalizeViteBundle(bundle) {
+  return String(bundle)
+    .replace(/\/\*\s*@__PURE__\s*\*\//g, '')
+    .replace(/\bvar\s+APP_VERSION\s*=/, 'const APP_VERSION =');
+}
+
+async function buildInlineJsBundle(manifest) {
+  assert(typeof manifest.appEntry === 'string' && manifest.appEntry.trim(), 'Manifest appEntry path is missing');
+  const appEntryPath = path.resolve(rootDir, manifest.appEntry);
+  assert(await pathExists(appEntryPath), `Manifest appEntry not found: ${manifest.appEntry}`);
+  assert(Array.isArray(manifest.js) && manifest.js.length > 0, 'Manifest js list is empty');
+
+  await fs.rm(viteOutputDir, { recursive: true, force: true });
+  await viteBuild({
+    configFile: viteConfigPath,
+    logLevel: 'warn'
+  });
+
+  const bundlePath = await findSingleViteBundle(viteOutputDir);
+  return normalizeViteBundle(await readText(bundlePath, 'Vite JS bundle')).trim();
 }
 
 function parseOutArg(argv) {
@@ -57,6 +105,7 @@ async function main() {
   assert(Array.isArray(manifest.css) && manifest.css.length > 0, 'Manifest css list is empty');
   assert(Array.isArray(manifest.html) && manifest.html.length > 0, 'Manifest html list is empty');
   assert(Array.isArray(manifest.js) && manifest.js.length > 0, 'Manifest js list is empty');
+  assert(typeof manifest.appEntry === 'string' && manifest.appEntry.trim(), 'Manifest appEntry path is missing');
   assert(typeof manifest.template === 'string' && manifest.template.trim(), 'Manifest template path is missing');
   assert(typeof manifest.bodyOpenTag === 'string' && manifest.bodyOpenTag.trim(), 'Manifest bodyOpenTag is missing');
 
@@ -79,15 +128,9 @@ async function main() {
     htmlParts.push(await readText(filePath, 'HTML part'));
   }
 
-  const jsParts = [];
-  for (const rel of manifest.js) {
-    const filePath = path.resolve(rootDir, rel);
-    jsParts.push(await readText(filePath, 'JS part'));
-  }
-
   const inlineCss = cssParts.join('\n\n').trim();
   const bodyContent = htmlParts.join('\n\n').trim();
-  const inlineJs = jsParts.join('\n\n').trim();
+  const inlineJs = await buildInlineJsBundle(manifest);
 
   assert(inlineCss.length > 100, 'Generated inline CSS is too short');
   assert(bodyContent.length > 1000, 'Generated body content is too short');
@@ -104,9 +147,12 @@ async function main() {
   assert(unresolved.length === 0, `Unresolved placeholders in generated HTML: ${[...new Set(unresolved)].join(', ')}`);
 
   assert(html.includes(`<meta name="fibery-html-editor-version" content="${manifest.version}" />`), 'Generated HTML missing version meta line');
-  assert(html.includes(`const APP_VERSION = '${manifest.version}';`), 'Generated HTML missing APP_VERSION line');
+  assert(new RegExp(`\\bconst\\s+APP_VERSION\\s*=\\s*['"]${escapeRegExp(manifest.version)}['"]\\s*;`).test(html), 'Generated HTML missing APP_VERSION line');
   assert(html.includes('window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;'), 'Generated HTML missing window version assignment');
   assert(html.includes('document.documentElement.dataset.appVersion = APP_VERSION;'), 'Generated HTML missing dataset version assignment');
+  assert(!html.includes('source/'), 'Generated HTML should not reference modular source files');
+  assert(!html.includes('dist/'), 'Generated HTML should not reference dist files');
+  assert(!html.includes('app.bundle.js'), 'Generated HTML should inline the Vite bundle instead of referencing it');
   assert(html.includes('<link rel="stylesheet" href="tailwind.css" />'), 'Generated HTML missing tailwind.css link');
   assert(html.includes('https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js'), 'Generated HTML missing Monaco CDN loader');
   assert(/fibery-html-editor/i.test(html), 'Generated HTML does not look like Fibery HTML Editor');

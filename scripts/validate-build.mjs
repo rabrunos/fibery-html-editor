@@ -45,7 +45,7 @@ function parseVersionMeta(html) {
 }
 
 function parseAppVersion(html) {
-  const match = extractSingle(/const\s+APP_VERSION\s*=\s*'([^']+)'\s*;/, html, 'APP_VERSION');
+  const match = extractSingle(/const\s+APP_VERSION\s*=\s*["']([^"']+)["']\s*;/, html, 'APP_VERSION');
   return match[1].trim();
 }
 
@@ -117,8 +117,9 @@ async function main() {
   assert(generated.includes('document.documentElement.dataset.appVersion = APP_VERSION;'), 'Missing dataset appVersion assignment');
   assert(generated.includes('<link rel="stylesheet" href="tailwind.css" />'), 'Missing tailwind.css link');
   assert(generated.includes('https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js'), 'Missing Monaco CDN loader');
-  assert(!generated.includes('source/js/'), 'Generated HTML should not reference modular source JS files');
-  assert(!generated.includes('source/css/'), 'Generated HTML should not reference modular source CSS files');
+  assert(!generated.includes('source/'), 'Generated HTML should not reference modular source files');
+  assert(!generated.includes('dist/'), 'Generated HTML should not reference dist files');
+  assert(!generated.includes('app.bundle.js'), 'Generated HTML should inline the Vite bundle instead of referencing it');
 
   const styleMatch = extractSingle(/<style>\n([\s\S]*?)\n\s*<\/style>/i, generated, 'inline style block');
   assert(styleMatch[1].trim().length > 1000, 'Inline style block is too short');

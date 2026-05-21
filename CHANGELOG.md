@@ -1,3 +1,24 @@
+## [8.16.0] - 2026-05-21
+
+### Technical adjustments
+
+* Introduced Vite as the internal JavaScript bundling pipeline while keeping `scripts/build.mjs` as the final single-file `index.html` generator.
+* Added a conservative Vite entry and manifest-backed virtual module bridge so the current shared-scope JavaScript order is preserved until the TypeScript/import migration planned in #63.
+* Kept the existing `npm run build:tmp`, `npm run validate:tmp`, `npm run build`, and `npm run validate` commands unchanged.
+* Bumped app version metadata to `8.16.0` via manifest and `package.json`, and regenerated the single-file deploy artifact.
+
+### Notes
+
+* No intentional UX or runtime behavior changes.
+* The final Fibery deployment remains a single generated `index.html` with the Vite bundle inlined.
+
+### Validation
+
+* `npm run build:tmp`
+* `npm run validate:tmp`
+* `npm run build`
+* `npm run validate`
+
 ## [8.15.0] - 2026-05-20
 
 ### Fixed

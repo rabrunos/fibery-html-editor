@@ -74,14 +74,16 @@ Canonical editing paths:
 * `source/html/` - body/layout/modals/panels sections;
 * `source/css/` - style modules;
 * `source/js/` - JavaScript modules by functional area;
+* `source/app/main.js` - Vite app entry for the JavaScript bundle;
 * `source/config/manifest.json` - version and deterministic assembly order.
 
 ### JavaScript Module Rules
 
 * Use descriptive names that reflect functional area; no numeric prefixes for new JS modules.
-* The concatenation order is defined exclusively by the `js` array in `source/config/manifest.json`; do not rely on filename order.
+* Until the TypeScript/import migration in #63, the compatibility bundle still loads `source/js/` files through the `js` array in `source/config/manifest.json`; do not rely on filename order.
 * `const` declaration order in the manifest must satisfy lexical dependencies: `app-version.js` -> `i18n-base.js` -> `i18n-en.js` / `i18n-pt-br.js` -> `storage-keys.js` -> `dom-refs.js` -> `app-state.js`.
-* Function declarations are hoisted within the IIFE and are order-independent.
+* Current `source/js/` files still share one bundled script scope. Do not convert them to per-file ES module imports piecemeal unless the task is explicitly part of #63.
+* Function declarations are hoisted within the generated bundle scope and are order-independent.
 
 `index.html` is generated from these files.
 
@@ -89,20 +91,22 @@ Canonical editing paths:
 
 Current state:
 
-* `scripts/build.mjs` assembles `index.html` from `source/config/manifest.json`, `source/template/index.template.html`, `source/html/`, `source/css/`, and `source/js/`;
+* `scripts/build.mjs` assembles `index.html` from `source/config/manifest.json`, `source/template/index.template.html`, `source/html/`, and `source/css/`;
+* Vite bundles the app JavaScript from `source/app/main.js` through a manifest-backed virtual module in `vite.config.mjs`;
+* the generated Vite bundle is injected inline into the final `index.html`;
 * `scripts/validate-build.mjs` validates generated HTML and inline JavaScript syntax;
-* `source/config/manifest.json` is the canonical version source and currently controls JS order;
+* `source/config/manifest.json` is the canonical version source and still controls compatibility JS order until #63 replaces that bridge with real imports;
 * `package.json` currently exposes the local build/validation npm scripts.
 
 Roadmap state:
 
 * #61 is the foundation epic for Vite, TypeScript, and local validation improvements;
-* #62 plans a Vite pipeline while keeping generated `index.html` single-file delivery;
+* #62 introduced the Vite bundle pipeline while keeping generated `index.html` single-file delivery;
 * #63 plans TypeScript migration and central contracts;
 * #64 plans `npm run verify` as a local validation aggregator;
 * #50 should come after that foundation for external cached resources and smaller `index.html`.
 
-Until #62/#63 are implemented, follow the current `source/js` plus manifest architecture. Do not claim Vite, TypeScript, or `npm run verify` are active unless the repository actually contains them. After #62/#63 land, update this file again so JS dependency/order guidance matches the new source of truth.
+After #62, Vite is active for JavaScript bundling. Do not claim TypeScript or `npm run verify` are active unless the repository actually contains them. After #63 lands, update this file again so JS dependency/order guidance matches the new import-based source of truth.
 
 ## Build and Validation
 
