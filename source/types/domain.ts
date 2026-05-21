@@ -38,9 +38,60 @@ export interface FiberyLoadPagesOptions extends FiberyApiCallOptions {
 }
 export type FiberyLoadPagesResult = FiberyPage[];
 
-export type PreviewMode = 'real' | 'local';
+export type PreviewMode = 'real' | 'local' | 'paused';
 export type PreviewVisibilityState = 'visible' | 'hidden' | 'paused';
 export type UnsavedTransitionChoice = 'cancel' | 'save-open' | 'keep-draft' | 'discard';
+
+export interface QueuePreviewSyncOptions {
+  forceRealReload?: boolean;
+}
+
+export interface PausePreviewOptions {
+  markNeedsSync?: boolean;
+}
+
+export interface ResumePreviewOptions {
+  immediate?: boolean;
+}
+
+export interface SyncPreviewVisibilityOptions extends ResumePreviewOptions {
+  markNeedsSync?: boolean;
+}
+
+export interface LocalPreviewStatusOptions {
+  usesTailwind?: boolean;
+}
+
+export interface LocalPreviewDocumentOptions {
+  requestId?: string;
+  cssHref?: string;
+  baseHref?: string;
+  enableTailwindBrowser?: boolean;
+}
+
+export type LocalPreviewMessageType =
+  | 'css-load'
+  | 'css-error'
+  | 'css-timeout'
+  | 'css-missing'
+  | 'tailwind-browser-load'
+  | 'tailwind-browser-error';
+
+export interface LocalPreviewMessagePayload extends LocalPreviewDocumentOptions {
+  source?: string;
+  type?: LocalPreviewMessageType | string;
+  resolvedHref?: string;
+  at?: number;
+}
+
+export interface RealPreviewRenderOptions {
+  forceReload?: boolean;
+}
+
+export interface SyncPreviewModeOptions {
+  immediate?: boolean;
+  forceRealReload?: boolean;
+}
 
 export interface UnsavedChangeCheckOptions {
   syncFromInputs?: boolean;

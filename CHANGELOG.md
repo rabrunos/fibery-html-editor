@@ -1,3 +1,29 @@
+## [8.28.0] - 2026-05-21
+
+### Technical adjustments
+
+* Migrated preview base lifecycle helpers to TypeScript (`preview-base.ts`) while preserving panel-visibility pause/resume behavior, hidden-preview neutralization (`about:blank`), queued sync flags, and preview mode change logging.
+* Migrated local preview document generation to TypeScript (`preview-local-document.ts`) while preserving `srcdoc` rendering, `<base>` injection, Tailwind local iframe injection, and local probe postMessage payloads.
+* Migrated local preview rendering flow to TypeScript (`preview-local-render.ts`) while preserving debounce behavior, duplicate-render signature checks, request-id tracking, and local preview status updates.
+* Migrated real preview rendering flow to TypeScript (`preview-real-render.ts`) while preserving `/api/ai-answer/pages/{id}/view` URL usage, force-reload behavior, and `recordPreviewUsage` calls on real preview load/reload paths.
+* Extended central preview/domain contracts and legacy global declarations for preview options/message payloads and legacy shared-scope globals, without introducing `import`/`export` in compatibility manifest scripts.
+* Updated compatibility manifest entries from `.js` to `.ts` for the four preview modules.
+* Bumped app version metadata to `8.28.0` via manifest and `package.json`, and regenerated the single-file deploy artifact.
+
+### Notes
+
+* No intentional UX or runtime behavior changes.
+* Local/real preview decision rules, cached-open forced-local behavior, and hidden-preview pause policy were preserved.
+* Tailwind browser/CDN remains local-preview-iframe only and is not injected into saved Fibery HTML.
+
+### Validation
+
+* `npm run typecheck`
+* `npm run build:tmp`
+* `npm run validate:tmp`
+* `npm run build`
+* `npm run validate`
+
 ## [8.27.0] - 2026-05-21
 
 ### Technical adjustments

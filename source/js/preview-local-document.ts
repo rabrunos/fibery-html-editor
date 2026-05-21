@@ -1,8 +1,20 @@
-function localPreviewProbeScript({ requestId, cssHref, baseHref, enableTailwindBrowser }) {
-  const payload = JSON.stringify({ source: LOCAL_PREVIEW_MESSAGE_SOURCE, requestId: String(requestId || ''), cssHref: String(cssHref || ''), baseHref: String(baseHref || ''), enableTailwindBrowser: !!enableTailwindBrowser });
+function localPreviewProbeScript({
+  requestId,
+  cssHref,
+  baseHref,
+  enableTailwindBrowser
+}: LocalPreviewDocumentOptions = {}): string {
+  const payload = JSON.stringify({
+    source: LOCAL_PREVIEW_MESSAGE_SOURCE,
+    requestId: String(requestId || ''),
+    cssHref: String(cssHref || ''),
+    baseHref: String(baseHref || ''),
+    enableTailwindBrowser: !!enableTailwindBrowser
+  });
   return `<script>(function(){var base=${payload};function send(type,extra){try{parent.postMessage(Object.assign({},base,{type:type,at:Date.now()},extra||{}),'*');}catch(_){}}window.addEventListener('DOMContentLoaded',function(){var link=document.querySelector('link[data-local-preview-tailwind=\"stylesheet\"]');if(link){var done=false;function finish(type){if(done)return;done=true;send(type,{resolvedHref:String(link.href||'')});}link.addEventListener('load',function(){finish('css-load');},{once:true});link.addEventListener('error',function(){finish('css-error');},{once:true});window.setTimeout(function(){finish('css-timeout');},4000);}else if(base.enableTailwindBrowser){send('css-missing');}var browser=document.querySelector('script[data-local-preview-tailwind=\"browser\"]');if(browser){browser.addEventListener('load',function(){send('tailwind-browser-load');},{once:true});browser.addEventListener('error',function(){send('tailwind-browser-error');},{once:true});}});})();<\/script>`;
 }
-function buildLocalPreviewDocument(userHtml, options = {}) {
+
+function buildLocalPreviewDocument(userHtml: string, options: LocalPreviewDocumentOptions = {}): string {
   const html = String(userHtml || '');
   const baseHref = String(options.baseHref || '');
   const enableTailwindBrowser = !!options.enableTailwindBrowser;

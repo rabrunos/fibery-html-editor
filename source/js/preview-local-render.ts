@@ -1,4 +1,4 @@
-function renderLocalPreview() {
+function renderLocalPreview(): void {
   if (pausePreviewIfHidden()) return;
   state.preview.paused = false;
   state.preview.needsSync = false;
@@ -34,15 +34,22 @@ function renderLocalPreview() {
   els.previewFrame.removeAttribute('src');
   els.previewFrame.srcdoc = doc;
 }
-function scheduleLocalPreviewRefresh() {
+
+function scheduleLocalPreviewRefresh(): void {
   if (state.blank) return;
   if (pausePreviewIfHidden()) return;
-  if (!shouldUseLocalPreview()) { renderRealPreview(); return; }
+  if (!shouldUseLocalPreview()) {
+    renderRealPreview();
+    return;
+  }
   clearPreviewDebounce();
   state.preview.debounceTimer = window.setTimeout(() => {
     state.preview.debounceTimer = null;
     if (pausePreviewIfHidden()) return;
-    if (!shouldUseLocalPreview()) { renderRealPreview(); return; }
+    if (!shouldUseLocalPreview()) {
+      renderRealPreview();
+      return;
+    }
     renderLocalPreview();
   }, state.preview.debounceMs);
 }
