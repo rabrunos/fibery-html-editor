@@ -1,3 +1,32 @@
+## [8.36.0] - 2026-05-21
+
+### Technical adjustments
+
+* Migrated core runtime modules to TypeScript (`app-version.ts`, `i18n-base.ts`, `dom-refs.ts`, `app-state.ts`, `utils-core.ts`).
+* `dom-refs.ts` uses a generic `$<T>` helper with explicit element types for all `els` properties; replaces the ambient `const els` declaration in `legacy-globals.d.ts`.
+* `app-state.ts` provides the concrete `const state: AppState` and `LOCAL_PREVIEW_MESSAGE_SOURCE`; corresponding ambient declarations removed from `legacy-globals.d.ts`.
+* `app-version.ts` provides the concrete `const APP_VERSION`; `Window` interface extended with `FIBERY_HTML_EDITOR_VERSION`.
+* `i18n-base.ts` typed as `Record<string, Record<string, string>>` preserving compatibility with `i18n-en.js` and `i18n-pt-br.js` runtime augmentation via `Object.assign`.
+* `utils-core.ts` provides `t`, `escapeHtml`, `escapeHtmlAttr`, `getCodeValue`, `setStatus`, `log`, `showToastNear`, `copyText`, `preferredLang` as global TypeScript functions.
+* `legacy-globals.d.ts` cleaned: ambient `els`, `state`, `APP_VERSION`, `LOCAL_PREVIEW_MESSAGE_SOURCE` blocks removed; `type AppState` added to `declare global`.
+* `i18n-en.js` and `i18n-pt-br.js` remain as `.js` (candidates for issue #50).
+
+### Notes
+
+* No intentional UX or runtime behavior changes.
+* All i18n keys preserved exactly from original JS files.
+* `__APP_VERSION__` placeholder preserved for build-time substitution.
+
+### Validation
+
+* `npm run typecheck`
+* `npm run build:tmp`
+* `npm run validate:tmp`
+* `npm run build`
+* `npm run validate`
+
+---
+
 ## [8.35.0] - 2026-05-21
 
 ### Technical adjustments

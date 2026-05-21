@@ -1,4 +1,4 @@
-const I18N = {
+const I18N: Record<string, Record<string, string>> = {
   en: {
     save: 'Save', newPage: 'New Page', history: 'History', settings: 'Settings', deletePage: 'Delete', openLast: 'Open last page on startup',
     versionLimit: 'Local version limit', manualHistoryLimit: 'Manual history limit', unlimited: 'Unlimited', historyLocalNote: 'Version history is saved only in this browser.',

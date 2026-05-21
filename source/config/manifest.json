@@ -1,5 +1,5 @@
 {
-  "version": "8.35.0",
+  "version": "8.36.0",
   "bodyOpenTag": "<body class=\"h-screen overflow-hidden bg-gray-50 text-gray-900 antialiased\">",
   "template": "source/template/index.template.html",
   "appEntry": "source/app/main.ts",
@@ -25,16 +25,16 @@
     "source/css/04-animations.css"
   ],
   "js": [
-    "source/js/app-version.js",
+    "source/js/app-version.ts",
     "source/js/update-remote-config.ts",
-    "source/js/i18n-base.js",
+    "source/js/i18n-base.ts",
     "source/js/i18n-en.js",
     "source/js/i18n-pt-br.js",
     "source/js/storage-keys.ts",
-    "source/js/dom-refs.js",
-    "source/js/app-state.js",
+    "source/js/dom-refs.ts",
+    "source/js/app-state.ts",
     "source/js/api-usage-monitor.ts",
-    "source/js/utils-core.js",
+    "source/js/utils-core.ts",
     "source/js/semver-utils.ts",
     "source/js/snapshot-utils.ts",
     "source/js/fibery-api.ts",

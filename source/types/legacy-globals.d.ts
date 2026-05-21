@@ -1,6 +1,7 @@
 import type { AppState } from './app';
 
 declare global {
+  type AppState = import('./app').AppState;
   type ApiUsageCall = import('./app').ApiUsageCall;
   type PanelMode = import('./app').PanelMode;
   type ApiUsageEntry = import('./app').ApiUsageEntry;
@@ -85,6 +86,7 @@ declare global {
   }
   interface MonacoSingleEditorInstance {
     getModel(): MonacoEditorModel | null;
+    getValue(): string;
     updateOptions(options: Record<string, unknown>): void;
     onDidChangeModelContent(callback: () => void): void;
     focus(): void;
@@ -103,147 +105,9 @@ declare global {
     (modules: string[], onLoad: () => void, onError?: () => void): void;
     config(options: { paths: Record<string, string> }): void;
   }
-  interface Window { require?: AmdRequire; }
+  interface Window { require?: AmdRequire; FIBERY_HTML_EDITOR_VERSION: string; }
 
-  const els: {
-    createProjectNameInput: HTMLInputElement;
-    titleInput: HTMLInputElement;
-    descriptionInput: HTMLInputElement;
-    reopenRecoveryBtn: HTMLButtonElement;
-    draftCodeDiffLegend: HTMLElement;
-    draftCodeDiffMonaco: HTMLElement;
-    draftCodeDiffFallback: HTMLElement;
-    draftFallbackCurrentPane: HTMLElement;
-    draftFallbackLocalPane: HTMLElement;
-    draftRecoveryModal: HTMLElement;
-    draftRecoveryTitle: HTMLElement;
-    draftRecoverySubtitle: HTMLElement;
-    draftCurrentColumn: HTMLElement;
-    draftLocalColumn: HTMLElement;
-    restoreDraftBtn: HTMLButtonElement;
-    keepCurrentVersionBtn: HTMLButtonElement;
-    discardDraftBtn: HTMLButtonElement;
-    externalSyncNotice: HTMLElement;
-    externalSyncNoticeTitle: HTMLElement;
-    externalSyncNoticeMessage: HTMLElement;
-    externalSyncDismissBtn: HTMLButtonElement;
-    searchModal: HTMLElement;
-    welcomeSearchResults: HTMLElement;
-    unsavedTransitionModal: HTMLElement;
-    confirmModal: HTMLElement;
-    confirmTitle: HTMLElement;
-    confirmMessage: HTMLElement;
-    confirmOkBtn: HTMLButtonElement;
-    deletePreviewWrap: HTMLElement;
-    deletePreviewFrame: HTMLIFrameElement;
-    confirmOpenPreviewBtn: HTMLButtonElement;
-    logPanel: HTMLElement;
-    apiUsageSummaryBox: HTMLElement;
-    dirtyBadge: HTMLElement;
-    pageHeader: HTMLElement;
-    welcomeView: HTMLElement;
-    historyBtn: HTMLButtonElement;
-    deleteBtn: HTMLButtonElement;
-    updateAppBtn: HTMLButtonElement;
-    quickBothBtn: HTMLButtonElement;
-    quickEditorBtn: HTMLButtonElement;
-    quickPreviewBtn: HTMLButtonElement;
-    charCount: HTMLElement;
-    openViewMenuBtn: HTMLButtonElement;
-    dragOverlay: HTMLElement;
-    splitter: HTMLElement;
-    historyModal: HTMLElement;
-    historyList: HTMLElement;
-    updateAppModal: HTMLElement;
-    closeUpdateAppBtn: HTMLButtonElement;
-    updateInstalledVersionValue: HTMLElement;
-    updateAvailableVersionValue: HTMLElement;
-    updateCheckStatusText: HTMLElement;
-    updateVerifyAgainBtn: HTMLButtonElement;
-    updateApplyBtn: HTMLButtonElement;
-    updateBackupsBox: HTMLElement;
-    updateChangelogBox: HTMLElement;
-    updateCloseBtn: HTMLButtonElement;
-    externalSyncCheckNowBtn: HTMLButtonElement;
-    saveBtn: HTMLButtonElement;
-    conflictCompareModal: HTMLElement;
-    conflictCompareTitle: HTMLElement;
-    conflictCompareSubtitle: HTMLElement;
-    conflictKeepLocalBtn: HTMLButtonElement;
-    conflictLoadRemoteBtn: HTMLButtonElement;
-    conflictCompareOpenBtn: HTMLButtonElement;
-    conflictCodeDiffLegend: HTMLElement;
-    conflictCodeDiffMonaco: HTMLElement;
-    conflictCodeDiffFallback: HTMLElement;
-    conflictFallbackLeftPane: HTMLElement;
-    conflictFallbackRightPane: HTMLElement;
-    conflictLocalColumn: HTMLElement;
-    conflictRemoteColumn: HTMLElement;
-    previewFrame: HTMLIFrameElement;
-    previewPane: HTMLElement;
-    previewStatus: HTMLElement;
-    splitArea: HTMLElement;
-    codeEditor: HTMLElement;
-    codeEditorFallback: HTMLTextAreaElement;
-    sidebarPagesList: HTMLElement;
-    sidebarLoadMoreWrap: HTMLElement;
-    sidebarLoadMoreBtn: HTMLButtonElement;
-    sidebarScroll: HTMLElement;
-    sidebar: HTMLElement;
-    sidebarCloseIcon: HTMLElement;
-    sidebarOpenIcon: HTMLElement;
-    sidebarProjectsList: HTMLElement;
-    globalSearchInput: HTMLInputElement;
-    globalSearchResults: HTMLElement;
-    closeSearchBtn: HTMLButtonElement;
-    welcomeSearchInput: HTMLInputElement;
-    settingsModal: HTMLElement;
-    moreMenu: HTMLElement;
-    moreBtn: HTMLButtonElement;
-    pageContextMenu: HTMLElement;
-    moveProjectMenu: HTMLElement;
-    projectContextMenu: HTMLElement;
-    editorPanelMenu: HTMLElement;
-    previewPanelMenu: HTMLElement;
-    editorPanelMenuBtn: HTMLButtonElement;
-    previewPanelMenuBtn: HTMLButtonElement;
-    previewFocusBtn: HTMLButtonElement;
-    previewFocusExitBtn: HTMLButtonElement;
-    newPageBtn: HTMLButtonElement;
-    welcomeNewPageBtn: HTMLButtonElement;
-    searchPagesBtn: HTMLButtonElement;
-    refreshBtn: HTMLButtonElement;
-    sidebarSettingsBtn: HTMLButtonElement;
-    logToggleBtn: HTMLButtonElement;
-    toggleSidebarBtn: HTMLButtonElement;
-    brandBtn: HTMLButtonElement;
-    refreshSidebarBtn: HTMLButtonElement;
-    newProjectBtn: HTMLButtonElement;
-    langSelect: HTMLSelectElement;
-    closeSettingsBtn: HTMLButtonElement;
-    closeDraftRecoveryBtn: HTMLButtonElement;
-    closeHistoryBtn: HTMLButtonElement;
-    confirmCancelBtn: HTMLButtonElement;
-    unsavedTransitionSaveBtn: HTMLButtonElement;
-    unsavedTransitionKeepDraftBtn: HTMLButtonElement;
-    unsavedTransitionDiscardBtn: HTMLButtonElement;
-    unsavedTransitionCancelBtn: HTMLButtonElement;
-    confirmCreateProjectBtn: HTMLButtonElement;
-    cancelCreateProjectBtn: HTMLButtonElement;
-    closeCreateProjectBtn: HTMLButtonElement;
-    createProjectModal: HTMLElement;
-    logMenuText: HTMLElement;
-    logBox: HTMLElement;
-    statusText: HTMLElement;
-    openLastToggle: HTMLInputElement;
-    versionLimitSelect: HTMLSelectElement;
-    copyHtmlBtn: HTMLButtonElement;
-    clearLogBtn: HTMLButtonElement;
-    [key: string]: unknown;
-  };
   const monaco: MonacoGlobal | undefined;
-  const state: AppState;
-  const APP_VERSION: string;
 
   function closeCreateProjectModal(): void;
   function confirmAction(options?: ConfirmActionOptions): Promise<boolean>;
@@ -388,9 +252,6 @@ declare global {
   function viewUrl(id: string): string;
   function updatePreviewHeaderStatus(): void;
 
-  const LOCAL_PREVIEW_MESSAGE_SOURCE: string;
-
-  // From utils-core.js (NOT in TS compilation)
   function showToastNear(target: Element, message: string): void;
   function copyText(text: string, target: Element, okMessage: string): Promise<void>;
   function preferredLang(): string;
