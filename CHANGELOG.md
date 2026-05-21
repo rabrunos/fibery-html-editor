@@ -1,3 +1,31 @@
+## [8.37.0] - 2026-05-21
+
+### Added
+
+* `npm run verify` — local validation aggregator that runs, in order: `typecheck`, local checks (`scripts/checks.mjs`), `build:tmp`, `validate:tmp`, `build`, `validate`. Fails fast on the first failing step with a clear label.
+* `scripts/checks.mjs` — lightweight Node-only pre-build checks:
+  * manifest version and `package.json` version are aligned;
+  * `CHANGELOG.md` top entry matches the manifest version;
+  * no unexpected `.js` files in the manifest (only `i18n-en.js` and `i18n-pt-br.js` are allowed);
+  * `i18n-en.js` and `i18n-pt-br.js` only extend `I18N` via `Object.assign` and do not reassign or delete it;
+  * `i18n-base.ts` `en` and `pt-BR` key sets are aligned.
+
+### Technical adjustments
+
+* All existing scripts (`typecheck`, `build:tmp`, `validate:tmp`, `build`, `validate`) preserved unchanged.
+* Fibery runtime tests remain manual; `npm run verify` covers only local validation.
+* Vite single-file build and `index.html` deploy model preserved.
+
+### Notes
+
+* No intentional UX or runtime behavior changes.
+
+### Validation
+
+* `npm run verify`
+
+---
+
 ## [8.36.0] - 2026-05-21
 
 ### Technical adjustments
