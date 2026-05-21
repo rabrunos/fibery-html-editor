@@ -1,4 +1,11 @@
-function hasRealUnsavedChangesForCurrentPage(options = {}) {
+function guardErrorMessage(error: unknown): string {
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    return String((error as { message?: unknown }).message || error || '');
+  }
+  return String(error || '');
+}
+
+function hasRealUnsavedChangesForCurrentPage(options: UnsavedChangeCheckOptions = {}): boolean {
   if (state.blank) return false;
   if (options.syncFromInputs !== false) updateCurrentFromInputs();
   const currentSnapshot = currentSnapshotFromState();
@@ -6,11 +13,11 @@ function hasRealUnsavedChangesForCurrentPage(options = {}) {
   return !sameSnapshot(currentSnapshot, baselineSnapshot);
 }
 
-function hasUnsavedPageChangesForTransition() {
+function hasUnsavedPageChangesForTransition(): boolean {
   return hasRealUnsavedChangesForCurrentPage({ syncFromInputs: true });
 }
 
-function syncCurrentSnapshotBaselineAndDirty(options = {}) {
+function syncCurrentSnapshotBaselineAndDirty(options: SyncCurrentSnapshotOptions = {}): void {
   if (state.blank) {
     markDirty(false);
     syncBeforeUnloadWarningState();
@@ -21,14 +28,14 @@ function syncCurrentSnapshotBaselineAndDirty(options = {}) {
   syncDirtyWithBaseline();
 }
 
-function handleBeforeUnloadWarning(event) {
+function handleBeforeUnloadWarning(event: BeforeUnloadEvent): true | void {
   if (!hasRealUnsavedChangesForCurrentPage({ syncFromInputs: true })) return;
   event.preventDefault();
   event.returnValue = true;
   return true;
 }
 
-function syncBeforeUnloadWarningState() {
+function syncBeforeUnloadWarningState(): void {
   const shouldWarn = hasRealUnsavedChangesForCurrentPage({ syncFromInputs: false });
   if (shouldWarn && !state.unsavedBeforeUnloadWarningActive) {
     window.addEventListener('beforeunload', handleBeforeUnloadWarning);
@@ -41,16 +48,16 @@ function syncBeforeUnloadWarningState() {
   }
 }
 
-function openUnsavedTransitionModal() {
+function openUnsavedTransitionModal(): Promise<UnsavedTransitionChoice> {
   if (!els.unsavedTransitionModal) return Promise.resolve('cancel');
   els.unsavedTransitionModal.classList.remove('hidden');
   if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
-  return new Promise(resolve => {
+  return new Promise<UnsavedTransitionChoice>((resolve) => {
     state.unsavedTransitionResolver = resolve;
   });
 }
 
-function closeUnsavedTransitionModal(choice = 'cancel') {
+function closeUnsavedTransitionModal(choice: UnsavedTransitionChoice = 'cancel'): void {
   if (els.unsavedTransitionModal) els.unsavedTransitionModal.classList.add('hidden');
   const resolver = state.unsavedTransitionResolver;
   state.unsavedTransitionResolver = null;
@@ -58,7 +65,7 @@ function closeUnsavedTransitionModal(choice = 'cancel') {
   if (resolver) resolver(choice);
 }
 
-async function keepDraftBeforeTransition() {
+async function keepDraftBeforeTransition(): Promise<void> {
   if (state.blank) return;
   updateCurrentFromInputs();
   syncDirtyWithBaseline();
@@ -66,7 +73,7 @@ async function keepDraftBeforeTransition() {
   syncBeforeUnloadWarningState();
 }
 
-async function discardCurrentUnsavedChanges() {
+async function discardCurrentUnsavedChanges(): Promise<void> {
   if (state.blank) return;
   updateCurrentFromInputs();
   const draftKey = draftKeyForPage(state.current.id || '');
@@ -78,12 +85,14 @@ async function discardCurrentUnsavedChanges() {
   state.current.html = baseline.html;
   renderCurrent();
   syncCurrentSnapshotBaselineAndDirty({ alignBaseline: true });
-  if (typeof clearExternalSyncCandidateForCurrentPage === 'function') clearExternalSyncCandidateForCurrentPage({ clearDismissed: true, clearNotified: true });
+  if (typeof clearExternalSyncCandidateForCurrentPage === 'function') {
+    clearExternalSyncCandidateForCurrentPage({ clearDismissed: true, clearNotified: true });
+  }
   if (typeof syncExternalSyncPollingState === 'function') syncExternalSyncPollingState();
   syncPreviewMode({ immediate: true });
 }
 
-async function runWithUnsavedPageTransitionGuard(proceed) {
+async function runWithUnsavedPageTransitionGuard(proceed?: (() => void | Promise<void>) | null): Promise<boolean> {
   if (typeof proceed !== 'function') return false;
   if (state.unsavedTransitionBusy) return false;
   state.unsavedTransitionBusy = true;
@@ -121,8 +130,8 @@ async function runWithUnsavedPageTransitionGuard(proceed) {
     }
 
     return false;
-  } catch (err) {
-    log(err?.message || String(err));
+  } catch (error) {
+    log(guardErrorMessage(error));
     return false;
   } finally {
     state.unsavedTransitionBusy = false;

@@ -1,3 +1,30 @@
+## [8.26.0] - 2026-05-21
+
+### Technical adjustments
+
+* Migrated unsaved-transition guard to TypeScript (`unsaved-transition-guard.ts`) with typed transition choices, unsaved-change checks, beforeunload warning sync, and guarded transition execution flow.
+* Migrated page CRUD/save/load flow to TypeScript (`page-crud-save-load.ts`) covering load/open dedupe, confirm modal flow, new page, delete current/list item, manual save, remote rename, and local pin/archive toggles.
+* Preserved global compatibility function names and shared-scope behavior expected by the legacy compatibility bundle.
+* Extended central contracts in `source/types/domain.ts` for transition/confirm options and Fibery save/API result shapes used by this migration lot.
+* Updated `legacy-globals.d.ts` to cover the additional legacy globals used by the migrated modules (`els` modal/input refs, Fibery API save/delete signatures, cache/draft/history/search/sync helpers).
+* Updated compatibility manifest entries from `.js` to `.ts` for both migrated modules.
+* Bumped app version metadata to `8.26.0` via manifest and `package.json`, and regenerated the single-file deploy artifact.
+
+### Notes
+
+* No intentional UX or runtime behavior changes.
+* Fibery save/load/delete behavior remains explicit-action only.
+* Autosave remains local-only and does not call Fibery APIs.
+* Draft/history/cache/preview/external-sync integration points were preserved.
+
+### Validation
+
+* `npm run typecheck`
+* `npm run build:tmp`
+* `npm run validate:tmp`
+* `npm run build`
+* `npm run validate`
+
 ## [8.25.0] - 2026-05-21
 
 ### Technical adjustments

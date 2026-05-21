@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.25.0" />
+  <meta name="fibery-html-editor-version" content="8.26.0" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -595,7 +595,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 
 (function() {
 	//#region \0virtual:fibery-html-editor/manifest-js
-	const APP_VERSION = "8.25.0";
+	const APP_VERSION = "8.26.0";
 	window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 	document.documentElement.dataset.appVersion = APP_VERSION;
 	var UPDATE_REMOTE = Object.freeze({
@@ -3655,6 +3655,10 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			mode: "draft"
 		});
 	}
+	function guardErrorMessage(error) {
+		if (typeof error === "object" && error !== null && "message" in error) return String(error.message || error || "");
+		return String(error || "");
+	}
 	function hasRealUnsavedChangesForCurrentPage(options = {}) {
 		if (state.blank) return false;
 		if (options.syncFromInputs !== false) updateCurrentFromInputs();
@@ -3760,8 +3764,8 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 				return true;
 			}
 			return false;
-		} catch (err) {
-			log(err?.message || String(err));
+		} catch (error) {
+			log(guardErrorMessage(error));
 			return false;
 		} finally {
 			state.unsavedTransitionBusy = false;
@@ -5179,11 +5183,18 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		}
 		renderRealPreview({ forceReload: !!forceRealReload });
 	}
+	function pageCrudErrorMessage(error) {
+		if (typeof error === "object" && error !== null && "message" in error) return String(error.message || error || "");
+		return String(error || "");
+	}
 	async function loadPage(id) {
 		const pageId = String(id || "");
 		if (!pageId) return;
 		if (!state.blank && state.current.id === pageId && !state.loadingPage) return;
-		if (state.pageLoads.inFlightById[pageId]) return state.pageLoads.inFlightById[pageId];
+		if (state.pageLoads.inFlightById[pageId]) {
+			await state.pageLoads.inFlightById[pageId];
+			return;
+		}
 		const loadPromise = (async () => {
 			state.loadingPage = true;
 			await flushDraftAutosaveNow();
@@ -5191,7 +5202,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		})();
 		state.pageLoads.inFlightById[pageId] = loadPromise;
 		try {
-			return await loadPromise;
+			await loadPromise;
 		} finally {
 			delete state.pageLoads.inFlightById[pageId];
 			state.loadingPage = false;
@@ -5202,8 +5213,8 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		els.confirmTitle.textContent = title || "";
 		els.confirmMessage.textContent = message || "";
 		els.confirmOkBtn.textContent = okText;
-		const previewTargetId = previewId || state.current.id;
-		els.confirmOpenPreviewBtn.dataset.previewId = openPreviewId || previewTargetId || "";
+		const previewTargetId = String(previewId || state.current.id || "");
+		els.confirmOpenPreviewBtn.dataset.previewId = String(openPreviewId || previewTargetId || "");
 		els.deletePreviewWrap.classList.toggle("hidden", !showPreview);
 		if (showPreview && previewTargetId) {
 			els.deletePreviewFrame.src = viewUrl(previewTargetId);
@@ -5271,9 +5282,10 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			refreshSidebarFromLocalCache({ reset: true });
 			setStatus(t("deleted"));
 			log(t("deleted"));
-		} catch (err) {
-			alert(err.message || String(err));
-			log(err.message || String(err));
+		} catch (error) {
+			const message = pageCrudErrorMessage(error);
+			alert(message);
+			log(message);
 		}
 	}
 	async function deletePageFromList(id, title) {
@@ -5299,9 +5311,10 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			if (!els.welcomeSearchResults.classList.contains("hidden")) await loadWelcomeSearchResults({ localOnly: true });
 			setStatus(t("deleted"));
 			log(`${t("deleted")}: ${title || id}`);
-		} catch (err) {
-			alert(err.message || String(err));
-			log(err.message || String(err));
+		} catch (error) {
+			const message = pageCrudErrorMessage(error);
+			alert(message);
+			log(message);
 		}
 	}
 	async function savePage(action = "save") {
@@ -5365,10 +5378,11 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			setStatus(t("saved"));
 			log(`${t("saved")}: ${state.current.title || state.current.id}`);
 			return true;
-		} catch (err) {
+		} catch (error) {
 			setStatus("Error");
-			log(err.message || String(err));
-			alert(err.message || String(err));
+			const message = pageCrudErrorMessage(error);
+			log(message);
+			alert(message);
 			return false;
 		} finally {
 			state.saving = false;

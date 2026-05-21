@@ -20,9 +20,34 @@ export interface FiberyPage extends PageSnapshot {
 }
 
 export type SavePagePayload = FiberyPage;
+export interface FiberySaveResult extends Partial<FiberyPage> {
+  data?: Partial<FiberyPage> | null;
+}
+export interface FiberyApiCallOptions {
+  source?: string;
+  automatic?: boolean;
+}
 
 export type PreviewMode = 'real' | 'local';
 export type PreviewVisibilityState = 'visible' | 'hidden' | 'paused';
+export type UnsavedTransitionChoice = 'cancel' | 'save-open' | 'keep-draft' | 'discard';
+
+export interface UnsavedChangeCheckOptions {
+  syncFromInputs?: boolean;
+}
+
+export interface SyncCurrentSnapshotOptions {
+  alignBaseline?: boolean;
+}
+
+export interface ConfirmActionOptions {
+  title?: string;
+  message?: string;
+  okText?: string;
+  showPreview?: boolean;
+  previewId?: PageId | '';
+  openPreviewId?: PageId | '';
+}
 
 export type RemoteStatus =
   | 'idle'

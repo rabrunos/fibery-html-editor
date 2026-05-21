@@ -3,7 +3,8 @@ import type {
   FiberyPage,
   PreviewMode,
   RemoteStatus,
-  SaveBlockedReason
+  SaveBlockedReason,
+  UnsavedTransitionChoice
 } from './domain';
 import type {
   DraftRecord,
@@ -47,7 +48,7 @@ export interface AppState {
     fallback: boolean;
   };
   confirmResolver: ((value: boolean) => void) | null;
-  unsavedTransitionResolver: ((value: string) => void) | null;
+  unsavedTransitionResolver: ((value: UnsavedTransitionChoice) => void) | null;
   unsavedTransitionBusy: boolean;
   unsavedBeforeUnloadWarningActive: boolean;
   apiUsage: {
@@ -62,7 +63,7 @@ export interface AppState {
     inFlight: Record<string, number>;
   };
   pageLoads: {
-    inFlightById: Record<string, Promise<unknown>>;
+    inFlightById: Record<string, Promise<unknown> | undefined>;
   };
   cachedPageOpen: {
     pageId: string;
@@ -188,4 +189,3 @@ export interface SearchState {
   loading: boolean;
   remoteQuery: string;
 }
-

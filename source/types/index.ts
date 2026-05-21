@@ -8,9 +8,12 @@ export type {
   UpdateStatus
 } from './app';
 export type {
+  ConfirmActionOptions,
   ConflictCandidate,
   ConflictResolution,
   ContentSignature,
+  FiberyApiCallOptions,
+  FiberySaveResult,
   FiberyPage,
   HtmlSource,
   PageId,
@@ -18,9 +21,12 @@ export type {
   PreviewMode,
   PreviewVisibilityState,
   RemoteStatus,
+  SyncCurrentSnapshotOptions,
   SemverSimple,
   SaveBlockedReason,
-  SavePagePayload
+  SavePagePayload,
+  UnsavedChangeCheckOptions,
+  UnsavedTransitionChoice
 } from './domain';
 export type {
   CachedFiberyPage,
