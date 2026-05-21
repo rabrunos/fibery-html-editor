@@ -1,5 +1,5 @@
 {
-  "version": "8.30.0",
+  "version": "8.31.0",
   "bodyOpenTag": "<body class=\"h-screen overflow-hidden bg-gray-50 text-gray-900 antialiased\">",
   "template": "source/template/index.template.html",
   "appEntry": "source/app/main.ts",
@@ -44,8 +44,8 @@
     "source/js/update-backup-list.ts",
     "source/js/update-apply-flow.ts",
     "source/js/update-rollback-flow.ts",
-    "source/js/update-changelog-render.js",
-    "source/js/update-panel-render.js",
+    "source/js/update-changelog-render.ts",
+    "source/js/update-panel-render.ts",
     "source/js/indexeddb-core.ts",
     "source/js/page-content-cache.ts",
     "source/js/page-meta.ts",

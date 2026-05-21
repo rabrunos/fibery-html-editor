@@ -1,3 +1,26 @@
+## [8.31.0] - 2026-05-21
+
+### Technical adjustments
+
+* Migrated Update App changelog rendering to TypeScript (`update-changelog-render.ts`) while preserving version-heading parsing (`## [x.y.z] - date`), section headings (`###`, `##`), list items (`-`, `*`), paragraph buffering, and all badge tones (installed, latest, current, outdated, newer).
+* Migrated Update App panel rendering to TypeScript (`update-panel-render.ts`) while preserving version value tone logic (latest = green, available = installed red/available green, local-newer = installed blue), verify-again button state, apply button visibility/disabled/title, `renderUpdateBackupList()` call, changelog loading/unavailable/remote branch, and `openUpdateAppModal`/`closeUpdateAppModal` behavior.
+* Added `UpdateChangelogVersionHeading` and `UpdateVersionComparisonState` contracts to `source/types/domain.ts`; exposed as global types in `legacy-globals.d.ts` alongside new declarations for `renderUpdateChangelog`, `openUpdateAppModal`, and `closeUpdateAppModal`.
+* Updated compatibility manifest entries from `.js` to `.ts` for changelog/panel render, bumped app version to `8.31.0`, and regenerated the single-file deploy artifact.
+
+### Notes
+
+* No intentional UX or runtime behavior changes.
+* Update App block is now fully migrated to TypeScript.
+* Vite single-file build and shared bundle scope preserved; no `import`/`export` introduced in migrated files.
+
+### Validation
+
+* `npm run typecheck`
+* `npm run build:tmp`
+* `npm run validate:tmp`
+* `npm run build`
+* `npm run validate`
+
 ## [8.30.0] - 2026-05-21
 
 ### Technical adjustments

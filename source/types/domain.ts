@@ -208,3 +208,15 @@ export interface ConflictCandidate extends FiberyPage {
 }
 
 export type ConflictResolution = 'keep-local' | 'load-remote';
+
+export interface UpdateChangelogVersionHeading {
+  version: string;
+  date: string;
+}
+
+export interface UpdateVersionComparisonState {
+  localSemver: SemverSimple | null;
+  remoteSemver: SemverSimple | null;
+  comparable: boolean;
+  localVsRemote: number | null;
+}

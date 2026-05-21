@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.30.0" />
+  <meta name="fibery-html-editor-version" content="8.31.0" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -595,7 +595,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 
 (function() {
 	//#region \0virtual:fibery-html-editor/manifest-js
-	const APP_VERSION = "8.30.0";
+	const APP_VERSION = "8.31.0";
 	window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 	document.documentElement.dataset.appVersion = APP_VERSION;
 	var UPDATE_REMOTE = Object.freeze({
@@ -2672,12 +2672,17 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 	function updateVersionComparisonState() {
 		const localSemver = parseSemverSimple(APP_VERSION);
 		const remoteSemver = parseSemverSimple(state.update.remoteVersion || "");
-		const comparable = !!localSemver && !!remoteSemver;
+		if (localSemver && remoteSemver) return {
+			localSemver,
+			remoteSemver,
+			comparable: true,
+			localVsRemote: compareSemverSimple(localSemver, remoteSemver)
+		};
 		return {
 			localSemver,
 			remoteSemver,
-			comparable,
-			localVsRemote: comparable ? compareSemverSimple(localSemver, remoteSemver) : null
+			comparable: false,
+			localVsRemote: null
 		};
 	}
 	function renderUpdateAppPanel() {

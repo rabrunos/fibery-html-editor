@@ -51,9 +51,11 @@ declare global {
   type RemoteUpdateValidationResult = import('./domain').RemoteUpdateValidationResult;
   type UpdateBackupListRecord = import('./storage').UpdateBackupListRecord;
   type UpdateBackupRecord = import('./storage').UpdateBackupRecord;
+  type UpdateChangelogVersionHeading = import('./domain').UpdateChangelogVersionHeading;
   type UpdateCheckStatus = import('./domain').UpdateCheckStatus;
   type UpdateRemoteConfig = import('./domain').UpdateRemoteConfig;
   type UpdateValidationReason = import('./domain').UpdateValidationReason;
+  type UpdateVersionComparisonState = import('./domain').UpdateVersionComparisonState;
   type ManualHistoryKind = import('./storage').ManualHistoryKind;
   type PageContentCacheRecord = import('./storage').PageContentCacheRecord;
   type PageMetaRecord = import('./storage').PageMetaRecord;
@@ -218,8 +220,11 @@ declare global {
   function renderRealPreview(options?: RealPreviewRenderOptions): void;
   function renderCurrent(): void;
   function renderSidebarProjects(): void;
+  function renderUpdateChangelog(container: HTMLElement, rawChangelog: string, comparison: UpdateVersionComparisonState): void;
   function renderUpdateAppPanel(): void;
   function renderUpdateBackupList(): void;
+  function openUpdateAppModal(): void;
+  function closeUpdateAppModal(): void;
   function revokeLocalPreviewObjectUrl(): void;
   function hasRealUnsavedChangesForCurrentPage(options?: UnsavedChangeCheckOptions): boolean;
   function resumePreviewIfVisible(options?: ResumePreviewOptions): boolean;

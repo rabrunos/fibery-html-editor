@@ -1,18 +1,20 @@
-function parseUpdateChangelogVersionHeading(line = '') {
+function parseUpdateChangelogVersionHeading(line = ''): UpdateChangelogVersionHeading | null {
   const match = String(line || '').trim().match(/^##\s+\[(\d+\.\d+\.\d+)\]\s*-\s*(.+)$/);
   if (!match) return null;
   const semver = parseSemverSimple(match[1]);
   if (!semver) return null;
   return { version: semver.raw, date: String(match[2] || '').trim() };
 }
-function appendUpdateChangelogBadge(parent, text, toneClass) {
+
+function appendUpdateChangelogBadge(parent: HTMLElement | null, text: string, toneClass: string): void {
   if (!parent || !text) return;
   const badge = document.createElement('span');
   badge.className = `update-changelog-badge ${toneClass || ''}`.trim();
   badge.textContent = text;
   parent.appendChild(badge);
 }
-function renderUpdateVersionHeading(container, headingLine, comparison) {
+
+function renderUpdateVersionHeading(container: HTMLElement, headingLine: string, comparison: UpdateVersionComparisonState): boolean {
   const heading = parseUpdateChangelogVersionHeading(headingLine);
   if (!heading) return false;
   const headingSemver = parseSemverSimple(heading.version);
@@ -54,7 +56,8 @@ function renderUpdateVersionHeading(container, headingLine, comparison) {
   container.appendChild(wrapper);
   return true;
 }
-function appendUpdateChangelogText(container, text) {
+
+function appendUpdateChangelogText(container: HTMLElement, text: string): void {
   const value = String(text || '').trim();
   if (!value) return;
   const p = document.createElement('p');
@@ -62,7 +65,8 @@ function appendUpdateChangelogText(container, text) {
   p.textContent = value;
   container.appendChild(p);
 }
-function renderUpdateChangelog(container, rawChangelog, comparison) {
+
+function renderUpdateChangelog(container: HTMLElement, rawChangelog: string, comparison: UpdateVersionComparisonState): void {
   container.textContent = '';
   const source = String(rawChangelog || '').replace(/\r\n/g, '\n');
   if (!source.trim()) {
@@ -70,8 +74,8 @@ function renderUpdateChangelog(container, rawChangelog, comparison) {
     return;
   }
   const lines = source.split('\n');
-  let paragraphBuffer = [];
-  let list = null;
+  let paragraphBuffer: string[] = [];
+  let list: HTMLUListElement | null = null;
 
   const flushParagraph = () => {
     if (!paragraphBuffer.length) return;

@@ -1,4 +1,4 @@
-function setUpdateVersionValueTone() {
+function setUpdateVersionValueTone(): void {
   if (!els.updateInstalledVersionValue || !els.updateAvailableVersionValue) return;
   const neutral = ['text-gray-900'];
   const positive = ['text-green-700'];
@@ -25,18 +25,17 @@ function setUpdateVersionValueTone() {
     return;
   }
 }
-function updateVersionComparisonState() {
+
+function updateVersionComparisonState(): UpdateVersionComparisonState {
   const localSemver = parseSemverSimple(APP_VERSION);
   const remoteSemver = parseSemverSimple(state.update.remoteVersion || '');
-  const comparable = !!localSemver && !!remoteSemver;
-  return {
-    localSemver,
-    remoteSemver,
-    comparable,
-    localVsRemote: comparable ? compareSemverSimple(localSemver, remoteSemver) : null
-  };
+  if (localSemver && remoteSemver) {
+    return { localSemver, remoteSemver, comparable: true, localVsRemote: compareSemverSimple(localSemver, remoteSemver) };
+  }
+  return { localSemver, remoteSemver, comparable: false, localVsRemote: null };
 }
-function renderUpdateAppPanel() {
+
+function renderUpdateAppPanel(): void {
   if (!els.updateInstalledVersionValue || !els.updateAvailableVersionValue || !els.updateCheckStatusText || !els.updateChangelogBox) return;
   els.updateInstalledVersionValue.textContent = APP_VERSION;
   els.updateAvailableVersionValue.textContent = state.update.remoteVersion || t('updateNotChecked');
@@ -77,14 +76,16 @@ function renderUpdateAppPanel() {
     renderUpdateChangelog(els.updateChangelogBox, t('updateChangelogUnavailable'), comparison);
   }
 }
-function openUpdateAppModal() {
+
+function openUpdateAppModal(): void {
   if (!els.updateAppModal) return;
   els.updateAppModal.classList.remove('hidden');
   renderUpdateAppPanel();
   void loadUpdateBackupList();
   void checkRemoteUpdateInfo();
 }
-function closeUpdateAppModal() {
+
+function closeUpdateAppModal(): void {
   if (!els.updateAppModal) return;
   els.updateAppModal.classList.add('hidden');
 }
