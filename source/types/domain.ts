@@ -27,6 +27,16 @@ export interface FiberyApiCallOptions {
   source?: string;
   automatic?: boolean;
 }
+export interface FiberyCheckAdminOptions extends FiberyApiCallOptions {}
+export interface FiberyLoadPageOptions extends FiberyApiCallOptions {}
+export interface FiberySavePageOptions extends FiberyApiCallOptions {}
+export interface FiberyDeletePageOptions extends FiberyApiCallOptions {}
+export interface FiberyLoadPagesOptions extends FiberyApiCallOptions {
+  skip?: number;
+  limit?: number;
+  search?: string;
+}
+export type FiberyLoadPagesResult = FiberyPage[];
 
 export type PreviewMode = 'real' | 'local';
 export type PreviewVisibilityState = 'visible' | 'hidden' | 'paused';

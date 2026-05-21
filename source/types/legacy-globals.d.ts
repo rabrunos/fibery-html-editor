@@ -1,13 +1,25 @@
 import type { AppState } from './app';
 
 declare global {
+  type ApiUsageCall = import('./app').ApiUsageCall;
+  type ApiUsageEntry = import('./app').ApiUsageEntry;
+  type ApiUsageKind = import('./app').ApiUsageKind;
+  type ApiUsageMeta = import('./app').ApiUsageMeta;
+  type ApiUsageOperation = import('./app').ApiUsageOperation;
+  type ApiUsageTask<TResult = unknown> = import('./app').ApiUsageTask<TResult>;
   type ConfirmActionOptions = import('./domain').ConfirmActionOptions;
   type ContentSignature = import('./domain').ContentSignature;
   type ConflictCandidate = import('./domain').ConflictCandidate;
   type ConflictResolution = import('./domain').ConflictResolution;
   type DraftRecord = import('./storage').DraftRecord;
+  type FiberyCheckAdminOptions = import('./domain').FiberyCheckAdminOptions;
   type FiberyApiCallOptions = import('./domain').FiberyApiCallOptions;
+  type FiberyDeletePageOptions = import('./domain').FiberyDeletePageOptions;
+  type FiberyLoadPageOptions = import('./domain').FiberyLoadPageOptions;
+  type FiberyLoadPagesOptions = import('./domain').FiberyLoadPagesOptions;
+  type FiberyLoadPagesResult = import('./domain').FiberyLoadPagesResult;
   type FiberySaveResult = import('./domain').FiberySaveResult;
+  type FiberySavePageOptions = import('./domain').FiberySavePageOptions;
   type FiberyPage = import('./domain').FiberyPage;
   type LocalEmergencyDraft = import('./storage').LocalEmergencyDraft;
   type PageId = import('./domain').PageId;
@@ -80,6 +92,7 @@ declare global {
     deletePreviewFrame: HTMLIFrameElement;
     confirmOpenPreviewBtn: HTMLButtonElement;
     logPanel: HTMLElement;
+    apiUsageSummaryBox: HTMLElement;
     externalSyncCheckNowBtn: HTMLButtonElement;
     saveBtn: HTMLButtonElement;
     conflictCompareModal: HTMLElement;
@@ -121,6 +134,15 @@ declare global {
   function log(message: string): void;
   function markDirty(value?: boolean): void;
   function markCurrentPageRemoteVerified(options?: { remoteStatus?: RemoteStatus; openedFromCache?: boolean; signature?: string }): void;
+  function apiUsageNow(): number;
+  function apiUsageErrorText(error: unknown): string;
+  function apiUsageCallKey(entry?: ApiUsageMeta): string;
+  function isApiUsageLogVisible(): boolean;
+  function renderApiUsageSummary(): void;
+  function recordApiUsage(entry?: ApiUsageEntry): ApiUsageCall;
+  function clearApiUsageStats(): void;
+  function withApiUsage<TResult = unknown>(meta: ApiUsageMeta, task: ApiUsageTask<TResult>): Promise<TResult>;
+  function automaticFiberyCooldownRemaining(now?: number): number;
   function rebuildProjectMaps(): void;
   function refreshSidebarFromLocalCache(options?: unknown): void;
   function renderCurrent(): void;
@@ -140,10 +162,11 @@ declare global {
   function showBlankPage(): void;
   function sameSnapshot(a?: Partial<PageSnapshot> | null, b?: Partial<PageSnapshot> | null): boolean;
   function syncDirtyWithBaseline(): void;
-  function canRunAutomaticFiberyCall(source: string): boolean;
+  function canRunAutomaticFiberyCall(source?: string): boolean;
   function clearExternalSyncCandidateForCurrentPage(options?: { clearDismissed?: boolean; clearNotified?: boolean }): void;
-  function automaticFiberySkipReason(source: string): string;
-  function recordPreviewUsage(options?: { operation?: string; source?: string; pageId?: string; automatic?: boolean }): void;
+  function automaticFiberySkipReason(source?: string): string;
+  function logAutomaticFiberySkip(source?: string, reason?: string): void;
+  function recordPreviewUsage(options?: { operation?: ApiUsageOperation; source?: string; pageId?: string; automatic?: boolean }): void;
   function setStatus(text: string): void;
   function syncBeforeUnloadWarningState(): void;
   function syncCachedOpenCheckNowButtonLabel(): void;
@@ -157,10 +180,12 @@ declare global {
   function updateCurrentFromInputs(): void;
   function viewUrl(id: string): string;
 
-  const API: {
-    loadPage(id: string, options?: FiberyApiCallOptions): Promise<FiberyPage | null>;
-    savePage(page: SavePagePayload, options?: FiberyApiCallOptions): Promise<FiberySaveResult>;
-    deletePage(id: string, options?: FiberyApiCallOptions): Promise<{ success: boolean }>;
+  var API: {
+    checkIsAdmin(options?: FiberyCheckAdminOptions): Promise<boolean>;
+    loadPages(options?: FiberyLoadPagesOptions): Promise<FiberyLoadPagesResult>;
+    loadPage(id: string, options?: FiberyLoadPageOptions): Promise<FiberyPage | null>;
+    savePage(page: SavePagePayload, options?: FiberySavePageOptions): Promise<FiberySaveResult>;
+    deletePage(id: string, options?: FiberyDeletePageOptions): Promise<{ success: boolean }>;
   };
 }
 

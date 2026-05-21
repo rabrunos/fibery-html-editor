@@ -1,26 +1,36 @@
-function apiUsageNow() { return Date.now(); }
-
-function apiUsageErrorText(error) {
-  return String(error?.message || error || '').slice(0, 140);
+function apiUsageNow(): number {
+  return Date.now();
 }
 
-function apiUsageCallKey(entry = {}) {
-  return [entry.kind || 'unknown', entry.operation || 'unknown', entry.source || 'unknown', entry.pageId || ''].join(':');
+function apiUsageErrorText(error: unknown): string {
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    return String((error as { message?: unknown }).message || error || '').slice(0, 140);
+  }
+  return String(error || '').slice(0, 140);
 }
 
-function isApiUsageLogVisible() {
+function apiUsageCallKey(entry: ApiUsageMeta = {}): string {
+  return [
+    entry.kind || 'unknown',
+    entry.operation || 'unknown',
+    entry.source || 'unknown',
+    entry.pageId || ''
+  ].join(':');
+}
+
+function isApiUsageLogVisible(): boolean {
   return !!els.logPanel && !els.logPanel.classList.contains('hidden');
 }
 
-function renderApiUsageSummary() {
+function renderApiUsageSummary(): void {
   if (!els.apiUsageSummaryBox) return;
   const calls = state.apiUsage.recentCalls || [];
   const now = apiUsageNow();
   const windowMs = Number(state.apiUsage.summaryWindowMs || 300000);
-  const recent = calls.filter(call => now - Number(call.timestamp || 0) <= windowMs);
-  const fiberyCount = recent.filter(call => call.kind === 'fibery-api').length;
-  const previewCount = recent.filter(call => call.kind === 'fibery-preview').length;
-  const remoteCount = recent.filter(call => call.kind === 'github-remote').length;
+  const recent = calls.filter((call) => now - Number(call.timestamp || 0) <= windowMs);
+  const fiberyCount = recent.filter((call) => call.kind === 'fibery-api').length;
+  const previewCount = recent.filter((call) => call.kind === 'fibery-preview').length;
+  const remoteCount = recent.filter((call) => call.kind === 'github-remote').length;
   const last = calls[calls.length - 1];
   const lastText = last
     ? `${last.kind}/${last.operation} (${last.source || '-'}) ${Number(last.durationMs || 0)}ms`
@@ -28,8 +38,8 @@ function renderApiUsageSummary() {
   els.apiUsageSummaryBox.textContent = `${t('apiUsageLast5Min')}: ${fiberyCount} ${t('apiUsageFibery')}, ${previewCount} ${t('apiUsagePreview')}, ${remoteCount} ${t('apiUsageRemote')}. ${t('apiUsageLastCall')}: ${lastText}`;
 }
 
-function recordApiUsage(entry = {}) {
-  const normalized = {
+function recordApiUsage(entry: ApiUsageEntry = {}): ApiUsageCall {
+  const normalized: ApiUsageCall = {
     kind: String(entry.kind || 'unknown'),
     operation: String(entry.operation || 'unknown'),
     source: String(entry.source || 'unknown'),
@@ -59,7 +69,7 @@ function recordApiUsage(entry = {}) {
   return normalized;
 }
 
-function clearApiUsageStats() {
+function clearApiUsageStats(): void {
   state.apiUsage.recentCalls = [];
   state.apiUsage.lastAutomaticFiberyCallAt = 0;
   state.apiUsage.slowModeUntil = 0;
@@ -67,7 +77,7 @@ function clearApiUsageStats() {
   renderApiUsageSummary();
 }
 
-async function withApiUsage(meta = {}, task) {
+async function withApiUsage<TResult = unknown>(meta: ApiUsageMeta = {}, task: ApiUsageTask<TResult>): Promise<TResult> {
   const startedAt = apiUsageNow();
   const key = apiUsageCallKey(meta);
   state.apiUsage.inFlight[key] = Number(state.apiUsage.inFlight[key] || 0) + 1;
@@ -75,16 +85,16 @@ async function withApiUsage(meta = {}, task) {
     const result = await task();
     recordApiUsage({ ...meta, timestamp: startedAt, durationMs: apiUsageNow() - startedAt, success: true });
     return result;
-  } catch (err) {
-    recordApiUsage({ ...meta, timestamp: startedAt, durationMs: apiUsageNow() - startedAt, success: false, error: err });
-    throw err;
+  } catch (error) {
+    recordApiUsage({ ...meta, timestamp: startedAt, durationMs: apiUsageNow() - startedAt, success: false, error });
+    throw error;
   } finally {
     state.apiUsage.inFlight[key] = Math.max(0, Number(state.apiUsage.inFlight[key] || 1) - 1);
     if (!state.apiUsage.inFlight[key]) delete state.apiUsage.inFlight[key];
   }
 }
 
-function automaticFiberyCooldownRemaining(now = apiUsageNow()) {
+function automaticFiberyCooldownRemaining(now: number = apiUsageNow()): number {
   const cooldownMs = Math.max(60000, Number(state.apiUsage.automaticCooldownMs || 180000));
   const slowUntil = Number(state.apiUsage.slowModeUntil || 0);
   if (slowUntil > now) return slowUntil - now;
@@ -93,7 +103,7 @@ function automaticFiberyCooldownRemaining(now = apiUsageNow()) {
   return Math.max(0, cooldownMs - (now - lastAt));
 }
 
-function automaticFiberySkipReason(source = '') {
+function automaticFiberySkipReason(source: string = ''): string {
   if (document.hidden) return 'document-hidden';
   if (state.saving) return 'saving';
   if (state.loadingPage) return 'loading-page';
@@ -103,16 +113,21 @@ function automaticFiberySkipReason(source = '') {
   return '';
 }
 
-function canRunAutomaticFiberyCall(source = '') {
+function canRunAutomaticFiberyCall(source: string = ''): boolean {
   return !automaticFiberySkipReason(source);
 }
 
-function logAutomaticFiberySkip(source = '', reason = automaticFiberySkipReason(source)) {
+function logAutomaticFiberySkip(source: string = '', reason: string = automaticFiberySkipReason(source)): void {
   if (!reason || !isApiUsageLogVisible()) return;
   log(`${t('apiUsageAutomaticSkippedLog')}: ${source || 'unknown'} (${reason})`);
 }
 
-function recordPreviewUsage({ operation = 'previewView', source = 'preview-real', pageId = '', automatic = false } = {}) {
+function recordPreviewUsage({ operation = 'previewView', source = 'preview-real', pageId = '', automatic = false }: {
+  operation?: ApiUsageOperation;
+  source?: string;
+  pageId?: string;
+  automatic?: boolean;
+} = {}): void {
   recordApiUsage({
     kind: 'fibery-preview',
     operation,

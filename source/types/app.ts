@@ -18,10 +18,20 @@ export type AppLanguage = 'en' | 'pt-BR';
 export type PanelMode = 'both' | 'editor' | 'preview';
 export type UpdateStatus = 'idle' | 'checking' | 'latest' | 'available' | 'local-newer' | 'invalid' | 'error' | 'applying';
 export type ExternalSyncStatus = 'idle' | 'checking' | 'current' | 'changed' | 'error';
+export type ApiUsageKind = 'fibery-api' | 'fibery-preview' | 'github-remote' | 'unknown';
+export type ApiUsageOperation = string;
+
+export interface ApiUsageMeta {
+  kind?: ApiUsageKind | string;
+  operation?: ApiUsageOperation;
+  source?: string;
+  pageId?: string;
+  automatic?: boolean;
+}
 
 export interface ApiUsageCall {
-  kind: string;
-  operation: string;
+  kind: ApiUsageKind | string;
+  operation: ApiUsageOperation;
   source: string;
   pageId: string;
   automatic: boolean;
@@ -30,6 +40,16 @@ export interface ApiUsageCall {
   timestamp: number;
   error: string;
 }
+
+export interface ApiUsageEntry extends ApiUsageMeta {
+  timestamp?: number;
+  durationMs?: number;
+  success?: boolean;
+  error?: unknown;
+}
+
+export type ApiUsageRecordedEntry = ApiUsageCall;
+export type ApiUsageTask<TResult = unknown> = () => Promise<TResult>;
 
 export interface AppState {
   isAdmin: boolean;

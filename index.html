@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.26.0" />
+  <meta name="fibery-html-editor-version" content="8.27.0" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -595,7 +595,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 
 (function() {
 	//#region \0virtual:fibery-html-editor/manifest-js
-	const APP_VERSION = "8.26.0";
+	const APP_VERSION = "8.27.0";
 	window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 	document.documentElement.dataset.appVersion = APP_VERSION;
 	var UPDATE_REMOTE = Object.freeze({
@@ -1559,7 +1559,8 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		return Date.now();
 	}
 	function apiUsageErrorText(error) {
-		return String(error?.message || error || "").slice(0, 140);
+		if (typeof error === "object" && error !== null && "message" in error) return String(error.message || error || "").slice(0, 140);
+		return String(error || "").slice(0, 140);
 	}
 	function apiUsageCallKey(entry = {}) {
 		return [
@@ -1629,15 +1630,15 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 				success: true
 			});
 			return result;
-		} catch (err) {
+		} catch (error) {
 			recordApiUsage({
 				...meta,
 				timestamp: startedAt,
 				durationMs: apiUsageNow() - startedAt,
 				success: false,
-				error: err
+				error
 			});
-			throw err;
+			throw error;
 		} finally {
 			state.apiUsage.inFlight[key] = Math.max(0, Number(state.apiUsage.inFlight[key] || 1) - 1);
 			if (!state.apiUsage.inFlight[key]) delete state.apiUsage.inFlight[key];

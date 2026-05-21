@@ -1,3 +1,29 @@
+## [8.27.0] - 2026-05-21
+
+### Technical adjustments
+
+* Migrated Fibery API wrapper to TypeScript (`fibery-api.ts`) while preserving the global `API` object and methods (`checkIsAdmin`, `loadPages`, `loadPage`, `savePage`, `deletePage`).
+* Migrated API usage monitor to TypeScript (`api-usage-monitor.ts`) while preserving call recording, in-flight tracking, cooldown/slow-mode controls, skip reasons, conditional logging, and summary rendering.
+* Preserved Fibery API endpoints, HTTP methods, `encodeURIComponent` usage, request headers, and existing error messages.
+* Preserved `withApiUsage` metadata fields (`kind`, `operation`, `source`, `pageId`, `automatic`) for Fibery API, preview, and remote update flows.
+* Added central TypeScript contracts for API usage metadata/task types and Fibery API options/results used by this migration lot.
+* Updated legacy global declarations and compatibility manifest entries to use the new `.ts` modules in shared bundle scope.
+* Bumped app version metadata to `8.27.0` via manifest and `package.json`, and regenerated the single-file deploy artifact.
+
+### Notes
+
+* No intentional UX or runtime behavior changes.
+* No intentional API-consumption policy changes (frequency, cooldown, slow mode, skip reasons).
+* Vite single-file build and compatibility bridge behavior remain unchanged.
+
+### Validation
+
+* `npm run typecheck`
+* `npm run build:tmp`
+* `npm run validate:tmp`
+* `npm run build`
+* `npm run validate`
+
 ## [8.26.0] - 2026-05-21
 
 ### Technical adjustments
