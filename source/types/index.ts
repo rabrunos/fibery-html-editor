@@ -18,6 +18,7 @@ export type {
   PreviewMode,
   PreviewVisibilityState,
   RemoteStatus,
+  SemverSimple,
   SaveBlockedReason,
   SavePagePayload
 } from './domain';
@@ -27,6 +28,7 @@ export type {
   DraftSource,
   HistoryRecord,
   LocalEmergencyDraft,
+  LocalStorageKeys,
   ManualHistoryKind,
   PageContentCacheRecord,
   PageMetaRecord,
@@ -42,4 +44,3 @@ export type {
   ResourceManifestEntry,
   ResourceRecord
 } from './resources';
-

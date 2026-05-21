@@ -2,6 +2,13 @@ export type PageId = string;
 export type HtmlSource = string;
 export type ContentSignature = string;
 
+export interface SemverSimple {
+  major: number;
+  minor: number;
+  patch: number;
+  raw: string;
+}
+
 export interface PageSnapshot {
   title: string;
   description: string;
@@ -34,4 +41,3 @@ export interface ConflictCandidate extends FiberyPage {
 }
 
 export type ConflictResolution = 'keep-local' | 'load-remote';
-

@@ -10,6 +10,19 @@ export type ManualHistoryKind = 'manual';
 export type DraftSource = 'draft' | 'emergency' | 'history-manual';
 export type UpdateBackupKind = 'update-backup';
 
+export interface LocalStorageKeys {
+  lang: string;
+  openLast: string;
+  lastPageId: string;
+  versionLimit: string;
+  split: string;
+  sidebarOpen: string;
+  pageMeta: string;
+  panelMode: string;
+  dismissedRecovery: string;
+  emergencyDraft: string;
+}
+
 export interface PageContentCacheRecord extends PageSnapshot {
   pageId: PageId;
   signature: ContentSignature;
@@ -87,4 +100,3 @@ export interface LocalEmergencyDraft extends PageSnapshot {
   savedAt: number;
   html: HtmlSource;
 }
-

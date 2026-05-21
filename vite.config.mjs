@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import ts from 'typescript';
 import { defineConfig } from 'vite';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -30,12 +31,34 @@ function readManifest() {
   return JSON.parse(readText(manifestPath, 'Manifest'));
 }
 
+function transpileManifestTsPart(source, rel) {
+  const result = ts.transpileModule(source, {
+    fileName: rel,
+    compilerOptions: {
+      module: ts.ModuleKind.ESNext,
+      target: ts.ScriptTarget.ES2020,
+      removeComments: false
+    },
+    reportDiagnostics: true
+  });
+  const errors = (result.diagnostics || []).filter((diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error);
+  assertConfig(errors.length === 0, `TypeScript transpile failed for ${rel}: ${errors.map((diagnostic) => diagnostic.messageText).join('; ')}`);
+  const output = normalizeLf(result.outputText).trim();
+  assertConfig(!/^\s*(?:import|export)\b/m.test(output), `Manifest TypeScript part must preserve shared script scope: ${rel}`);
+  return output;
+}
+
+function readManifestJsPart(rel) {
+  const source = readText(path.resolve(rootDir, rel), 'JS part');
+  return rel.endsWith('.ts') ? transpileManifestTsPart(source, rel) : source;
+}
+
 function readManifestJsBundle() {
   const manifest = readManifest();
   assertConfig(Array.isArray(manifest.js) && manifest.js.length > 0, 'Manifest js list is empty');
 
   return manifest.js
-    .map((rel) => readText(path.resolve(rootDir, rel), 'JS part'))
+    .map((rel) => readManifestJsPart(rel))
     .join('\n\n')
     .trim();
 }
@@ -59,7 +82,7 @@ function fiberyManifestJsPlugin() {
 }
 
 const manifest = readManifest();
-const appEntry = path.resolve(rootDir, manifest.appEntry || 'source/app/main.js');
+const appEntry = path.resolve(rootDir, manifest.appEntry || 'source/app/main.ts');
 
 export default defineConfig({
   root: rootDir,

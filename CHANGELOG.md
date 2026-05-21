@@ -1,3 +1,26 @@
+## [8.18.0] - 2026-05-21
+
+### Technical adjustments
+
+* Migrated the first legacy utility modules to TypeScript: semver helpers, snapshot helpers, and localStorage key constants.
+* Preserved the legacy shared-scope globals (`parseSemverSimple`, `compareSemverSimple`, `snapshotSignature`, `normalizeSnapshotText`, `sameSnapshot`, `currentSnapshotFromState`, `currentBaselineSnapshot`, `setCurrentBaseline`, and `LS`) through the manifest-backed Vite bridge.
+* Reused central TypeScript contracts where safe and added TypeScript transpilation for `.ts` files listed in the compatibility manifest.
+* Bumped app version metadata to `8.18.0` via manifest and `package.json`, and regenerated the single-file deploy artifact.
+
+### Notes
+
+* No intentional UX or runtime behavior changes.
+* The final Fibery deployment remains a single generated `index.html` with the Vite bundle inlined.
+* `utils-core.js` remains JavaScript because it touches DOM, localStorage, global state, i18n, clipboard, and toast behavior.
+
+### Validation
+
+* `npm run typecheck`
+* `npm run build:tmp`
+* `npm run validate:tmp`
+* `npm run build`
+* `npm run validate`
+
 ## [8.17.0] - 2026-05-21
 
 ### Technical adjustments

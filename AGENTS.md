@@ -73,7 +73,7 @@ Canonical editing paths:
 * `source/template/index.template.html` - top-level HTML template and placeholders;
 * `source/html/` - body/layout/modals/panels sections;
 * `source/css/` - style modules;
-* `source/js/` - JavaScript modules by functional area;
+* `source/js/` - legacy shared-scope JavaScript/TypeScript modules by functional area;
 * `source/app/main.ts` - Vite app entry for the JavaScript bundle;
 * `source/types/` - TypeScript contracts for app, domain, storage, and future resources;
 * `source/config/manifest.json` - version and deterministic assembly order.
@@ -81,7 +81,7 @@ Canonical editing paths:
 ### JavaScript Module Rules
 
 * Use descriptive names that reflect functional area; no numeric prefixes for new JS modules.
-* During gradual TypeScript migration, the compatibility bundle still loads legacy `source/js/` files through the `js` array in `source/config/manifest.json`; do not rely on filename order.
+* During gradual TypeScript migration, the compatibility bundle still loads legacy `source/js/` JavaScript/TypeScript files through the `js` array in `source/config/manifest.json`; do not rely on filename order.
 * `const` declaration order in the manifest must satisfy lexical dependencies: `app-version.js` -> `i18n-base.js` -> `i18n-en.js` / `i18n-pt-br.js` -> `storage-keys.js` -> `dom-refs.js` -> `app-state.js`.
 * Current `source/js/` files still share one bundled script scope. Do not convert them to per-file ES module imports piecemeal unless the task is an explicit TypeScript migration.
 * Function declarations are hoisted within the generated bundle scope and are order-independent.
@@ -90,7 +90,8 @@ Canonical editing paths:
 
 * TypeScript is configured for gradual migration through `tsconfig.json` and `npm run typecheck`.
 * `source/types/` holds central contracts. Prefer importing/exporting these contracts when migrating modules instead of inventing duplicate shapes.
-* Legacy `source/js/` files are not globally checked by TypeScript yet. Do not enable `checkJs` or migrate broad UI/runtime modules unless the task scope explicitly calls for that lot.
+* Migrated `source/js/*.ts` files are typechecked and transpiled by the Vite manifest bridge before being injected into the shared bundle scope.
+* Legacy `source/js/*.js` files are not globally checked by TypeScript yet. Do not enable `checkJs` or migrate broad UI/runtime modules unless the task scope explicitly calls for that lot.
 * Keep TypeScript changes small and biased toward pure utilities, storage contracts, and narrow module migrations before touching UI/render/events.
 
 `index.html` is generated from these files.
@@ -101,6 +102,7 @@ Current state:
 
 * `scripts/build.mjs` assembles `index.html` from `source/config/manifest.json`, `source/template/index.template.html`, `source/html/`, and `source/css/`;
 * Vite bundles the app JavaScript from `source/app/main.ts` through a manifest-backed virtual module in `vite.config.mjs`;
+* `.ts` files listed in the compatibility manifest are transpiled by that Vite bridge while preserving the shared bundle scope;
 * the generated Vite bundle is injected inline into the final `index.html`;
 * TypeScript is configured with central contracts in `source/types/` and a local `npm run typecheck` script;
 * `scripts/validate-build.mjs` validates generated HTML and inline JavaScript syntax;

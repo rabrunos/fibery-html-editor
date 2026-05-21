@@ -20,6 +20,7 @@
   },
   "include": [
     "source/app/**/*.ts",
+    "source/js/**/*.ts",
     "source/types/**/*.ts",
     "source/types/**/*.d.ts"
   ],
