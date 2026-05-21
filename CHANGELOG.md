@@ -1,3 +1,25 @@
+## [8.30.0] - 2026-05-21
+
+### Technical adjustments
+
+* Migrated Update App apply flow to TypeScript (`update-apply-flow.ts`) while preserving explicit confirmation, remote HTML validation, backup-before-save, `API.savePage` source tagging (`update-apply`), and post-save cache/meta/history/baseline/preview/sidebar updates.
+* Migrated Update App rollback flow to TypeScript (`update-rollback-flow.ts`) while preserving explicit rollback validation and confirmation, current-version backup-before-restore, `API.savePage` source tagging (`update-rollback`), and post-restore backup list/cache/history/baseline/preview/sidebar updates.
+* Added central rollback validation contracts to `source/types/domain.ts` and updated legacy global declarations for the migrated apply/rollback globals in shared bundle scope.
+* Updated compatibility manifest entries from `.js` to `.ts` for apply/rollback, bumped app version metadata to `8.30.0`, and regenerated the single-file deploy artifact.
+
+### Notes
+
+* No intentional UX or runtime behavior changes.
+* `update-changelog-render.js` and `update-panel-render.js` remain in JavaScript for the next migration lot.
+
+### Validation
+
+* `npm run typecheck`
+* `npm run build:tmp`
+* `npm run validate:tmp`
+* `npm run build`
+* `npm run validate`
+
 ## [8.29.0] - 2026-05-21
 
 ### Technical adjustments

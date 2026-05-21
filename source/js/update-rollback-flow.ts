@@ -1,4 +1,11 @@
-function getRollbackDisabledReasonText() {
+function updateRollbackErrorMessage(error: unknown): string {
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    return String((error as { message?: unknown }).message || error || '');
+  }
+  return String(error || '');
+}
+
+function getRollbackDisabledReasonText(): string {
   if (state.update.checking) return t('updateRollbackBusyChecking');
   if (state.update.applying) return t('updateRollbackBusyApplying');
   if (state.update.rollbacking) return t('updateRollbackRestoring');
@@ -7,7 +14,7 @@ function getRollbackDisabledReasonText() {
   return '';
 }
 
-function validateUpdateBackupForRollback(record = {}) {
+function validateUpdateBackupForRollback(record: UpdateBackupListRecord = {}): RollbackValidationResult {
   if (!isSafeUpdateBackupRecord(record)) return { ok: false, reason: 'invalid-origin' };
   const expectedPageId = getUpdateBackupTargetPageId();
   if (!expectedPageId || String(record.pageId || '') !== expectedPageId) return { ok: false, reason: 'page-mismatch' };
@@ -33,11 +40,11 @@ function validateUpdateBackupForRollback(record = {}) {
   return { ok: true, backupVersion: metaSemver.raw, backupHtml: source };
 }
 
-function updateRollbackValidationReasonText() {
+function updateRollbackValidationReasonText(_reason: RollbackValidationReason | string = ''): string {
   return t('updateRollbackBackupInvalid');
 }
 
-function getInstalledAppVersionFromCurrentState() {
+function getInstalledAppVersionFromCurrentState(): string {
   const sources = [
     String(state.currentBaseline?.html || ''),
     String(state.current?.html || '')
@@ -55,7 +62,7 @@ function getInstalledAppVersionFromCurrentState() {
   return runtimeSemver ? runtimeSemver.raw : APP_VERSION;
 }
 
-async function restoreUpdateBackupByKey(key = '') {
+async function restoreUpdateBackupByKey(key: string = ''): Promise<void> {
   const rollbackKey = String(key || '').trim();
   if (!rollbackKey) return;
 
@@ -66,12 +73,12 @@ async function restoreUpdateBackupByKey(key = '') {
     return;
   }
 
-  let record = null;
+  let record: UpdateBackupListRecord | null = null;
   try {
     record = await getUpdateBackupRecordByKey(rollbackKey);
   } catch (err) {
     setStatus(t('updateRollbackFailed'));
-    log(`${t('updateRollbackFailed')}: ${String(err?.message || err || '')}`);
+    log(`${t('updateRollbackFailed')}: ${updateRollbackErrorMessage(err)}`);
     return;
   }
   if (!record) {
@@ -120,7 +127,7 @@ async function restoreUpdateBackupByKey(key = '') {
         html: baselineSnapshot.html || state.current.html
       });
     } catch (backupErr) {
-      const backupMessage = String(backupErr?.message || backupErr || '');
+      const backupMessage = updateRollbackErrorMessage(backupErr);
       setStatus(t('updateRollbackCurrentBackupFailed'));
       log(`${t('updateRollbackCurrentBackupFailed')}: ${backupMessage}`);
       return;
@@ -164,7 +171,7 @@ async function restoreUpdateBackupByKey(key = '') {
     log(`${t('updateRollbackRestored')}: ${installedVersion} -> ${validation.backupVersion}`);
     void checkRemoteUpdateInfo();
   } catch (err) {
-    const message = String(err?.message || err || '');
+    const message = updateRollbackErrorMessage(err);
     setStatus(t('updateRollbackFailed'));
     log(`${t('updateRollbackFailed')}: ${message}`);
   } finally {

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.29.0" />
+  <meta name="fibery-html-editor-version" content="8.30.0" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -595,7 +595,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 
 (function() {
 	//#region \0virtual:fibery-html-editor/manifest-js
-	const APP_VERSION = "8.29.0";
+	const APP_VERSION = "8.30.0";
 	window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 	document.documentElement.dataset.appVersion = APP_VERSION;
 	var UPDATE_REMOTE = Object.freeze({
@@ -2168,6 +2168,10 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			els.updateBackupsBox.appendChild(row);
 		}
 	}
+	function updateApplyErrorMessage(error) {
+		if (typeof error === "object" && error !== null && "message" in error) return String(error.message || error || "");
+		return String(error || "");
+	}
 	function isCurrentAppPageForUpdate() {
 		if (state.blank) return false;
 		if (!state.current.id || !state.appPageId) return false;
@@ -2243,7 +2247,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 					html: state.current.html
 				});
 			} catch (backupErr) {
-				const backupMsg = String(backupErr?.message || backupErr || "");
+				const backupMsg = updateApplyErrorMessage(backupErr);
 				setStatus(t("updateBackupFailed"));
 				log(`${t("updateBackupFailed")}: ${backupMsg}`);
 				return;
@@ -2293,7 +2297,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			renderUpdateAppPanel();
 			checkRemoteUpdateInfo();
 		} catch (err) {
-			const msg = String(err?.message || err || "");
+			const msg = updateApplyErrorMessage(err);
 			setStatus(t("updateApplyFailed"));
 			log(`${t("updateApplyFailed")}: ${msg}`);
 			state.update.status = previousStatus;
@@ -2302,6 +2306,10 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			if (state.update.status === "applying") state.update.status = previousStatus;
 			renderUpdateAppPanel();
 		}
+	}
+	function updateRollbackErrorMessage(error) {
+		if (typeof error === "object" && error !== null && "message" in error) return String(error.message || error || "");
+		return String(error || "");
 	}
 	function getRollbackDisabledReasonText() {
 		if (state.update.checking) return t("updateRollbackBusyChecking");
@@ -2371,7 +2379,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			backupHtml: source
 		};
 	}
-	function updateRollbackValidationReasonText() {
+	function updateRollbackValidationReasonText(_reason = "") {
 		return t("updateRollbackBackupInvalid");
 	}
 	function getInstalledAppVersionFromCurrentState() {
@@ -2400,7 +2408,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			record = await getUpdateBackupRecordByKey(rollbackKey);
 		} catch (err) {
 			setStatus(t("updateRollbackFailed"));
-			log(`${t("updateRollbackFailed")}: ${String(err?.message || err || "")}`);
+			log(`${t("updateRollbackFailed")}: ${updateRollbackErrorMessage(err)}`);
 			return;
 		}
 		if (!record) {
@@ -2444,7 +2452,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 					html: baselineSnapshot.html || state.current.html
 				});
 			} catch (backupErr) {
-				const backupMessage = String(backupErr?.message || backupErr || "");
+				const backupMessage = updateRollbackErrorMessage(backupErr);
 				setStatus(t("updateRollbackCurrentBackupFailed"));
 				log(`${t("updateRollbackCurrentBackupFailed")}: ${backupMessage}`);
 				return;
@@ -2490,7 +2498,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			log(`${t("updateRollbackRestored")}: ${installedVersion} -> ${validation.backupVersion}`);
 			checkRemoteUpdateInfo();
 		} catch (err) {
-			const message = String(err?.message || err || "");
+			const message = updateRollbackErrorMessage(err);
 			setStatus(t("updateRollbackFailed"));
 			log(`${t("updateRollbackFailed")}: ${message}`);
 		} finally {

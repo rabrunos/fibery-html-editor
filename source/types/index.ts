@@ -21,6 +21,8 @@ export type {
   FetchRemoteTextOptions,
   UpdateCheckStatus,
   UpdateRemoteConfig,
+  RollbackValidationReason,
+  RollbackValidationResult,
   UpdateValidationReason,
   RemoteUpdateValidationResult,
   LocalPreviewDocumentOptions,

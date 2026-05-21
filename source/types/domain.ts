@@ -44,6 +44,20 @@ export type UpdateValidationReason =
   | 'invalid-local-version'
   | 'remote-not-newer';
 
+export type RollbackValidationReason =
+  | 'invalid-origin'
+  | 'page-mismatch'
+  | 'empty'
+  | 'too-short'
+  | 'not-html'
+  | 'not-editor'
+  | 'missing-meta-version'
+  | 'invalid-meta-version'
+  | 'missing-app-version'
+  | 'version-mismatch'
+  | 'missing-window-version-assign'
+  | 'missing-dataset-version-assign';
+
 export interface RemoteUpdateValidationFailure {
   ok: false;
   reason: UpdateValidationReason;
@@ -60,6 +74,21 @@ export interface RemoteUpdateValidationSuccess {
 export type RemoteUpdateValidationResult =
   | RemoteUpdateValidationFailure
   | RemoteUpdateValidationSuccess;
+
+export interface RollbackValidationFailure {
+  ok: false;
+  reason: RollbackValidationReason;
+}
+
+export interface RollbackValidationSuccess {
+  ok: true;
+  backupVersion: string;
+  backupHtml: string;
+}
+
+export type RollbackValidationResult =
+  | RollbackValidationFailure
+  | RollbackValidationSuccess;
 
 export interface PageSnapshot {
   title: string;

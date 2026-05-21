@@ -1,15 +1,25 @@
-function isCurrentAppPageForUpdate() {
+function updateApplyErrorMessage(error: unknown): string {
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    return String((error as { message?: unknown }).message || error || '');
+  }
+  return String(error || '');
+}
+
+function isCurrentAppPageForUpdate(): boolean {
   if (state.blank) return false;
   if (!state.current.id || !state.appPageId) return false;
   return state.current.id === state.appPageId;
 }
-function canShowApplyUpdateButton() {
+
+function canShowApplyUpdateButton(): boolean {
   return state.update.status === 'available';
 }
-function canApplyUpdateNow() {
+
+function canApplyUpdateNow(): boolean {
   return canShowApplyUpdateButton() && !state.update.checking && !state.update.applying && !state.update.rollbacking && state.isAdmin && isCurrentAppPageForUpdate();
 }
-async function applyRemoteUpdate() {
+
+async function applyRemoteUpdate(): Promise<void> {
   if (state.update.applying) return;
   if (state.update.rollbacking) { setStatus(t('updateRollbackRestoring')); return; }
   if (state.update.checking) { setStatus(t('updateApplyUnavailableWhileChecking')); return; }
@@ -18,7 +28,7 @@ async function applyRemoteUpdate() {
   if (state.update.status !== 'available') { setStatus(t('updateRemoteVersionNotNewer')); return; }
 
   state.update.applying = true;
-  const previousStatus = state.update.status;
+  const previousStatus: typeof state.update.status = state.update.status;
   state.update.status = 'applying';
   renderUpdateAppPanel();
 
@@ -44,7 +54,7 @@ async function applyRemoteUpdate() {
 
     updateCurrentFromInputs();
     setStatus(t('updateBackupCreating'));
-    let backupRecord = null;
+    let backupRecord: UpdateBackupRecord | null = null;
     try {
       backupRecord = await createUpdateBackupRecord({
         pageId: state.current.id,
@@ -55,7 +65,7 @@ async function applyRemoteUpdate() {
         html: state.current.html
       });
     } catch (backupErr) {
-      const backupMsg = String(backupErr?.message || backupErr || '');
+      const backupMsg = updateApplyErrorMessage(backupErr);
       setStatus(t('updateBackupFailed'));
       log(`${t('updateBackupFailed')}: ${backupMsg}`);
       return;
@@ -97,7 +107,7 @@ async function applyRemoteUpdate() {
     renderUpdateAppPanel();
     void checkRemoteUpdateInfo();
   } catch (err) {
-    const msg = String(err?.message || err || '');
+    const msg = updateApplyErrorMessage(err);
     setStatus(t('updateApplyFailed'));
     log(`${t('updateApplyFailed')}: ${msg}`);
     state.update.status = previousStatus;

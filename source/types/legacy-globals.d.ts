@@ -35,6 +35,8 @@ declare global {
   type RemoteStatus = import('./domain').RemoteStatus;
   type RealPreviewRenderOptions = import('./domain').RealPreviewRenderOptions;
   type ResumePreviewOptions = import('./domain').ResumePreviewOptions;
+  type RollbackValidationReason = import('./domain').RollbackValidationReason;
+  type RollbackValidationResult = import('./domain').RollbackValidationResult;
   type QueuePreviewSyncOptions = import('./domain').QueuePreviewSyncOptions;
   type SavePagePayload = import('./domain').SavePagePayload;
   type SaveBlockedReason = import('./domain').SaveBlockedReason;
@@ -165,11 +167,13 @@ declare global {
   function fetchRemoteText(url: string, options?: FetchRemoteTextOptions): Promise<string>;
   function getCodeValue(): string;
   function getHistory(pageId: PageId, kind?: 'all' | 'manual' | 'autosave'): Promise<HistoryRecord[]>;
+  function getInstalledAppVersionFromCurrentState(): string;
   function getRollbackDisabledReasonText(): string;
   function getUpdateBackupRecordByKey(key?: string): Promise<UpdateBackupListRecord | null>;
   function getUpdateBackupTargetPageId(): string;
   function getMetaMap(): Record<string, PageMetaRecord>;
   function isSaveBlockedByRemoteVerification(): boolean;
+  function isCurrentAppPageForUpdate(): boolean;
   function isPreviewPanelVisible(): boolean;
   function loadPageWithCacheAwareFlow(pageId: string, promptToken: number): Promise<void>;
   function loadSearchResults(options?: { localOnly?: boolean }): Promise<void>;
@@ -238,6 +242,8 @@ declare global {
   function snapshotSignature(snapshot?: Partial<PageSnapshot> | null): ContentSignature;
   function shouldForceLocalPreviewForCachedOpen(): boolean;
   function canRunAutomaticFiberyCall(source?: string): boolean;
+  function canShowApplyUpdateButton(): boolean;
+  function canApplyUpdateNow(): boolean;
   function clearExternalSyncCandidateForCurrentPage(options?: { clearDismissed?: boolean; clearNotified?: boolean }): void;
   function automaticFiberySkipReason(source?: string): string;
   function logAutomaticFiberySkip(source?: string, reason?: string): void;
@@ -252,8 +258,12 @@ declare global {
   function syncPreviewVisibilityState(options?: SyncPreviewVisibilityOptions): boolean;
   function cachePagesForSidebar(rows: FiberyPage[]): void;
   function savePage(action?: string): Promise<boolean>;
+  function applyRemoteUpdate(): Promise<void>;
+  function restoreUpdateBackupByKey(key?: string): Promise<void>;
   function updateStatusMessage(): string;
+  function validateUpdateBackupForRollback(record?: UpdateBackupListRecord): RollbackValidationResult;
   function validateRemoteUpdateHtml(remoteHtml?: string): RemoteUpdateValidationResult;
+  function updateRollbackValidationReasonText(reason?: RollbackValidationReason | string): string;
   function updateValidationReasonText(reason?: UpdateValidationReason | string): string;
   function checkRemoteUpdateInfo(): Promise<void>;
   function t(key: string): string;
