@@ -1,15 +1,26 @@
-function createCachedPageOpenRequestId(pageId = '') {
+interface CachedPageVerifyOptions {
+  source?: string;
+  promptToken?: number;
+}
+
+interface MarkCurrentPageRemoteVerifiedOptions {
+  remoteStatus?: RemoteStatus;
+  openedFromCache?: boolean;
+  signature?: string;
+}
+
+function createCachedPageOpenRequestId(pageId: string = ''): string {
   return `${String(pageId || '')}:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function cancelCachedPageRemoteVerification() {
+function cancelCachedPageRemoteVerification(): void {
   if (state.cachedPageOpen.remoteVerificationTimer) {
     clearTimeout(state.cachedPageOpen.remoteVerificationTimer);
     state.cachedPageOpen.remoteVerificationTimer = null;
   }
 }
 
-function scheduleCachedPageRemoteVerification(pageId, requestId, options = {}) {
+function scheduleCachedPageRemoteVerification(pageId: string, requestId: string, options: CachedPageVerifyOptions = {}): void {
   cancelCachedPageRemoteVerification();
   state.cachedPageOpen.remoteVerificationTimer = setTimeout(() => {
     state.cachedPageOpen.remoteVerificationTimer = null;
@@ -21,7 +32,7 @@ function scheduleCachedPageRemoteVerification(pageId, requestId, options = {}) {
   }, 2000);
 }
 
-function resetCachedPageOpenState(pageId = '') {
+function resetCachedPageOpenState(pageId: string = ''): void {
   cancelCachedPageRemoteVerification();
   state.cachedPageOpen.pageId = String(pageId || '');
   state.cachedPageOpen.openRequestId = '';
@@ -35,11 +46,11 @@ function resetCachedPageOpenState(pageId = '') {
   syncSaveAvailabilityState();
 }
 
-function markCurrentPageRemoteVerified(options = {}) {
+function markCurrentPageRemoteVerified(options: MarkCurrentPageRemoteVerifiedOptions = {}): void {
   if (state.blank || !state.current.id) return;
   cancelCachedPageRemoteVerification();
   const verifiedAt = Date.now();
-  const status = String(options.remoteStatus || 'verified');
+  const status = (options.remoteStatus || 'verified') as RemoteStatus;
   const openedFromCache = !!options.openedFromCache;
   state.cachedPageOpen.pageId = String(state.current.id || '');
   state.cachedPageOpen.openRequestId = '';
@@ -53,7 +64,7 @@ function markCurrentPageRemoteVerified(options = {}) {
   syncSaveAvailabilityState();
 }
 
-function isActiveCachedPageOpenRequest(pageId = '', requestId = '') {
+function isActiveCachedPageOpenRequest(pageId: string = '', requestId: string = ''): boolean {
   const expectedPageId = String(pageId || '');
   const expectedRequestId = String(requestId || '');
   if (!expectedPageId || !expectedRequestId) return false;
@@ -64,7 +75,7 @@ function isActiveCachedPageOpenRequest(pageId = '', requestId = '') {
   return true;
 }
 
-function hasUserEditedSinceCachedOpen(pageId = '') {
+function hasUserEditedSinceCachedOpen(pageId: string = ''): boolean {
   const currentPageId = String(state.current.id || '');
   const expectedPageId = String(pageId || '');
   if (!expectedPageId || currentPageId !== expectedPageId) return false;
@@ -73,7 +84,7 @@ function hasUserEditedSinceCachedOpen(pageId = '') {
   return !sameSnapshot(currentSnapshotFromState(), currentBaselineSnapshot());
 }
 
-function cachedPageSnapshot(record = {}, pageId = '') {
+function cachedPageSnapshot(record: Partial<PageContentCacheRecord> = {}, pageId: string = ''): FiberyPage {
   const normalizedPageId = String(record.pageId || pageId || '').trim();
   return {
     id: normalizedPageId,
@@ -83,15 +94,16 @@ function cachedPageSnapshot(record = {}, pageId = '') {
   };
 }
 
-async function loadPageFromRemoteDirect(pageId, promptToken) {
+async function loadPageFromRemoteDirect(pageId: string, promptToken: number): Promise<void> {
   setStatus(t('loading'));
-  const page = await API.loadPage(pageId, { source: 'load-page' });
-  state.current = {
-    id: page.id || pageId,
-    title: page.title || '',
-    description: page.description || '',
-    html: page.html || ''
+  const pageRaw = await API.loadPage(pageId, { source: 'load-page' });
+  const page: FiberyPage = {
+    id: String(pageRaw?.id || pageId),
+    title: String(pageRaw?.title || ''),
+    description: String(pageRaw?.description || ''),
+    html: String(pageRaw?.html || '')
   };
+  state.current = { id: page.id, title: page.title, description: page.description, html: page.html };
   await savePageContentCacheSafe(state.current, { source: 'fibery-load' });
   cachePagesForSidebar([state.current]);
   if (typeof resetExternalSyncStateForCurrentPage === 'function') resetExternalSyncStateForCurrentPage(state.current.id);
@@ -107,9 +119,8 @@ async function loadPageFromRemoteDirect(pageId, promptToken) {
   void maybePromptDraftRecoveryForCurrentPage(promptToken);
 }
 
-async function startCachedPageRemoteVerification(pageId, requestId, options = {}) {
+async function startCachedPageRemoteVerification(pageId: string, requestId: string, options: CachedPageVerifyOptions = {}): Promise<boolean> {
   const source = String(options.source || 'load-page-cache-verify');
-  const promptToken = Number(options.promptToken || state.drafts.promptToken || 0);
   if (!pageId || !requestId) return false;
 
   if (isActiveCachedPageOpenRequest(pageId, requestId)) {
@@ -121,12 +132,12 @@ async function startCachedPageRemoteVerification(pageId, requestId, options = {}
   }
 
   try {
-    const remote = await API.loadPage(pageId, { source });
-    const remoteSnapshot = {
-      id: String(remote.id || pageId),
-      title: String(remote.title || ''),
-      description: String(remote.description || ''),
-      html: String(remote.html || '')
+    const remoteRaw = await API.loadPage(pageId, { source });
+    const remoteSnapshot: FiberyPage = {
+      id: String(remoteRaw?.id || pageId),
+      title: String(remoteRaw?.title || ''),
+      description: String(remoteRaw?.description || ''),
+      html: String(remoteRaw?.html || '')
     };
     const verifiedAt = Date.now();
     const remoteSignature = snapshotSignature(remoteSnapshot);
@@ -192,7 +203,7 @@ async function startCachedPageRemoteVerification(pageId, requestId, options = {}
     return false;
   } catch (err) {
     if (!isActiveCachedPageOpenRequest(pageId, requestId)) return false;
-    const message = String(err?.message || err || '');
+    const message = String((err as Error)?.message || err || '');
     state.cachedPageOpen.remoteStatus = 'failed';
     state.cachedPageOpen.saveBlockedReason = 'failed';
     state.cachedPageOpen.lastErrorMessage = message;
@@ -205,12 +216,12 @@ async function startCachedPageRemoteVerification(pageId, requestId, options = {}
   }
 }
 
-async function openPageFromLastSavedCacheIfAvailable(pageId, promptToken) {
-  let cacheRecord = null;
+async function openPageFromLastSavedCacheIfAvailable(pageId: string, promptToken: number): Promise<boolean> {
+  let cacheRecord: PageContentCacheRecord | null = null;
   try {
     cacheRecord = await getPageContentCache(pageId);
   } catch (err) {
-    log(`Last Saved Cache read failed (${pageId}): ${String(err?.message || err || '')}`);
+    log(`Last Saved Cache read failed (${pageId}): ${String((err as Error)?.message || err || '')}`);
     cacheRecord = null;
   }
   if (!cacheRecord) return false;
@@ -253,13 +264,13 @@ async function openPageFromLastSavedCacheIfAvailable(pageId, promptToken) {
   return true;
 }
 
-async function loadPageWithCacheAwareFlow(pageId, promptToken) {
+async function loadPageWithCacheAwareFlow(pageId: string, promptToken: number): Promise<void> {
   if (await openPageFromLastSavedCacheIfAvailable(pageId, promptToken)) return;
   resetCachedPageOpenState(pageId);
   await loadPageFromRemoteDirect(pageId, promptToken);
 }
 
-async function retryCurrentPageRemoteVerification() {
+async function retryCurrentPageRemoteVerification(): Promise<boolean> {
   const pageId = String(state.current.id || '');
   const samePage = pageId && String(state.cachedPageOpen.pageId || '') === pageId;
   const status = String(state.cachedPageOpen.remoteStatus || '');
@@ -282,7 +293,7 @@ async function retryCurrentPageRemoteVerification() {
   return startCachedPageRemoteVerification(pageId, requestId, { promptToken: state.drafts.promptToken, source: 'load-page-cache-verify-manual' });
 }
 
-async function handleExternalSyncCheckNowAction() {
+async function handleExternalSyncCheckNowAction(): Promise<void> {
   const pageId = String(state.current.id || '');
   const samePage = pageId && String(state.cachedPageOpen.pageId || '') === pageId;
   const remoteStatus = String(state.cachedPageOpen.remoteStatus || 'idle');

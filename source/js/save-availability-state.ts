@@ -1,25 +1,28 @@
-function currentCachedPageRemoteStatus() {
+interface SyncSaveAvailabilityOptions {
+  announce?: boolean;
+}
+
+function currentCachedPageRemoteStatus(): RemoteStatus {
   const pageId = String(state.current.id || '');
   if (!pageId) return 'idle';
   if (String(state.cachedPageOpen.pageId || '') !== pageId) return 'idle';
-  return String(state.cachedPageOpen.remoteStatus || 'idle');
+  return (state.cachedPageOpen.remoteStatus || 'idle') as RemoteStatus;
 }
 
-function shouldForceLocalPreviewForCachedOpen() {
+function shouldForceLocalPreviewForCachedOpen(): boolean {
   const status = currentCachedPageRemoteStatus();
   if (!String(state.cachedPageOpen.openedFromCache || '')) return false;
   // conflict-resolved-local: user chose local/cache; keep local preview until manual save publishes to Fibery.
   return status === 'checking' || status === 'failed' || status === 'conflict' || status === 'conflict-resolved-local';
 }
 
-
-function shouldKeepCachedOpenStatusMessage() {
+function shouldKeepCachedOpenStatusMessage(): boolean {
   const status = currentCachedPageRemoteStatus();
   if (!String(state.cachedPageOpen.openedFromCache || '')) return false;
   return status === 'checking' || status === 'verified' || status === 'stale-applied' || status === 'failed' || status === 'conflict';
 }
 
-function saveBlockedReasonForCurrentPage() {
+function saveBlockedReasonForCurrentPage(): SaveBlockedReason {
   const pageId = String(state.current.id || '');
   if (!pageId) return '';
   if (!state.cachedPageOpen.openedFromCache) return '';
@@ -32,25 +35,25 @@ function saveBlockedReasonForCurrentPage() {
   return '';
 }
 
-function saveBlockedStatusKey(reason = '') {
+function saveBlockedStatusKey(reason: SaveBlockedReason = ''): string {
   if (reason === 'pending') return 'cachedOpenSaveBlockedPending';
   if (reason === 'failed') return 'cachedOpenSaveBlockedFailed';
   if (reason === 'conflict') return 'cachedOpenSaveBlockedConflict';
   return '';
 }
 
-function saveBlockedTooltipKey(reason = '') {
+function saveBlockedTooltipKey(reason: SaveBlockedReason = ''): string {
   if (reason === 'pending') return 'cachedOpenSaveBlockedPendingTooltip';
   if (reason === 'failed') return 'cachedOpenSaveBlockedFailedTooltip';
   if (reason === 'conflict') return 'cachedOpenSaveBlockedConflictTooltip';
   return '';
 }
 
-function isSaveBlockedByRemoteVerification() {
+function isSaveBlockedByRemoteVerification(): boolean {
   return !!saveBlockedReasonForCurrentPage();
 }
 
-function canRetryCurrentPageRemoteVerification() {
+function canRetryCurrentPageRemoteVerification(): boolean {
   const pageId = String(state.current.id || '');
   if (!pageId) return false;
   if (!state.cachedPageOpen.openedFromCache) return false;
@@ -59,7 +62,7 @@ function canRetryCurrentPageRemoteVerification() {
   return status === 'failed' || status === 'conflict';
 }
 
-function syncCachedOpenCheckNowButtonLabel() {
+function syncCachedOpenCheckNowButtonLabel(): void {
   if (!els.externalSyncCheckNowBtn) return;
   const labelKey = canRetryCurrentPageRemoteVerification() ? 'cachedOpenRetryVerifyNow' : 'externalSyncCheckNow';
   const label = t(labelKey);
@@ -67,7 +70,7 @@ function syncCachedOpenCheckNowButtonLabel() {
   els.externalSyncCheckNowBtn.title = label;
 }
 
-function syncSaveAvailabilityState(options = {}) {
+function syncSaveAvailabilityState(options: SyncSaveAvailabilityOptions = {}): boolean {
   if (!els.saveBtn) return true;
   const blockedReason = saveBlockedReasonForCurrentPage();
   state.cachedPageOpen.saveBlockedReason = blockedReason;
@@ -93,7 +96,7 @@ function syncSaveAvailabilityState(options = {}) {
   return !blockedReason;
 }
 
-async function requestSavePage(action = 'save', options = {}) {
+async function requestSavePage(action: string = 'save', options: { announce?: boolean } = {}): Promise<boolean> {
   if (!state.isAdmin || state.blank) return false;
   const blockedReason = saveBlockedReasonForCurrentPage();
   if (blockedReason) {
@@ -102,4 +105,3 @@ async function requestSavePage(action = 'save', options = {}) {
   }
   return savePage(action);
 }
-

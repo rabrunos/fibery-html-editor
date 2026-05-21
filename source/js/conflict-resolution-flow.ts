@@ -1,24 +1,29 @@
-function disposeConflictDiffEditor() {
+interface ConflictSnapshots {
+  localSnapshot: PageSnapshot;
+  remoteSnapshot: FiberyPage;
+}
+
+function disposeConflictDiffEditor(): void {
   if (state.conflictCompare.diffEditor) {
-    try { state.conflictCompare.diffEditor.dispose(); } catch (_) {}
+    try { (state.conflictCompare.diffEditor as MonacoDiffEditorInstance).dispose(); } catch (_) {}
     state.conflictCompare.diffEditor = null;
   }
   if (state.conflictCompare.diffOriginalModel) {
-    try { state.conflictCompare.diffOriginalModel.dispose(); } catch (_) {}
+    try { (state.conflictCompare.diffOriginalModel as MonacoEditorModel).dispose(); } catch (_) {}
     state.conflictCompare.diffOriginalModel = null;
   }
   if (state.conflictCompare.diffModifiedModel) {
-    try { state.conflictCompare.diffModifiedModel.dispose(); } catch (_) {}
+    try { (state.conflictCompare.diffModifiedModel as MonacoEditorModel).dispose(); } catch (_) {}
     state.conflictCompare.diffModifiedModel = null;
   }
 }
 
-function renderConflictCodeLegend(stats = {}) {
+function renderConflictCodeLegend(stats: Partial<DraftLineDiffStats> = {}): void {
   if (!els.conflictCodeDiffLegend) return;
   const added = Number(stats.added || 0);
   const removed = Number(stats.removed || 0);
   const changed = Number(stats.changed || 0);
-  const parts = [];
+  const parts: string[] = [];
   if (added) parts.push(`<span class="inline-flex items-center rounded-full border border-green-200 bg-green-50 px-2 py-1 font-semibold text-green-700">${escapeHtml(t('draftAdded'))}: ${added}</span>`);
   if (removed) parts.push(`<span class="inline-flex items-center rounded-full border border-red-200 bg-red-50 px-2 py-1 font-semibold text-red-700">${escapeHtml(t('draftRemoved'))}: ${removed}</span>`);
   if (changed) parts.push(`<span class="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-1 font-semibold text-amber-700">${escapeHtml(t('draftChanged'))}: ${changed}</span>`);
@@ -26,7 +31,7 @@ function renderConflictCodeLegend(stats = {}) {
   els.conflictCodeDiffLegend.innerHTML = parts.join('');
 }
 
-function syncConflictFallbackScroll(source, target) {
+function syncConflictFallbackScroll(source: HTMLElement, target: HTMLElement): void {
   if (state.conflictCompare.fallbackSyncing) return;
   state.conflictCompare.fallbackSyncing = true;
   target.scrollTop = source.scrollTop;
@@ -34,7 +39,7 @@ function syncConflictFallbackScroll(source, target) {
   window.requestAnimationFrame(() => { state.conflictCompare.fallbackSyncing = false; });
 }
 
-function renderConflictFallbackDiff(rows, stats) {
+function renderConflictFallbackDiff(rows: DraftLineDiffRow[], stats: DraftLineDiffStats): void {
   if (!els.conflictCodeDiffMonaco || !els.conflictCodeDiffFallback) return;
   els.conflictCodeDiffMonaco.classList.add('hidden');
   els.conflictCodeDiffFallback.classList.remove('hidden');
@@ -53,7 +58,10 @@ function renderConflictFallbackDiff(rows, stats) {
   renderConflictCodeLegend(stats);
 }
 
-function renderConflictCodeDiff(leftSnapshot, rightSnapshot) {
+function renderConflictCodeDiff(
+  leftSnapshot: Partial<PageSnapshot> | null | undefined,
+  rightSnapshot: Partial<PageSnapshot> | null | undefined
+): void {
   disposeConflictDiffEditor();
   if (!els.conflictCodeDiffMonaco || !els.conflictCodeDiffFallback) return;
   const leftCode = String(leftSnapshot?.html || '');
@@ -63,48 +71,53 @@ function renderConflictCodeDiff(leftSnapshot, rightSnapshot) {
   els.conflictCodeDiffMonaco.classList.add('hidden');
   els.conflictCodeDiffFallback.classList.add('hidden');
 
-  if (!(window.monaco && window.monaco.editor && els.conflictCodeDiffMonaco)) {
+  const m = monaco as MonacoGlobal | undefined;
+  if (!m?.editor) {
     renderConflictFallbackDiff(fallback.rows, fallback.stats);
     return;
   }
 
   try {
-    state.conflictCompare.diffOriginalModel = monaco.editor.createModel(leftCode, 'html');
-    state.conflictCompare.diffModifiedModel = monaco.editor.createModel(rightCode, 'html');
-    state.conflictCompare.diffEditor = monaco.editor.createDiffEditor(els.conflictCodeDiffMonaco, {
+    state.conflictCompare.diffOriginalModel = m.editor.createModel(leftCode, 'html');
+    state.conflictCompare.diffModifiedModel = m.editor.createModel(rightCode, 'html');
+    state.conflictCompare.diffEditor = m.editor.createDiffEditor(els.conflictCodeDiffMonaco, {
       automaticLayout: true, readOnly: true, originalEditable: false, renderIndicators: true,
       renderSideBySide: window.matchMedia('(min-width: 1024px)').matches,
       minimap: { enabled: false }, lineNumbers: 'on', scrollBeyondLastLine: false,
       ignoreTrimWhitespace: false, wordWrap: 'off', fontSize: 12, lineHeight: 20
     });
-    state.conflictCompare.diffEditor.setModel({ original: state.conflictCompare.diffOriginalModel, modified: state.conflictCompare.diffModifiedModel });
+    const editor = state.conflictCompare.diffEditor as MonacoDiffEditorInstance;
+    editor.setModel({
+      original: state.conflictCompare.diffOriginalModel as MonacoEditorModel,
+      modified: state.conflictCompare.diffModifiedModel as MonacoEditorModel
+    });
     els.conflictCodeDiffMonaco.classList.remove('hidden');
     const refreshLegend = () => {
-      const editor = state.conflictCompare.diffEditor;
-      if (!editor) return;
-      const changes = editor.getLineChanges() || [];
+      const ed = state.conflictCompare.diffEditor as MonacoDiffEditorInstance | null;
+      if (!ed) return;
+      const changes = ed.getLineChanges() || [];
       if (!changes.length) {
         renderConflictCodeLegend(leftCode === rightCode ? { added: 0, removed: 0, changed: 0 } : fallback.stats);
         return;
       }
       renderConflictCodeLegend(monacoDiffStatsFromChanges(changes));
     };
-    state.conflictCompare.diffEditor.onDidUpdateDiff(refreshLegend);
+    editor.onDidUpdateDiff(refreshLegend);
     refreshLegend();
-    state.conflictCompare.diffEditor.layout();
+    editor.layout();
   } catch (err) {
-    log(err.message || String(err));
+    log(String((err as Error)?.message || err || ''));
     disposeConflictDiffEditor();
     renderConflictFallbackDiff(fallback.rows, fallback.stats);
   }
 }
 
-function conflictSnapshotsFromState() {
+function conflictSnapshotsFromState(): ConflictSnapshots | null {
   const candidate = state.cachedPageOpen.remoteCandidate;
   if (!candidate) return null;
   updateCurrentFromInputs();
   const localSnapshot = currentSnapshotFromState();
-  const remoteSnapshot = {
+  const remoteSnapshot: FiberyPage = {
     id: String(candidate.id || state.current.id || ''),
     title: String(candidate.title || ''),
     description: String(candidate.description || ''),
@@ -113,7 +126,7 @@ function conflictSnapshotsFromState() {
   return { localSnapshot, remoteSnapshot };
 }
 
-function renderConflictCompareContent(localSnapshot, remoteSnapshot) {
+function renderConflictCompareContent(localSnapshot: PageSnapshot, remoteSnapshot: FiberyPage): void {
   if (!els.conflictLocalColumn || !els.conflictRemoteColumn) return;
   const userEdited = hasUserEditedSinceCachedOpen(String(state.current.id || ''));
   const diffLocalRemote = draftDiffMap(localSnapshot, remoteSnapshot);
@@ -125,7 +138,7 @@ function renderConflictCompareContent(localSnapshot, remoteSnapshot) {
   renderConflictCodeDiff(localSnapshot, remoteSnapshot);
 }
 
-function openConflictCompareModal() {
+function openConflictCompareModal(): void {
   if (!els.conflictCompareModal) return;
   const snapshots = conflictSnapshotsFromState();
   if (!snapshots) return;
@@ -139,7 +152,7 @@ function openConflictCompareModal() {
   syncConflictCompareButtonState();
 }
 
-function closeConflictCompareModal() {
+function closeConflictCompareModal(): void {
   if (!els.conflictCompareModal) return;
   disposeConflictDiffEditor();
   if (els.conflictCodeDiffMonaco) els.conflictCodeDiffMonaco.classList.add('hidden');
@@ -152,8 +165,8 @@ function closeConflictCompareModal() {
   syncConflictCompareButtonState();
 }
 
-function keepLocalEditsFromConflict() {
-  if (String(state.cachedPageOpen.remoteStatus || '') !== 'conflict') {
+function keepLocalEditsFromConflict(): void {
+  if (state.cachedPageOpen.remoteStatus !== 'conflict') {
     closeConflictCompareModal();
     return;
   }
@@ -167,7 +180,7 @@ function keepLocalEditsFromConflict() {
   log(t('conflictKeepLocalLog'));
 }
 
-async function loadFiberyVersionFromConflict() {
+async function loadFiberyVersionFromConflict(): Promise<void> {
   const candidate = state.cachedPageOpen.remoteCandidate;
   if (!candidate) { closeConflictCompareModal(); return; }
 
@@ -182,7 +195,7 @@ async function loadFiberyVersionFromConflict() {
       log(t('conflictLoadRemoteDraftSaved'));
     } catch (_) {}
   }
-  const remoteSnapshot = {
+  const remoteSnapshot: FiberyPage = {
     id: pageId,
     title: String(candidate.title || ''),
     description: String(candidate.description || ''),
@@ -213,10 +226,10 @@ async function loadFiberyVersionFromConflict() {
   log(t('conflictLoadRemoteLog'));
 }
 
-function syncConflictCompareButtonState() {
+function syncConflictCompareButtonState(): void {
   if (!els.conflictCompareOpenBtn) return;
-  const isConflict = String(state.cachedPageOpen.remoteStatus || '') === 'conflict';
-  const modalOpen = els.conflictCompareModal && !els.conflictCompareModal.classList.contains('hidden');
+  const isConflict = state.cachedPageOpen.remoteStatus === 'conflict';
+  const modalOpen = !!els.conflictCompareModal && !els.conflictCompareModal.classList.contains('hidden');
   els.conflictCompareOpenBtn.classList.toggle('hidden', !isConflict || !!modalOpen);
   if (isConflict && !modalOpen) {
     els.conflictCompareOpenBtn.textContent = t('conflictCompareOpenBtn');

@@ -1,3 +1,24 @@
+## [8.25.0] - 2026-05-21
+
+### Technical adjustments
+
+* Migrated save availability state to TypeScript (`save-availability-state.ts`): typed save-blocked reason, remote status helpers, check-now button label sync, and `requestSavePage`; all save-blocked rules (`checking`→`pending`, `failed`, `conflict`, `conflict-resolved-local`→unblocked) preserved exactly.
+* Migrated cached page open flow to TypeScript (`cached-page-open-flow.ts`): typed request-id creation, remote verification timer, stale-request protection, Last Saved Cache update rules, conflict candidate capture, and all open/retry/external-sync-check-now action flows; 2-second delay before remote verification preserved.
+* Migrated conflict resolution flow to TypeScript (`conflict-resolution-flow.ts`): typed Monaco diff editor wrappers, fallback diff renderer, scroll sync, conflict modal open/close, keep-local and load-Fibery actions; draft preservation before loading Fibery version preserved; mandatory comparator with no silent remote-apply preserved.
+* Added type aliases `RemoteStatus`, `SaveBlockedReason`, `ConflictCandidate`, `ConflictResolution` to `legacy-globals.d.ts`.
+* Added `els` declarations for save button, all conflict compare modal elements (modal, title, subtitle, buttons, diff panels, column containers).
+* Added `syncCurrentSnapshotBaselineAndDirty`, `cachePagesForSidebar`, and `savePage` to `legacy-globals.d.ts`.
+* Removed unused `promptToken` local variable from `startCachedPageRemoteVerification` (was dead code in the JS original; now caught by `noUnusedLocals`).
+* Replaced `window.monaco` reference in conflict diff renderer with the typed `MonacoGlobal | undefined` narrowing pattern consistent with `drafts-diff-render.ts`.
+* Bumped app version metadata to `8.25.0` via manifest and `package.json`, and regenerated the single-file deploy artifact.
+
+### Notes
+
+* No intentional UX or runtime behavior changes.
+* Cache/save/conflict rules are preserved verbatim: Last Saved Cache updates only on remote-matches-cache or user-chooses-Fibery; mandatory comparator opens when cache and remote diverge; choosing local keeps local preview until manual save.
+
+---
+
 ## [8.24.0] - 2026-05-21
 
 ### Technical adjustments

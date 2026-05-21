@@ -2,11 +2,15 @@ import type { AppState } from './app';
 
 declare global {
   type ContentSignature = import('./domain').ContentSignature;
+  type ConflictCandidate = import('./domain').ConflictCandidate;
+  type ConflictResolution = import('./domain').ConflictResolution;
   type DraftRecord = import('./storage').DraftRecord;
   type FiberyPage = import('./domain').FiberyPage;
   type LocalEmergencyDraft = import('./storage').LocalEmergencyDraft;
   type PageId = import('./domain').PageId;
   type PageSnapshot = import('./domain').PageSnapshot;
+  type RemoteStatus = import('./domain').RemoteStatus;
+  type SaveBlockedReason = import('./domain').SaveBlockedReason;
   type HistoryRecord = import('./storage').HistoryRecord;
   type SemverSimple = import('./domain').SemverSimple;
   type LocalStorageKeys = import('./storage').LocalStorageKeys;
@@ -60,6 +64,20 @@ declare global {
     confirmModal: HTMLElement;
     logPanel: HTMLElement;
     externalSyncCheckNowBtn: HTMLButtonElement;
+    saveBtn: HTMLButtonElement;
+    conflictCompareModal: HTMLElement;
+    conflictCompareTitle: HTMLElement;
+    conflictCompareSubtitle: HTMLElement;
+    conflictKeepLocalBtn: HTMLButtonElement;
+    conflictLoadRemoteBtn: HTMLButtonElement;
+    conflictCompareOpenBtn: HTMLButtonElement;
+    conflictCodeDiffLegend: HTMLElement;
+    conflictCodeDiffMonaco: HTMLElement;
+    conflictCodeDiffFallback: HTMLElement;
+    conflictFallbackLeftPane: HTMLElement;
+    conflictFallbackRightPane: HTMLElement;
+    conflictLocalColumn: HTMLElement;
+    conflictRemoteColumn: HTMLElement;
     [key: string]: unknown;
   };
   const monaco: MonacoGlobal | undefined;
@@ -87,7 +105,10 @@ declare global {
   function setStatus(text: string): void;
   function syncBeforeUnloadWarningState(): void;
   function syncCachedOpenCheckNowButtonLabel(): void;
+  function syncCurrentSnapshotBaselineAndDirty(options?: { alignBaseline?: boolean }): void;
   function syncPreviewMode(options?: { immediate?: boolean; forceRealReload?: boolean }): void;
+  function cachePagesForSidebar(rows: FiberyPage[]): void;
+  function savePage(action?: string): Promise<boolean>;
   function t(key: string): string;
   function updateCurrentFromInputs(): void;
 

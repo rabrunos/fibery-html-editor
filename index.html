@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.24.0" />
+  <meta name="fibery-html-editor-version" content="8.25.0" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -595,7 +595,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 
 (function() {
 	//#region \0virtual:fibery-html-editor/manifest-js
-	const APP_VERSION = "8.24.0";
+	const APP_VERSION = "8.25.0";
 	window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 	document.documentElement.dataset.appVersion = APP_VERSION;
 	var UPDATE_REMOTE = Object.freeze({
@@ -4026,7 +4026,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		const pageId = String(state.current.id || "");
 		if (!pageId) return "idle";
 		if (String(state.cachedPageOpen.pageId || "") !== pageId) return "idle";
-		return String(state.cachedPageOpen.remoteStatus || "idle");
+		return state.cachedPageOpen.remoteStatus || "idle";
 	}
 	function shouldForceLocalPreviewForCachedOpen() {
 		const status = currentCachedPageRemoteStatus();
@@ -4137,7 +4137,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		if (state.blank || !state.current.id) return;
 		cancelCachedPageRemoteVerification();
 		const verifiedAt = Date.now();
-		const status = String(options.remoteStatus || "verified");
+		const status = options.remoteStatus || "verified";
 		const openedFromCache = !!options.openedFromCache;
 		state.cachedPageOpen.pageId = String(state.current.id || "");
 		state.cachedPageOpen.openRequestId = "";
@@ -4178,12 +4178,18 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 	}
 	async function loadPageFromRemoteDirect(pageId, promptToken) {
 		setStatus(t("loading"));
-		const page = await API.loadPage(pageId, { source: "load-page" });
+		const pageRaw = await API.loadPage(pageId, { source: "load-page" });
+		const page = {
+			id: String(pageRaw?.id || pageId),
+			title: String(pageRaw?.title || ""),
+			description: String(pageRaw?.description || ""),
+			html: String(pageRaw?.html || "")
+		};
 		state.current = {
-			id: page.id || pageId,
-			title: page.title || "",
-			description: page.description || "",
-			html: page.html || ""
+			id: page.id,
+			title: page.title,
+			description: page.description,
+			html: page.html
 		};
 		await savePageContentCacheSafe(state.current, { source: "fibery-load" });
 		cachePagesForSidebar([state.current]);
@@ -4205,7 +4211,6 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 	}
 	async function startCachedPageRemoteVerification(pageId, requestId, options = {}) {
 		const source = String(options.source || "load-page-cache-verify");
-		Number(options.promptToken || state.drafts.promptToken || 0);
 		if (!pageId || !requestId) return false;
 		if (isActiveCachedPageOpenRequest(pageId, requestId)) {
 			state.cachedPageOpen.remoteStatus = "checking";
@@ -4215,12 +4220,12 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			setStatus(t("cachedOpenLoadedFromCacheChecking"));
 		}
 		try {
-			const remote = await API.loadPage(pageId, { source });
+			const remoteRaw = await API.loadPage(pageId, { source });
 			const remoteSnapshot = {
-				id: String(remote.id || pageId),
-				title: String(remote.title || ""),
-				description: String(remote.description || ""),
-				html: String(remote.html || "")
+				id: String(remoteRaw?.id || pageId),
+				title: String(remoteRaw?.title || ""),
+				description: String(remoteRaw?.description || ""),
+				html: String(remoteRaw?.html || "")
 			};
 			const verifiedAt = Date.now();
 			const remoteSignature = snapshotSignature(remoteSnapshot);
@@ -4446,14 +4451,15 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		renderConflictCodeLegend(fallback.stats);
 		els.conflictCodeDiffMonaco.classList.add("hidden");
 		els.conflictCodeDiffFallback.classList.add("hidden");
-		if (!(window.monaco && window.monaco.editor && els.conflictCodeDiffMonaco)) {
+		const m = monaco;
+		if (!m?.editor) {
 			renderConflictFallbackDiff(fallback.rows, fallback.stats);
 			return;
 		}
 		try {
-			state.conflictCompare.diffOriginalModel = monaco.editor.createModel(leftCode, "html");
-			state.conflictCompare.diffModifiedModel = monaco.editor.createModel(rightCode, "html");
-			state.conflictCompare.diffEditor = monaco.editor.createDiffEditor(els.conflictCodeDiffMonaco, {
+			state.conflictCompare.diffOriginalModel = m.editor.createModel(leftCode, "html");
+			state.conflictCompare.diffModifiedModel = m.editor.createModel(rightCode, "html");
+			state.conflictCompare.diffEditor = m.editor.createDiffEditor(els.conflictCodeDiffMonaco, {
 				automaticLayout: true,
 				readOnly: true,
 				originalEditable: false,
@@ -4467,15 +4473,16 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 				fontSize: 12,
 				lineHeight: 20
 			});
-			state.conflictCompare.diffEditor.setModel({
+			const editor = state.conflictCompare.diffEditor;
+			editor.setModel({
 				original: state.conflictCompare.diffOriginalModel,
 				modified: state.conflictCompare.diffModifiedModel
 			});
 			els.conflictCodeDiffMonaco.classList.remove("hidden");
 			const refreshLegend = () => {
-				const editor = state.conflictCompare.diffEditor;
-				if (!editor) return;
-				const changes = editor.getLineChanges() || [];
+				const ed = state.conflictCompare.diffEditor;
+				if (!ed) return;
+				const changes = ed.getLineChanges() || [];
 				if (!changes.length) {
 					renderConflictCodeLegend(leftCode === rightCode ? {
 						added: 0,
@@ -4486,11 +4493,11 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 				}
 				renderConflictCodeLegend(monacoDiffStatsFromChanges(changes));
 			};
-			state.conflictCompare.diffEditor.onDidUpdateDiff(refreshLegend);
+			editor.onDidUpdateDiff(refreshLegend);
 			refreshLegend();
-			state.conflictCompare.diffEditor.layout();
+			editor.layout();
 		} catch (err) {
-			log(err.message || String(err));
+			log(String(err?.message || err || ""));
 			disposeConflictDiffEditor();
 			renderConflictFallbackDiff(fallback.rows, fallback.stats);
 		}
@@ -4550,7 +4557,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		syncConflictCompareButtonState();
 	}
 	function keepLocalEditsFromConflict() {
-		if (String(state.cachedPageOpen.remoteStatus || "") !== "conflict") {
+		if (state.cachedPageOpen.remoteStatus !== "conflict") {
 			closeConflictCompareModal();
 			return;
 		}
@@ -4615,8 +4622,8 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 	}
 	function syncConflictCompareButtonState() {
 		if (!els.conflictCompareOpenBtn) return;
-		const isConflict = String(state.cachedPageOpen.remoteStatus || "") === "conflict";
-		const modalOpen = els.conflictCompareModal && !els.conflictCompareModal.classList.contains("hidden");
+		const isConflict = state.cachedPageOpen.remoteStatus === "conflict";
+		const modalOpen = !!els.conflictCompareModal && !els.conflictCompareModal.classList.contains("hidden");
 		els.conflictCompareOpenBtn.classList.toggle("hidden", !isConflict || !!modalOpen);
 		if (isConflict && !modalOpen) {
 			els.conflictCompareOpenBtn.textContent = t("conflictCompareOpenBtn");
