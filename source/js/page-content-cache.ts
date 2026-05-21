@@ -1,4 +1,17 @@
-function normalizePageContentCacheRecord(snapshot = {}, options = {}) {
+type PageContentCacheSnapshotInput = Partial<PageSnapshot & FiberyPage & PageContentCacheRecord>;
+
+interface PageContentCacheOptions {
+  pageId?: PageId;
+  cachedAt?: number;
+  verifiedAt?: number;
+  source?: string;
+  signature?: ContentSignature;
+}
+
+function normalizePageContentCacheRecord(
+  snapshot: PageContentCacheSnapshotInput = {},
+  options: PageContentCacheOptions = {}
+): PageContentCacheRecord {
   const pageId = String(options.pageId ?? snapshot.pageId ?? snapshot.id ?? '').trim();
   if (!pageId) throw new Error('page-content-cache-page-id-required');
 
@@ -16,49 +29,57 @@ function normalizePageContentCacheRecord(snapshot = {}, options = {}) {
   return { pageId, title, description, html, signature, cachedAt, verifiedAt, source };
 }
 
-async function savePageContentCache(snapshot = {}, options = {}) {
+async function savePageContentCache(
+  snapshot: PageContentCacheSnapshotInput = {},
+  options: PageContentCacheOptions = {}
+): Promise<PageContentCacheRecord> {
   if (!state.db) throw new Error('page-content-cache-db-unavailable');
   const record = normalizePageContentCacheRecord(snapshot, options);
   await txPut('pageContentCache', record);
   return record;
 }
 
-function getPageContentCache(pageId = '') {
+function getPageContentCache(pageId: PageId | '' = ''): Promise<PageContentCacheRecord | null> {
   const normalizedPageId = String(pageId || '').trim();
   if (!normalizedPageId || !state.db) return Promise.resolve(null);
   return new Promise((resolve, reject) => {
-    const tx = state.db.transaction('pageContentCache', 'readonly');
+    const tx = state.db!.transaction('pageContentCache', 'readonly');
     const req = tx.objectStore('pageContentCache').get(normalizedPageId);
-    req.onsuccess = () => resolve(req.result || null);
+    req.onsuccess = () => resolve((req.result || null) as PageContentCacheRecord | null);
     req.onerror = () => reject(req.error);
   });
 }
 
-async function deletePageContentCache(pageId = '') {
+async function deletePageContentCache(pageId: PageId | '' = ''): Promise<boolean> {
   const normalizedPageId = String(pageId || '').trim();
   if (!normalizedPageId || !state.db) return false;
   await txDelete('pageContentCache', normalizedPageId);
   return true;
 }
 
-async function savePageContentCacheSafe(snapshot = {}, options = {}) {
+async function savePageContentCacheSafe(
+  snapshot: PageContentCacheSnapshotInput = {},
+  options: PageContentCacheOptions = {}
+): Promise<PageContentCacheRecord | null> {
   try {
     return await savePageContentCache(snapshot, options);
   } catch (err) {
     const source = String(options.source || 'unknown');
     const pageId = String(options.pageId ?? snapshot.pageId ?? snapshot.id ?? '').trim() || '-';
-    log(`Last Saved Cache update failed (${source}/${pageId}): ${String(err?.message || err || '')}`);
+    const message = typeof err === 'object' && err !== null && 'message' in err ? (err as { message?: unknown }).message : undefined;
+    log(`Last Saved Cache update failed (${source}/${pageId}): ${String(message || err || '')}`);
     return null;
   }
 }
 
-async function deletePageContentCacheSafe(pageId = '', options = {}) {
+async function deletePageContentCacheSafe(pageId: PageId | '' = '', options: PageContentCacheOptions = {}): Promise<boolean> {
   try {
     return await deletePageContentCache(pageId);
   } catch (err) {
     const source = String(options.source || 'unknown');
     const normalizedPageId = String(pageId || '').trim() || '-';
-    log(`Last Saved Cache delete failed (${source}/${normalizedPageId}): ${String(err?.message || err || '')}`);
+    const message = typeof err === 'object' && err !== null && 'message' in err ? (err as { message?: unknown }).message : undefined;
+    log(`Last Saved Cache delete failed (${source}/${normalizedPageId}): ${String(message || err || '')}`);
     return false;
   }
 }

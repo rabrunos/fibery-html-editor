@@ -1,3 +1,25 @@
+## [8.19.0] - 2026-05-21
+
+### Technical adjustments
+
+* Migrated the IndexedDB core helpers to TypeScript while preserving the existing database name, schema version, stores, and indexes.
+* Migrated Last Saved Cache storage helpers to TypeScript and reused central page snapshot/cache contracts where safe.
+* Kept page metadata storage in JavaScript for this lot because it is coupled to localStorage fallback, drafts, projects, grouping, and i18n behavior.
+* Bumped app version metadata to `8.19.0` via manifest and `package.json`, and regenerated the single-file deploy artifact.
+
+### Notes
+
+* No intentional UX or runtime behavior changes.
+* The final Fibery deployment remains a single generated `index.html` with the Vite bundle inlined.
+
+### Validation
+
+* `npm run typecheck`
+* `npm run build:tmp`
+* `npm run validate:tmp`
+* `npm run build`
+* `npm run validate`
+
 ## [8.18.0] - 2026-05-21
 
 ### Technical adjustments
