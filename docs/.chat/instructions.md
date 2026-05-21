@@ -160,7 +160,7 @@ Seções permitidas: `### Added`, `### Fixed`, `### Technical adjustments`, `###
 
 ## Commit e Push
 
-Regra padrão para prompts: permitir commit quando o prompt autorizar e as validações aplicáveis passarem, mas não push. Push só quando o usuário pedir explicitamente. Se o usuário disser "sem commit" ou "sem push", respeite. Se validação aplicável falhar, Codex não pode commitar nem pushar.
+Regra padrão para prompts: permitir commit e push quando o prompt autorizar e as validações aplicáveis passarem. Se o usuário disser "sem commit" ou "sem push", respeite. Se validação aplicável falhar, Codex não pode commitar nem pushar.
 
 No prompt, peça `git status`, apenas arquivos relevantes, `CHANGELOG.md` quando aplicável, `index.html` gerado quando `source/` mudar e `package.json` quando houver mudança de versão ou tooling.
 

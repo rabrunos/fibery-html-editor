@@ -56,7 +56,6 @@ Não-objetivos:
 * <o que deve ficar para outra issue/ciclo>
 * não editar `index.html` diretamente, salvo emergência justificada e reconciliada em `source/`;
 * não acessar `docs/.chat/` ou `docs/.human/` em tarefa normal do app, salvo autorização explícita neste prompt;
-* não fazer push salvo pedido explícito.
 
 Requisitos técnicos:
 
@@ -117,13 +116,13 @@ Git:
 
 * rodar `git status` antes de finalizar;
 * commitar por padrão se este prompt permitir commit e a validação aplicável passar;
+* fazer push por padrão se este prompt permitir push e a validação aplicável passar;
 * não commitar se validação aplicável falhar;
 * incluir apenas arquivos relevantes;
 * incluir `index.html` gerado quando `source/` mudar;
 * incluir `CHANGELOG.md` quando aplicável;
 * incluir `package.json` quando houver mudança de versão ou tooling;
 * não incluir alterações pré-existentes não relacionadas;
-* não fazer push salvo pedido explícito;
 * respeitar "sem commit" e "sem push" se o usuário tiver pedido.
 
 Resposta final:
