@@ -344,6 +344,72 @@ async function checkCssExternalization() {
   ok('Critical CSS files present in inline manifest css array');
 }
 
+const PT_BR_LITERAL_Q_PATTERNS = [
+  { re: /vers\?o/i, label: 'versão→vers?o' },
+  { re: /p\?gina/i, label: 'página→p?gina' },
+  { re: /hist\?ric/i, label: 'histórico→hist?rico' },
+  { re: /pr\?via/i, label: 'prévia→pr?via' },
+  { re: /configura\?\?o/i, label: 'configuração→configura??o' },
+  { re: /a\?\?o\b/i, label: 'ação→a??o' },
+  { re: /descri\?\?o/i, label: 'descrição→descri??o' },
+  { re: /informa\?\?o/i, label: 'informação→informa??o' },
+  { re: /atualiza\?\?o/i, label: 'atualização→atualiza??o' },
+];
+
+async function checkI18nPtBrLiteralQPatterns(version) {
+  const ptRel = `support/${version}/i18n/pt-BR.json`;
+  let ptData;
+  try { ptData = JSON.parse(await readText(ptRel)); } catch (_) { return; }
+  const hits = [];
+  for (const [key, val] of Object.entries(ptData)) {
+    for (const { re, label } of PT_BR_LITERAL_Q_PATTERNS) {
+      if (re.test(val)) {
+        hits.push(`  key "${key}" matches pattern ${label}: ${JSON.stringify(val.slice(0, 60))}`);
+        break;
+      }
+    }
+  }
+  if (hits.length > 0) {
+    fail(`${ptRel}: literal-? substitution mojibake detected in ${hits.length} value(s):\n${hits.join('\n')}`);
+    return;
+  }
+  ok(`${ptRel}: no literal-? mojibake patterns detected`);
+}
+
+const HTML_I18N_SOURCES = [
+  'source/html/layout-main.html',
+  'source/html/context-menus.html',
+  'source/html/modal-confirm.html',
+  'source/html/panel-log.html',
+  'source/html/panel-resources-boot.html',
+];
+const DATA_I18N_ATTR_RE = /data-i18n(?:-title)?=["']([\w-]+)["']/g;
+
+async function checkDataI18nKeys(version) {
+  const enRel = `support/${version}/i18n/en.json`;
+  let enKeys;
+  try { enKeys = new Set(Object.keys(JSON.parse(await readText(enRel)))); } catch (_) { return; }
+
+  const sources = [...HTML_I18N_SOURCES, `support/${version}/templates/app-modals.html`];
+  const missing = [];
+  for (const rel of sources) {
+    let content;
+    try { content = await readText(rel); } catch (_) { continue; }
+    const re = new RegExp(DATA_I18N_ATTR_RE.source, DATA_I18N_ATTR_RE.flags);
+    let m;
+    while ((m = re.exec(content)) !== null) {
+      if (!enKeys.has(m[1])) {
+        missing.push(`${rel}: data-i18n key "${m[1]}" not in i18n JSON`);
+      }
+    }
+  }
+  if (missing.length > 0) {
+    fail(`data-i18n key(s) missing from i18n JSON:\n${missing.map(s => '  ' + s).join('\n')}`);
+    return;
+  }
+  ok('All data-i18n/data-i18n-title keys found in i18n JSON');
+}
+
 async function checkChangelogResourceNonRequired(version) {
   const rel = `support/${version}/resources-manifest.json`;
   let data;
@@ -362,6 +428,8 @@ async function main() {
   await checkChangelogVersion(version);
   await checkNoUnexpectedJs();
   await checkI18nJsonFiles(version);
+  await checkI18nPtBrLiteralQPatterns(version);
+  await checkDataI18nKeys(version);
   await checkResourceManifest(version);
   await checkHtmlExternalization();
   await checkCssExternalization();
