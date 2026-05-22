@@ -109,7 +109,7 @@ async function checkI18nJsonFiles(version) {
   ok(`i18n JSON keys aligned (${enKeys.size} keys each)`);
 }
 
-const RESOURCE_KINDS_ALLOWED = new Set(['script', 'style', 'font', 'image', 'data', 'other']);
+const RESOURCE_KINDS_ALLOWED = new Set(['script', 'style', 'font', 'image', 'data', 'other', 'template']);
 const RESOURCE_ENCODINGS_ALLOWED = new Set(['utf-8', 'base64']);
 const SHA256_HEX_RE = /^[0-9a-f]{64}$/i;
 const GITHUB_RAW_REPO_PREFIX = 'https://raw.githubusercontent.com/rabrunos/fibery-html-editor/main/';
@@ -209,6 +209,57 @@ async function checkResourceManifest(version) {
   ok(`${rel} valid (version=${data.version}, resources=${data.resources.length})`);
 }
 
+async function checkHtmlExternalization() {
+  const manifest = JSON.parse(await readText('source/config/manifest.json'));
+  const htmlArray = (manifest.html || []).map(f => path.normalize(f));
+
+  const EXTERNALIZED_HTML = [
+    'source/html/modal-settings.html',
+    'source/html/modal-search.html',
+    'source/html/modal-update-app.html',
+    'source/html/modal-history.html',
+    'source/html/modal-create-project.html',
+    'source/html/modal-draft-recovery.html',
+    'source/html/modal-unsaved-transition.html',
+    'source/html/modal-conflict-compare.html'
+  ];
+  for (const f of EXTERNALIZED_HTML) {
+    if (htmlArray.includes(path.normalize(f))) {
+      fail(`${f} was externalized but is still listed in manifest html array`); return;
+    }
+  }
+  ok('Externalized modal HTML files absent from inline manifest html array');
+
+  const REQUIRED_HTML = [
+    'source/html/layout-main.html',
+    'source/html/context-menus.html',
+    'source/html/modal-confirm.html',
+    'source/html/panel-log.html',
+    'source/html/template-resources-host.html',
+    'source/html/panel-resources-boot.html'
+  ];
+  for (const f of REQUIRED_HTML) {
+    if (!htmlArray.includes(path.normalize(f))) {
+      fail(`${f} is required inline but missing from manifest html array`); return;
+    }
+  }
+  ok('Required inline HTML files present in manifest html array');
+
+  // Template safety: ensure no <script> or inline event handlers in the template resource file
+  const version = manifest.version;
+  const templateRel = `support/${version}/templates/app-modals.html`;
+  let templateContent;
+  try { templateContent = await readText(templateRel); }
+  catch (_) { warn(`${templateRel} not found — skipping template safety check`); return; }
+  if (/<script/i.test(templateContent)) {
+    fail(`${templateRel}: template HTML must not contain <script> tags`); return;
+  }
+  if (/\bon\w+\s*=/i.test(templateContent)) {
+    fail(`${templateRel}: template HTML must not contain inline event handlers (on...=)`); return;
+  }
+  ok(`${templateRel}: template HTML safety check passed`);
+}
+
 async function checkCssExternalization() {
   const manifest = JSON.parse(await readText('source/config/manifest.json'));
   const cssArray = (manifest.css || []).map(f => path.normalize(f));
@@ -249,6 +300,7 @@ async function main() {
   await checkNoUnexpectedJs();
   await checkI18nJsonFiles(version);
   await checkResourceManifest(version);
+  await checkHtmlExternalization();
   await checkCssExternalization();
   await checkChangelogResourceNonRequired(version);
   console.log('\nAll local checks passed.');

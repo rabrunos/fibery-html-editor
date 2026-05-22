@@ -1,4 +1,4 @@
-export type ResourceKind = 'script' | 'style' | 'font' | 'image' | 'data' | 'other';
+export type ResourceKind = 'script' | 'style' | 'font' | 'image' | 'data' | 'other' | 'template';
 export type ResourceCacheStatus = 'missing' | 'cached' | 'stale' | 'failed';
 export type ResourceEncoding = 'utf-8' | 'base64';
 

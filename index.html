@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.43.0" />
+  <meta name="fibery-html-editor-version" content="8.44.0" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -301,177 +301,6 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
   <div id="previewPanelMenu" class="hidden fixed z-[90] min-w-52 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-2xl"></div>
 
 
-<!-- Create project modal -->
-  <div id="createProjectModal" class="hidden fixed inset-0 z-[70] bg-black/25 p-6">
-    <div class="mx-auto mt-16 w-full max-w-lg overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
-      <div class="border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-        <div class="text-base font-semibold text-gray-900" data-i18n="createProjectTitle">Create project</div>
-        <button id="closeCreateProjectBtn" class="h-8 w-8 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 flex items-center justify-center">×</button>
-      </div>
-      <div class="p-4 space-y-4">
-        <label class="block text-sm text-gray-700">
-          <span data-i18n="projectNameLabel">Project name</span>
-          <input id="createProjectNameInput" class="mt-2 h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30" placeholder="My project" />
-        </label>
-        <div class="rounded-xl bg-gray-50 p-3 text-xs leading-5 text-gray-600" data-i18n="projectLocalNote">Projects are saved only in this browser.</div>
-      </div>
-      <div class="border-t border-gray-200 px-4 py-3 flex items-center justify-end gap-2">
-        <button id="cancelCreateProjectBtn" class="h-8 rounded border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 hover:bg-gray-50" data-i18n="cancel">Cancel</button>
-        <button id="confirmCreateProjectBtn" class="h-8 rounded bg-blue-600 px-3 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40" data-i18n="createProjectButton" disabled>Create project</button>
-      </div>
-    </div>
-  </div>
-
-
-<!-- Draft recovery modal -->
-  <div id="draftRecoveryModal" class="hidden fixed inset-0 z-[80] bg-black/25 p-4 sm:p-6">
-    <div class="mx-auto mt-2 sm:mt-8 flex max-h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
-      <div class="border-b border-gray-200 px-4 py-3 sm:px-5 flex items-start justify-between gap-3">
-        <div class="min-w-0">
-          <div id="draftRecoveryTitle" class="text-base font-semibold text-gray-900" data-i18n="draftRecoveryTitle">Recover local draft</div>
-          <div id="draftRecoverySubtitle" class="mt-1 text-xs text-gray-500"></div>
-        </div>
-        <button id="closeDraftRecoveryBtn" class="h-8 w-8 shrink-0 rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-900" aria-label="Close">×</button>
-      </div>
-      <div class="min-h-0 flex-1 overflow-auto p-4 sm:p-5">
-        <div class="space-y-4">
-          <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <div id="draftCurrentColumn"></div>
-            <div id="draftLocalColumn"></div>
-          </div>
-          <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
-            <div class="border-b border-gray-200 bg-gray-50 px-3 py-2 flex flex-wrap items-center justify-between gap-2">
-              <div class="text-xs font-semibold uppercase tracking-wide text-gray-600" data-i18n="draftFieldHtml">HTML / code</div>
-              <div id="draftCodeDiffLegend" class="flex flex-wrap items-center gap-2 text-[11px]"></div>
-            </div>
-            <div id="draftCodeDiffMonaco" class="hidden w-full" style="height:320px;"></div>
-            <div id="draftCodeDiffFallback" class="hidden overflow-hidden bg-white" style="height:320px;">
-              <div class="grid h-full grid-cols-1 gap-px bg-gray-200 lg:grid-cols-2">
-                <div id="draftFallbackCurrentPane" class="min-h-0 overflow-auto bg-white"></div>
-                <div id="draftFallbackLocalPane" class="min-h-0 overflow-auto bg-white"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="border-t border-gray-200 px-4 py-3 sm:px-5 flex flex-wrap items-center justify-end gap-2">
-        <button id="discardDraftBtn" class="h-9 rounded-lg border border-red-200 bg-white px-3 text-sm font-medium text-red-700 hover:bg-red-50" data-i18n="discardDraft">Discard draft</button>
-        <button id="keepCurrentVersionBtn" class="h-9 rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 hover:bg-gray-50" data-i18n="keepCurrentVersion">Keep current version</button>
-        <button id="restoreDraftBtn" class="h-9 rounded-lg bg-blue-600 px-3 text-sm font-medium text-white hover:bg-blue-700" data-i18n="restoreDraft">Restore draft</button>
-      </div>
-    </div>
-  </div>
-
-
-<!-- Search modal -->
-  <div id="searchModal" class="hidden fixed inset-0 z-50 bg-black/25 p-6">
-    <div class="mx-auto mt-10 flex max-h-[70vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
-      <div class="h-16 shrink-0 border-b border-gray-200 px-3 flex items-center gap-3">
-        <svg class="h-5 w-5 shrink-0 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
-        <input id="globalSearchInput" class="min-w-0 flex-1 border-0 bg-transparent text-base outline-none focus:ring-0" placeholder="Search pages..." />
-        <button id="closeSearchBtn" class="h-8 w-8 rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900 flex items-center justify-center">×</button>
-      </div>
-      <div id="globalSearchResults" class="min-h-0 flex-1 overflow-auto p-2"></div>
-    </div>
-  </div>
-
-
-<!-- Settings modal -->
-  <div id="settingsModal" class="hidden fixed inset-0 z-50 bg-black/25 p-6">
-    <div class="mx-auto mt-10 w-full max-w-md overflow-hidden rounded-xl bg-white shadow-2xl">
-      <div class="border-b border-gray-200 p-3 flex items-center justify-between">
-        <div class="text-sm font-bold text-gray-900" data-i18n="settings">Settings</div>
-        <button id="closeSettingsBtn" class="h-8 w-8 rounded border border-gray-300 bg-white text-gray-600 hover:bg-gray-50">×</button>
-      </div>
-      <div class="p-4 space-y-4">
-        <label class="block text-sm text-gray-700">
-          <span>Language</span>
-          <select id="langSelect" class="mt-1 h-8 w-full rounded border border-gray-300 bg-white px-2 text-sm">
-            <option value="auto">Auto</option>
-            <option value="en">EN</option>
-            <option value="pt-BR">PT-BR</option>
-          </select>
-        </label>
-        <label class="flex items-center justify-between gap-3 text-sm text-gray-700">
-          <span data-i18n="openLast">Open last page on startup</span>
-          <input id="openLastToggle" type="checkbox" class="h-4 w-4 accent-blue-600" />
-        </label>
-        <label class="block text-sm text-gray-700">
-          <span data-i18n="manualHistoryLimit">Manual history limit</span>
-          <select id="versionLimitSelect" class="mt-1 h-8 w-full rounded border border-gray-300 bg-white px-2 text-sm">
-            <option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option><option value="0" data-i18n="unlimited">Unlimited</option>
-          </select>
-        </label>
-        <button id="logToggleBtn" class="flex h-9 w-full items-center justify-between rounded border border-gray-200 bg-white px-3 text-left text-sm text-gray-700 hover:bg-gray-50">
-          <span id="logMenuText">Show log</span>
-          <span class="text-xs text-gray-400">Log</span>
-        </button>
-        <div class="rounded bg-amber-50 p-2 text-xs leading-5 text-amber-800" data-i18n="historyLocalNote">Version history is saved only in this browser.</div>
-      </div>
-    </div>
-  </div>
-
-
-<!-- Update app modal -->
-  <div id="updateAppModal" class="hidden fixed inset-0 z-50 bg-black/25 p-6">
-    <div class="mx-auto mt-8 flex max-h-[84vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
-      <div class="shrink-0 border-b border-gray-200 p-4 flex items-center justify-between">
-        <div class="text-base font-semibold text-gray-900" data-i18n="updateAppTitle">Update App</div>
-        <button id="closeUpdateAppBtn" class="h-8 w-8 rounded-lg border border-gray-300 bg-white text-gray-600 hover:bg-gray-50">×</button>
-      </div>
-      <div class="min-h-0 flex-1 overflow-auto p-4 space-y-4">
-        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div class="rounded-xl border border-gray-200 bg-gray-50 p-3">
-            <div class="text-[11px] font-semibold uppercase tracking-wide text-gray-500" data-i18n="updateInstalledVersion">Installed version</div>
-            <div id="updateInstalledVersionValue" class="mt-1 text-sm font-semibold text-gray-900">-</div>
-          </div>
-          <div class="rounded-xl border border-gray-200 bg-gray-50 p-3">
-            <div class="text-[11px] font-semibold uppercase tracking-wide text-gray-500" data-i18n="updateAvailableVersion">Available version</div>
-            <div id="updateAvailableVersionValue" class="mt-1 text-sm font-semibold text-gray-900">-</div>
-          </div>
-        </div>
-        <div class="rounded-xl border border-gray-200 bg-white p-3">
-          <div class="mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-500" data-i18n="updateCheckStatus">Status</div>
-          <div id="updateCheckStatusText" class="text-sm text-gray-700"></div>
-          <div class="mt-3">
-            <button id="updateVerifyAgainBtn" class="h-8 rounded bg-blue-600 px-3 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40" data-i18n="updateCheckAgain">Check again</button>
-            <button id="updateApplyBtn" class="hidden h-8 rounded bg-emerald-600 px-3 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40" data-i18n="updateApply">Apply update</button>
-          </div>
-        </div>
-        <div class="rounded-xl border border-gray-200 bg-white">
-          <div class="border-b border-gray-200 bg-gray-50 px-3 py-2">
-            <div class="text-xs font-semibold uppercase tracking-wide text-gray-600" data-i18n="updateBackupsTitle">Local update backups</div>
-            <div class="mt-1 text-[11px] text-gray-500" data-i18n="updateBackupsHelp">Backups are created in this browser before applying an app update.</div>
-          </div>
-          <div id="updateBackupsBox" class="space-y-2 p-3 text-xs text-gray-700" aria-live="polite">-</div>
-        </div>
-        <div class="rounded-xl border border-gray-200 bg-white">
-          <div class="border-b border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-600" data-i18n="updateWhatChanged">What changed</div>
-          <div id="updateChangelogBox" class="max-h-[42vh] overflow-auto p-3 text-xs leading-5 text-gray-700" aria-live="polite">-</div>
-        </div>
-      </div>
-      <div class="shrink-0 border-t border-gray-200 p-3 flex justify-end">
-        <button id="updateCloseBtn" class="h-8 rounded border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 hover:bg-gray-50" data-i18n="updateClose">Close</button>
-      </div>
-    </div>
-  </div>
-
-
-<!-- History modal -->
-  <div id="historyModal" class="hidden fixed inset-0 z-50 bg-black/25 p-6">
-    <div class="mx-auto flex h-full max-w-4xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
-      <div class="shrink-0 border-b border-gray-200 p-3 flex items-center justify-between">
-        <div>
-          <div class="text-sm font-bold text-gray-900" data-i18n="history">History</div>
-          <div class="text-xs text-gray-500" data-i18n="historyLocalNote">Version history is saved only in this browser.</div>
-        </div>
-        <button id="closeHistoryBtn" class="h-8 w-8 rounded border border-gray-300 bg-white text-gray-600 hover:bg-gray-50">×</button>
-      </div>
-      <div id="historyList" class="min-h-0 flex-1 overflow-auto divide-y divide-gray-100"></div>
-    </div>
-  </div>
-
-
 <!-- Confirm modal -->
   <div id="confirmModal" class="hidden fixed inset-0 z-[60] bg-black/25 p-6">
     <div id="confirmBox" class="mx-auto mt-10 max-w-xl overflow-hidden rounded-xl bg-white shadow-2xl">
@@ -494,59 +323,6 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
   </div>
 
 
-<!-- Unsaved transition modal -->
-  <div id="unsavedTransitionModal" class="hidden fixed inset-0 z-[75] bg-black/25 p-6">
-    <div class="mx-auto mt-10 w-full max-w-xl overflow-hidden rounded-xl bg-white shadow-2xl">
-      <div class="border-b border-gray-200 p-4">
-        <div class="text-sm font-bold text-gray-900" data-i18n="unsavedTransitionTitle">Unsaved changes</div>
-        <div class="mt-1 text-sm text-gray-600" data-i18n="unsavedTransitionMessage">You have local changes that have not been saved to Fibery yet. What would you like to do before opening another page?</div>
-      </div>
-      <div class="flex flex-wrap items-center justify-end gap-2 p-3">
-        <button id="unsavedTransitionCancelBtn" class="h-8 rounded border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 hover:bg-gray-50" data-i18n="unsavedTransitionCancel">Cancel</button>
-        <button id="unsavedTransitionDiscardBtn" class="h-8 rounded border border-red-200 bg-white px-3 text-sm font-medium text-red-700 hover:bg-red-50" data-i18n="unsavedTransitionDiscard">Discard changes</button>
-        <button id="unsavedTransitionKeepDraftBtn" class="h-8 rounded border border-blue-200 bg-white px-3 text-sm font-medium text-blue-700 hover:bg-blue-50" data-i18n="unsavedTransitionKeepDraft">Keep local draft</button>
-        <button id="unsavedTransitionSaveBtn" class="h-8 rounded bg-blue-600 px-3 text-sm font-medium text-white hover:bg-blue-700" data-i18n="unsavedTransitionSaveOpen">Save and open</button>
-      </div>
-    </div>
-  </div>
-
-
-<!-- Conflict compare modal -->
-  <div id="conflictCompareModal" class="hidden fixed inset-0 z-[80] bg-black/25 p-4 sm:p-6">
-    <div class="mx-auto mt-2 sm:mt-8 flex max-h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
-      <div class="border-b border-gray-200 px-4 py-3 sm:px-5">
-        <div id="conflictCompareTitle" class="text-base font-semibold text-gray-900" data-i18n="conflictCompareTitle">Resolve conflict</div>
-        <div id="conflictCompareSubtitle" class="mt-1 text-xs text-gray-500"></div>
-      </div>
-      <div class="min-h-0 flex-1 overflow-auto p-4 sm:p-5">
-        <div class="space-y-4">
-          <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <div id="conflictLocalColumn"></div>
-            <div id="conflictRemoteColumn"></div>
-          </div>
-          <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
-            <div class="border-b border-gray-200 bg-gray-50 px-3 py-2 flex flex-wrap items-center justify-between gap-2">
-              <div class="text-xs font-semibold uppercase tracking-wide text-gray-600" data-i18n="draftFieldHtml">HTML / code</div>
-              <div id="conflictCodeDiffLegend" class="flex flex-wrap items-center gap-2 text-[11px]"></div>
-            </div>
-            <div id="conflictCodeDiffMonaco" class="hidden w-full" style="height:320px;"></div>
-            <div id="conflictCodeDiffFallback" class="hidden overflow-hidden bg-white" style="height:320px;">
-              <div class="grid h-full grid-cols-1 gap-px bg-gray-200 lg:grid-cols-2">
-                <div id="conflictFallbackLeftPane" class="min-h-0 overflow-auto bg-white"></div>
-                <div id="conflictFallbackRightPane" class="min-h-0 overflow-auto bg-white"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="border-t border-gray-200 px-4 py-3 sm:px-5 flex flex-wrap items-center justify-end gap-2">
-        <button id="conflictLoadRemoteBtn" class="h-9 rounded-lg border border-amber-300 bg-amber-50 px-3 text-sm font-medium text-amber-800 hover:bg-amber-100" data-i18n="conflictLoadRemote">Load Fibery version</button>
-        <button id="conflictKeepLocalBtn" class="h-9 rounded-lg bg-blue-600 px-3 text-sm font-medium text-white hover:bg-blue-700">Keep my edits</button>
-      </div>
-    </div>
-  </div>
-
-
 <!-- Log panel -->
   <div id="logPanel" class="hidden fixed bottom-3 right-3 z-40 w-[520px] max-w-[calc(100vw-24px)] rounded-lg border border-gray-200 bg-white shadow-xl">
     <div class="border-b border-gray-200 px-3 py-2 flex items-center justify-between">
@@ -556,6 +332,10 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
     <div id="apiUsageSummaryBox" class="border-b border-gray-100 px-3 py-2 text-[11px] leading-4 text-gray-500">API usage: no calls yet</div>
     <div id="logBox" class="max-h-56 overflow-auto p-3 font-mono text-[11px] leading-5 text-gray-600"></div>
   </div>
+
+
+<!-- Template resources host — populated by ensureCachedTemplateResourcesLoaded() after required resources are cached -->
+  <div id="templateResourcesHost" style="display:contents;"></div>
 
 
 <!-- Resources boot overlay — hidden by default; shown only when required resources are missing -->
@@ -583,7 +363,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 
 (function() {
 	//#region \0virtual:fibery-html-editor/manifest-js
-	const APP_VERSION = "8.43.0";
+	const APP_VERSION = "8.44.0";
 	window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 	document.documentElement.dataset.appVersion = APP_VERSION;
 	var UPDATE_REMOTE = Object.freeze({
@@ -716,144 +496,150 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		emergencyDraft: "fibery-pro-editor.emergencyDraft"
 	};
 	var $ = (id) => document.getElementById(id);
-	var els = {
-		sidebar: $("sidebar"),
-		brandBtn: $("brandBtn"),
-		toggleSidebarBtn: $("toggleSidebarBtn"),
-		sidebarCloseIcon: $("sidebarCloseIcon"),
-		sidebarOpenIcon: $("sidebarOpenIcon"),
-		sidebarScroll: $("sidebarScroll"),
-		sidebarProjectsSection: $("sidebarProjectsSection"),
-		sidebarProjectsList: $("sidebarProjectsList"),
-		newProjectBtn: $("newProjectBtn"),
-		sidebarPagesList: $("sidebarPagesList"),
-		refreshSidebarBtn: $("refreshSidebarBtn"),
-		sidebarLoadMoreWrap: $("sidebarLoadMoreWrap"),
-		sidebarLoadMoreBtn: $("sidebarLoadMoreBtn"),
-		searchPagesBtn: $("searchPagesBtn"),
-		sidebarSettingsBtn: $("sidebarSettingsBtn"),
-		pageHeader: $("pageHeader"),
-		welcomeView: $("welcomeView"),
-		welcomeNewPageBtn: $("welcomeNewPageBtn"),
-		welcomeSearchInput: $("welcomeSearchInput"),
-		welcomeSearchResults: $("welcomeSearchResults"),
-		saveBtn: $("saveBtn"),
-		updateAppBtn: $("updateAppBtn"),
-		refreshBtn: $("refreshBtn"),
-		openViewMenuBtn: $("openViewMenuBtn"),
-		newPageBtn: $("newPageBtn"),
-		historyBtn: $("historyBtn"),
-		deleteBtn: $("deleteBtn"),
-		moreBtn: $("moreBtn"),
-		moreMenu: $("moreMenu"),
-		quickBothBtn: $("quickBothBtn"),
-		quickEditorBtn: $("quickEditorBtn"),
-		quickPreviewBtn: $("quickPreviewBtn"),
-		titleInput: $("titleInput"),
-		descriptionInput: $("descriptionInput"),
-		dirtyBadge: $("dirtyBadge"),
-		externalSyncNotice: $("externalSyncNotice"),
-		externalSyncNoticeTitle: $("externalSyncNoticeTitle"),
-		externalSyncNoticeMessage: $("externalSyncNoticeMessage"),
-		externalSyncDismissBtn: $("externalSyncDismissBtn"),
-		externalSyncCheckNowBtn: $("externalSyncCheckNowBtn"),
-		statusText: $("statusText"),
-		logToggleBtn: $("logToggleBtn"),
-		logMenuText: $("logMenuText"),
-		settingsModal: $("settingsModal"),
-		closeSettingsBtn: $("closeSettingsBtn"),
-		langSelect: $("langSelect"),
-		updateAppModal: $("updateAppModal"),
-		closeUpdateAppBtn: $("closeUpdateAppBtn"),
-		updateInstalledVersionValue: $("updateInstalledVersionValue"),
-		updateAvailableVersionValue: $("updateAvailableVersionValue"),
-		updateCheckStatusText: $("updateCheckStatusText"),
-		updateVerifyAgainBtn: $("updateVerifyAgainBtn"),
-		updateApplyBtn: $("updateApplyBtn"),
-		updateBackupsBox: $("updateBackupsBox"),
-		updateChangelogBox: $("updateChangelogBox"),
-		updateCloseBtn: $("updateCloseBtn"),
-		openLastToggle: $("openLastToggle"),
-		versionLimitSelect: $("versionLimitSelect"),
-		codeEditor: $("codeEditor"),
-		codeEditorFallback: $("codeEditorFallback"),
-		charCount: $("charCount"),
-		copyHtmlBtn: $("copyHtmlBtn"),
-		editorPanelMenuBtn: $("editorPanelMenuBtn"),
-		previewFrame: $("previewFrame"),
-		previewStatus: $("previewStatus"),
-		previewPanelMenuBtn: $("previewPanelMenuBtn"),
-		previewFocusBtn: $("previewFocusBtn"),
-		previewFocusExitBtn: $("previewFocusExitBtn"),
-		splitter: $("splitter"),
-		splitArea: $("splitArea"),
-		editorPane: $("editorPane"),
-		previewPane: $("previewPane"),
-		dragOverlay: $("dragOverlay"),
-		searchModal: $("searchModal"),
-		closeSearchBtn: $("closeSearchBtn"),
-		globalSearchInput: $("globalSearchInput"),
-		globalSearchResults: $("globalSearchResults"),
-		pageContextMenu: $("pageContextMenu"),
-		moveProjectMenu: $("moveProjectMenu"),
-		projectContextMenu: $("projectContextMenu"),
-		editorPanelMenu: $("editorPanelMenu"),
-		previewPanelMenu: $("previewPanelMenu"),
-		createProjectModal: $("createProjectModal"),
-		createProjectNameInput: $("createProjectNameInput"),
-		closeCreateProjectBtn: $("closeCreateProjectBtn"),
-		cancelCreateProjectBtn: $("cancelCreateProjectBtn"),
-		confirmCreateProjectBtn: $("confirmCreateProjectBtn"),
-		historyModal: $("historyModal"),
-		closeHistoryBtn: $("closeHistoryBtn"),
-		historyList: $("historyList"),
-		logPanel: $("logPanel"),
-		apiUsageSummaryBox: $("apiUsageSummaryBox"),
-		logBox: $("logBox"),
-		clearLogBtn: $("clearLogBtn"),
-		confirmModal: $("confirmModal"),
-		confirmBox: $("confirmBox"),
-		confirmTitle: $("confirmTitle"),
-		confirmMessage: $("confirmMessage"),
-		confirmCancelBtn: $("confirmCancelBtn"),
-		confirmOkBtn: $("confirmOkBtn"),
-		deletePreviewWrap: $("deletePreviewWrap"),
-		deletePreviewFrame: $("deletePreviewFrame"),
-		confirmOpenPreviewBtn: $("confirmOpenPreviewBtn"),
-		unsavedTransitionModal: $("unsavedTransitionModal"),
-		unsavedTransitionSaveBtn: $("unsavedTransitionSaveBtn"),
-		unsavedTransitionKeepDraftBtn: $("unsavedTransitionKeepDraftBtn"),
-		unsavedTransitionDiscardBtn: $("unsavedTransitionDiscardBtn"),
-		unsavedTransitionCancelBtn: $("unsavedTransitionCancelBtn"),
-		draftRecoveryModal: $("draftRecoveryModal"),
-		draftRecoveryTitle: $("draftRecoveryTitle"),
-		draftRecoverySubtitle: $("draftRecoverySubtitle"),
-		draftCurrentColumn: $("draftCurrentColumn"),
-		draftLocalColumn: $("draftLocalColumn"),
-		draftCodeDiffLegend: $("draftCodeDiffLegend"),
-		draftCodeDiffMonaco: $("draftCodeDiffMonaco"),
-		draftCodeDiffFallback: $("draftCodeDiffFallback"),
-		draftFallbackCurrentPane: $("draftFallbackCurrentPane"),
-		draftFallbackLocalPane: $("draftFallbackLocalPane"),
-		closeDraftRecoveryBtn: $("closeDraftRecoveryBtn"),
-		restoreDraftBtn: $("restoreDraftBtn"),
-		keepCurrentVersionBtn: $("keepCurrentVersionBtn"),
-		discardDraftBtn: $("discardDraftBtn"),
-		reopenRecoveryBtn: $("reopenRecoveryBtn"),
-		conflictCompareModal: $("conflictCompareModal"),
-		conflictCompareTitle: $("conflictCompareTitle"),
-		conflictCompareSubtitle: $("conflictCompareSubtitle"),
-		conflictLocalColumn: $("conflictLocalColumn"),
-		conflictRemoteColumn: $("conflictRemoteColumn"),
-		conflictCodeDiffLegend: $("conflictCodeDiffLegend"),
-		conflictCodeDiffMonaco: $("conflictCodeDiffMonaco"),
-		conflictCodeDiffFallback: $("conflictCodeDiffFallback"),
-		conflictFallbackLeftPane: $("conflictFallbackLeftPane"),
-		conflictFallbackRightPane: $("conflictFallbackRightPane"),
-		conflictKeepLocalBtn: $("conflictKeepLocalBtn"),
-		conflictLoadRemoteBtn: $("conflictLoadRemoteBtn"),
-		conflictCompareOpenBtn: $("conflictCompareOpenBtn")
-	};
+	function buildEls() {
+		return {
+			sidebar: $("sidebar"),
+			brandBtn: $("brandBtn"),
+			toggleSidebarBtn: $("toggleSidebarBtn"),
+			sidebarCloseIcon: $("sidebarCloseIcon"),
+			sidebarOpenIcon: $("sidebarOpenIcon"),
+			sidebarScroll: $("sidebarScroll"),
+			sidebarProjectsSection: $("sidebarProjectsSection"),
+			sidebarProjectsList: $("sidebarProjectsList"),
+			newProjectBtn: $("newProjectBtn"),
+			sidebarPagesList: $("sidebarPagesList"),
+			refreshSidebarBtn: $("refreshSidebarBtn"),
+			sidebarLoadMoreWrap: $("sidebarLoadMoreWrap"),
+			sidebarLoadMoreBtn: $("sidebarLoadMoreBtn"),
+			searchPagesBtn: $("searchPagesBtn"),
+			sidebarSettingsBtn: $("sidebarSettingsBtn"),
+			pageHeader: $("pageHeader"),
+			welcomeView: $("welcomeView"),
+			welcomeNewPageBtn: $("welcomeNewPageBtn"),
+			welcomeSearchInput: $("welcomeSearchInput"),
+			welcomeSearchResults: $("welcomeSearchResults"),
+			saveBtn: $("saveBtn"),
+			updateAppBtn: $("updateAppBtn"),
+			refreshBtn: $("refreshBtn"),
+			openViewMenuBtn: $("openViewMenuBtn"),
+			newPageBtn: $("newPageBtn"),
+			historyBtn: $("historyBtn"),
+			deleteBtn: $("deleteBtn"),
+			moreBtn: $("moreBtn"),
+			moreMenu: $("moreMenu"),
+			quickBothBtn: $("quickBothBtn"),
+			quickEditorBtn: $("quickEditorBtn"),
+			quickPreviewBtn: $("quickPreviewBtn"),
+			titleInput: $("titleInput"),
+			descriptionInput: $("descriptionInput"),
+			dirtyBadge: $("dirtyBadge"),
+			externalSyncNotice: $("externalSyncNotice"),
+			externalSyncNoticeTitle: $("externalSyncNoticeTitle"),
+			externalSyncNoticeMessage: $("externalSyncNoticeMessage"),
+			externalSyncDismissBtn: $("externalSyncDismissBtn"),
+			externalSyncCheckNowBtn: $("externalSyncCheckNowBtn"),
+			statusText: $("statusText"),
+			logToggleBtn: $("logToggleBtn"),
+			logMenuText: $("logMenuText"),
+			settingsModal: $("settingsModal"),
+			closeSettingsBtn: $("closeSettingsBtn"),
+			langSelect: $("langSelect"),
+			updateAppModal: $("updateAppModal"),
+			closeUpdateAppBtn: $("closeUpdateAppBtn"),
+			updateInstalledVersionValue: $("updateInstalledVersionValue"),
+			updateAvailableVersionValue: $("updateAvailableVersionValue"),
+			updateCheckStatusText: $("updateCheckStatusText"),
+			updateVerifyAgainBtn: $("updateVerifyAgainBtn"),
+			updateApplyBtn: $("updateApplyBtn"),
+			updateBackupsBox: $("updateBackupsBox"),
+			updateChangelogBox: $("updateChangelogBox"),
+			updateCloseBtn: $("updateCloseBtn"),
+			openLastToggle: $("openLastToggle"),
+			versionLimitSelect: $("versionLimitSelect"),
+			codeEditor: $("codeEditor"),
+			codeEditorFallback: $("codeEditorFallback"),
+			charCount: $("charCount"),
+			copyHtmlBtn: $("copyHtmlBtn"),
+			editorPanelMenuBtn: $("editorPanelMenuBtn"),
+			previewFrame: $("previewFrame"),
+			previewStatus: $("previewStatus"),
+			previewPanelMenuBtn: $("previewPanelMenuBtn"),
+			previewFocusBtn: $("previewFocusBtn"),
+			previewFocusExitBtn: $("previewFocusExitBtn"),
+			splitter: $("splitter"),
+			splitArea: $("splitArea"),
+			editorPane: $("editorPane"),
+			previewPane: $("previewPane"),
+			dragOverlay: $("dragOverlay"),
+			searchModal: $("searchModal"),
+			closeSearchBtn: $("closeSearchBtn"),
+			globalSearchInput: $("globalSearchInput"),
+			globalSearchResults: $("globalSearchResults"),
+			pageContextMenu: $("pageContextMenu"),
+			moveProjectMenu: $("moveProjectMenu"),
+			projectContextMenu: $("projectContextMenu"),
+			editorPanelMenu: $("editorPanelMenu"),
+			previewPanelMenu: $("previewPanelMenu"),
+			createProjectModal: $("createProjectModal"),
+			createProjectNameInput: $("createProjectNameInput"),
+			closeCreateProjectBtn: $("closeCreateProjectBtn"),
+			cancelCreateProjectBtn: $("cancelCreateProjectBtn"),
+			confirmCreateProjectBtn: $("confirmCreateProjectBtn"),
+			historyModal: $("historyModal"),
+			closeHistoryBtn: $("closeHistoryBtn"),
+			historyList: $("historyList"),
+			logPanel: $("logPanel"),
+			apiUsageSummaryBox: $("apiUsageSummaryBox"),
+			logBox: $("logBox"),
+			clearLogBtn: $("clearLogBtn"),
+			confirmModal: $("confirmModal"),
+			confirmBox: $("confirmBox"),
+			confirmTitle: $("confirmTitle"),
+			confirmMessage: $("confirmMessage"),
+			confirmCancelBtn: $("confirmCancelBtn"),
+			confirmOkBtn: $("confirmOkBtn"),
+			deletePreviewWrap: $("deletePreviewWrap"),
+			deletePreviewFrame: $("deletePreviewFrame"),
+			confirmOpenPreviewBtn: $("confirmOpenPreviewBtn"),
+			unsavedTransitionModal: $("unsavedTransitionModal"),
+			unsavedTransitionSaveBtn: $("unsavedTransitionSaveBtn"),
+			unsavedTransitionKeepDraftBtn: $("unsavedTransitionKeepDraftBtn"),
+			unsavedTransitionDiscardBtn: $("unsavedTransitionDiscardBtn"),
+			unsavedTransitionCancelBtn: $("unsavedTransitionCancelBtn"),
+			draftRecoveryModal: $("draftRecoveryModal"),
+			draftRecoveryTitle: $("draftRecoveryTitle"),
+			draftRecoverySubtitle: $("draftRecoverySubtitle"),
+			draftCurrentColumn: $("draftCurrentColumn"),
+			draftLocalColumn: $("draftLocalColumn"),
+			draftCodeDiffLegend: $("draftCodeDiffLegend"),
+			draftCodeDiffMonaco: $("draftCodeDiffMonaco"),
+			draftCodeDiffFallback: $("draftCodeDiffFallback"),
+			draftFallbackCurrentPane: $("draftFallbackCurrentPane"),
+			draftFallbackLocalPane: $("draftFallbackLocalPane"),
+			closeDraftRecoveryBtn: $("closeDraftRecoveryBtn"),
+			restoreDraftBtn: $("restoreDraftBtn"),
+			keepCurrentVersionBtn: $("keepCurrentVersionBtn"),
+			discardDraftBtn: $("discardDraftBtn"),
+			reopenRecoveryBtn: $("reopenRecoveryBtn"),
+			conflictCompareModal: $("conflictCompareModal"),
+			conflictCompareTitle: $("conflictCompareTitle"),
+			conflictCompareSubtitle: $("conflictCompareSubtitle"),
+			conflictLocalColumn: $("conflictLocalColumn"),
+			conflictRemoteColumn: $("conflictRemoteColumn"),
+			conflictCodeDiffLegend: $("conflictCodeDiffLegend"),
+			conflictCodeDiffMonaco: $("conflictCodeDiffMonaco"),
+			conflictCodeDiffFallback: $("conflictCodeDiffFallback"),
+			conflictFallbackLeftPane: $("conflictFallbackLeftPane"),
+			conflictFallbackRightPane: $("conflictFallbackRightPane"),
+			conflictKeepLocalBtn: $("conflictKeepLocalBtn"),
+			conflictLoadRemoteBtn: $("conflictLoadRemoteBtn"),
+			conflictCompareOpenBtn: $("conflictCompareOpenBtn")
+		};
+	}
+	var els = buildEls();
+	function initDomRefs() {
+		els = buildEls();
+	}
 	function detectCurrentAppPageId() {
 		const viewMatch = window.location.pathname.match(/\/api\/ai-answer\/pages\/([^/]+)\/view\/?$/);
 		if (viewMatch) return decodeURIComponent(viewMatch[1]);
@@ -2371,14 +2157,59 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 	async function ensureCachedStyleResourcesLoaded() {
 		await applyCachedStyleResource("css/app-noncritical");
 	}
+	var TEMPLATE_RESOURCE_KEY = "templates/app-modals";
+	var TEMPLATE_RESOURCE_HOST_ID = "templateResourcesHost";
+	function getTemplateResourceKeys() {
+		return [TEMPLATE_RESOURCE_KEY];
+	}
+	function validateTemplateHtmlSafety(html) {
+		if (/<script/i.test(html)) return false;
+		if (/\bon\w+\s*=/i.test(html)) return false;
+		return true;
+	}
+	function mountTemplateHtml(key, html) {
+		const host = document.getElementById(TEMPLATE_RESOURCE_HOST_ID);
+		if (!host) return;
+		if (host.dataset.loadedKey === key) return;
+		host.innerHTML = html;
+		host.dataset.loadedKey = key;
+	}
+	async function applyCachedTemplateResource(key) {
+		try {
+			const content = await getResourceContent(key);
+			if (!content) return false;
+			if (!validateTemplateHtmlSafety(content)) {
+				log(`[templates] rejected unsafe HTML for key: ${key}`);
+				return false;
+			}
+			mountTemplateHtml(key, content);
+			return true;
+		} catch (_) {
+			return false;
+		}
+	}
+	async function ensureCachedTemplateResourcesLoaded() {
+		for (const key of getTemplateResourceKeys()) await applyCachedTemplateResource(key);
+	}
 	var RESOURCE_KINDS_VALID = new Set([
 		"script",
 		"style",
 		"font",
 		"image",
 		"data",
-		"other"
+		"other",
+		"template"
 	]);
+	var _resourcesReadyResolve = null;
+	var RESOURCES_READY_SIGNAL = new Promise((resolve) => {
+		_resourcesReadyResolve = resolve;
+	});
+	function signalResourcesReady() {
+		if (_resourcesReadyResolve) {
+			_resourcesReadyResolve();
+			_resourcesReadyResolve = null;
+		}
+	}
 	function resourceManifestUrl() {
 		return `https://raw.githubusercontent.com/rabrunos/fibery-html-editor/main/support/${APP_VERSION}/resources-manifest.json`;
 	}
@@ -2506,11 +2337,13 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			state.resources.lastCheckedAt = Date.now();
 			if (!manifest) {
 				state.resources.ready = true;
+				signalResourcesReady();
 				return;
 			}
 			state.resources.manifest = manifest;
 			if (!manifest.resources.length) {
 				state.resources.ready = true;
+				signalResourcesReady();
 				return;
 			}
 			const statuses = await getRequiredResourceStatuses(manifest);
@@ -2518,11 +2351,15 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			const missing = statuses.filter((s) => s.status !== "cached").map((s) => s.key);
 			state.resources.requiredMissing = missing;
 			if (missing.length > 0) showResourceBootOverlay();
-			else state.resources.ready = true;
+			else {
+				state.resources.ready = true;
+				signalResourcesReady();
+			}
 		} catch (err) {
 			state.resources.errorMessage = err.message || String(err);
 			log(`[resources] ensureRequiredResources failed: ${state.resources.errorMessage}`);
 			state.resources.ready = true;
+			signalResourcesReady();
 		} finally {
 			state.resources.loading = false;
 		}
@@ -2542,8 +2379,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			if (missing.length === 0) {
 				state.resources.ready = true;
 				hideResourceBootOverlay();
-				ensureI18nResourcesLoaded().then(() => applyI18n());
-				ensureCachedStyleResourcesLoaded();
+				signalResourcesReady();
 			}
 		} catch (err) {
 			state.resources.errorMessage = err.message || String(err);
@@ -6675,24 +6511,30 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		if (typeof syncExternalSyncPollingState === "function") syncExternalSyncPollingState();
 	}
 	async function init() {
+		state.panelMode = localStorage.getItem(LS.panelMode) || "both";
+		state.db = await openDb();
+		await loadPageMetaCache();
+		await loadProjectsCache();
+		await loadDraftsCache();
+		await ensureRequiredResources();
+		await RESOURCES_READY_SIGNAL;
+		await ensureCachedStyleResourcesLoaded();
+		await ensureCachedTemplateResourcesLoaded();
+		initDomRefs();
+		if (!document.getElementById("settingsModal")) {
+			log("[init] Template resources not available — some features will be missing");
+			return;
+		}
 		els.langSelect.value = localStorage.getItem(LS.lang) || "auto";
 		els.openLastToggle.checked = (localStorage.getItem(LS.openLast) ?? "1") === "1";
 		els.versionLimitSelect.value = localStorage.getItem(LS.versionLimit) || "20";
-		state.panelMode = localStorage.getItem(LS.panelMode) || "both";
+		await ensureI18nResourcesLoaded();
 		applyI18n();
 		await setupCodeEditor();
 		bindEvents();
 		setupResize();
 		setPanelMode(state.panelMode, false);
-		state.db = await openDb();
-		await loadPageMetaCache();
-		await loadProjectsCache();
-		await loadDraftsCache();
 		await applyEmergencyDraftIfRelevant();
-		await ensureRequiredResources();
-		await ensureCachedStyleResourcesLoaded();
-		await ensureI18nResourcesLoaded();
-		applyI18n();
 		try {
 			setAdminMode(await API.checkIsAdmin({ source: "init" }));
 		} catch (_) {

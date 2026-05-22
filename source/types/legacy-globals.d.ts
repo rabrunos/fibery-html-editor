@@ -340,9 +340,16 @@ declare global {
   function renderResourceBootOverlay(): void;
   function initResourceBootEvents(): void;
   function styleResourceElementId(key: string): string;
+  function initDomRefs(): void;
   function injectCachedStyle(key: string, css: string): void;
   function applyCachedStyleResource(key: string): Promise<boolean>;
   function ensureCachedStyleResourcesLoaded(): Promise<void>;
+  function validateTemplateHtmlSafety(html: string): boolean;
+  function mountTemplateHtml(key: string, html: string): void;
+  function injectCachedTemplate(key: string, html: string): void;
+  function applyCachedTemplateResource(key: string): Promise<boolean>;
+  function ensureCachedTemplateResourcesLoaded(): Promise<void>;
+  function getTemplateResourceKeys(): string[];
   function getCachedUpdateChangelog(): Promise<string | null>;
   function cacheUpdateChangelogFromRemote(content: string): Promise<void>;
   function loadUpdateChangelogWithCache(): Promise<string | null>;

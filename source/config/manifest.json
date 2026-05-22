@@ -1,21 +1,14 @@
 {
-  "version": "8.43.0",
+  "version": "8.44.0",
   "bodyOpenTag": "<body class=\"h-screen overflow-hidden bg-gray-50 text-gray-900 antialiased\">",
   "template": "source/template/index.template.html",
   "appEntry": "source/app/main.ts",
   "html": [
     "source/html/layout-main.html",
     "source/html/context-menus.html",
-    "source/html/modal-create-project.html",
-    "source/html/modal-draft-recovery.html",
-    "source/html/modal-search.html",
-    "source/html/modal-settings.html",
-    "source/html/modal-update-app.html",
-    "source/html/modal-history.html",
     "source/html/modal-confirm.html",
-    "source/html/modal-unsaved-transition.html",
-    "source/html/modal-conflict-compare.html",
     "source/html/panel-log.html",
+    "source/html/template-resources-host.html",
     "source/html/panel-resources-boot.html"
   ],
   "css": [
@@ -48,6 +41,7 @@
     "source/js/indexeddb-core.ts",
     "source/js/app-resources-storage.ts",
     "source/js/app-style-resources.ts",
+    "source/js/app-template-resources.ts",
     "source/js/app-resources-loader.ts",
     "source/js/app-resources-boot.ts",
     "source/js/page-content-cache.ts",

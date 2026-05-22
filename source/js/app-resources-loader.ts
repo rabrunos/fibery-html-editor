@@ -1,4 +1,15 @@
-const RESOURCE_KINDS_VALID = new Set<ResourceKind>(['script', 'style', 'font', 'image', 'data', 'other']);
+const RESOURCE_KINDS_VALID = new Set<ResourceKind>(['script', 'style', 'font', 'image', 'data', 'other', 'template']);
+
+let _resourcesReadyResolve: (() => void) | null = null;
+// Resolved when all required resources are cached (or the system gives up). Awaited by lifecycle-init.ts.
+const RESOURCES_READY_SIGNAL: Promise<void> = new Promise(resolve => { _resourcesReadyResolve = resolve; });
+
+function signalResourcesReady(): void {
+  if (_resourcesReadyResolve) {
+    _resourcesReadyResolve();
+    _resourcesReadyResolve = null;
+  }
+}
 
 function resourceManifestUrl(): string {
   return `https://raw.githubusercontent.com/rabrunos/fibery-html-editor/main/support/${APP_VERSION}/resources-manifest.json`;
@@ -108,22 +119,25 @@ async function ensureRequiredResources(): Promise<void> {
   try {
     const manifest = await fetchResourceManifest();
     state.resources.lastCheckedAt = Date.now();
-    if (!manifest) { state.resources.ready = true; return; }
+    if (!manifest) { state.resources.ready = true; signalResourcesReady(); return; }
     state.resources.manifest = manifest;
-    if (!manifest.resources.length) { state.resources.ready = true; return; }
+    if (!manifest.resources.length) { state.resources.ready = true; signalResourcesReady(); return; }
     const statuses = await getRequiredResourceStatuses(manifest);
     state.resources.statuses = statuses;
     const missing = statuses.filter(s => s.status !== 'cached').map(s => s.key);
     state.resources.requiredMissing = missing;
     if (missing.length > 0) {
       showResourceBootOverlay();
+      // RESOURCES_READY_SIGNAL is resolved by retryRequiredResourcesDownload() on success.
     } else {
       state.resources.ready = true;
+      signalResourcesReady();
     }
   } catch (err) {
     state.resources.errorMessage = (err as Error).message || String(err);
     log(`[resources] ensureRequiredResources failed: ${state.resources.errorMessage}`);
     state.resources.ready = true;
+    signalResourcesReady();
   } finally {
     state.resources.loading = false;
   }
@@ -146,8 +160,7 @@ async function retryRequiredResourcesDownload(): Promise<void> {
     if (missing.length === 0) {
       state.resources.ready = true;
       hideResourceBootOverlay();
-      void ensureI18nResourcesLoaded().then(() => applyI18n());
-      void ensureCachedStyleResourcesLoaded();
+      signalResourcesReady(); // lifecycle-init.ts continues and applies CSS, templates, i18n, etc.
     }
   } catch (err) {
     state.resources.errorMessage = (err as Error).message || String(err);

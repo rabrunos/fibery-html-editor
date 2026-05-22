@@ -15,14 +15,11 @@ const ESSENTIAL_IDS = [
   'splitArea',
   'saveBtn',
   'updateAppBtn',
-  'updateAppModal',
-  'updateApplyBtn',
   'codeEditor',
   'codeEditorFallback',
   'previewFrame',
-  'historyModal',
   'confirmModal',
-  'draftRecoveryModal',
+  'templateResourcesHost',
   'resourceBootOverlay'
 ];
 
@@ -31,7 +28,8 @@ const RESOURCE_BOOTSTRAP_SYMBOLS = [
   'retryRequiredResourcesDownload',
   'appResources',
   'ensureI18nResourcesLoaded',
-  'ensureCachedStyleResourcesLoaded'
+  'ensureCachedStyleResourcesLoaded',
+  'ensureCachedTemplateResourcesLoaded'
 ];
 
 function assert(condition, message) {
@@ -172,7 +170,7 @@ async function main() {
     const generatedIdCount = countMatches(generated, /id="[^"]+"/g);
     const baselineIdCount = countMatches(baselineContent, /id="[^"]+"/g);
     const idDiff = Math.abs(generatedIdCount - baselineIdCount);
-    assert(idDiff <= 5, `Generated ID count diverged too much from baseline (${generatedIdCount} vs ${baselineIdCount})`);
+    assert(idDiff <= 70, `Generated ID count diverged too much from baseline (${generatedIdCount} vs ${baselineIdCount})`);
   }
 
   console.log(`Validation passed for ${path.relative(rootDir, targetPath)} (version ${metaVersion}).`);
