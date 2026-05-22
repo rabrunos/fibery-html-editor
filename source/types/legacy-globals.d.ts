@@ -271,6 +271,8 @@ declare global {
 
   function showToastNear(target: Element, message: string): void;
   function copyText(text: string, target: Element, okMessage: string): Promise<void>;
+  function buildDiagnosticReport(): string;
+  function copyDiagnosticReport(trigger?: HTMLElement): Promise<void>;
   function preferredLang(): string;
 
   // Migrated functions

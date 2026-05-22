@@ -20,6 +20,7 @@ function bindEvents(): void {
   els.previewPanelMenuBtn.addEventListener('click', openPreviewPanelMenu);
   els.previewFocusBtn.addEventListener('click', enterPreviewFocus);
   els.previewFocusExitBtn.addEventListener('click', exitPreviewFocus);
+  els.copyDiagnosticBtn.addEventListener('click', (e: MouseEvent) => { void copyDiagnosticReport(e.currentTarget as HTMLElement); });
   els.clearLogBtn.addEventListener('click', () => { els.logBox.innerHTML = ''; clearApiUsageStats(); });
   els.toggleSidebarBtn.addEventListener('click', () => setSidebarOpen(!state.sidebar.open));
   els.brandBtn.addEventListener('click', async () => {

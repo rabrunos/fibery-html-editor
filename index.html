@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.47.4" />
+  <meta name="fibery-html-editor-version" content="8.47.5" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -336,7 +336,10 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
   <div id="logPanel" class="hidden fixed bottom-3 right-3 z-40 w-[520px] max-w-[calc(100vw-24px)] rounded-lg border border-gray-200 bg-white shadow-xl">
     <div class="border-b border-gray-200 px-3 py-2 flex items-center justify-between">
       <div class="text-xs font-bold uppercase tracking-wide text-gray-500">Log</div>
-      <button id="clearLogBtn" class="text-xs text-gray-500 hover:text-gray-900">Clear</button>
+      <div class="flex items-center gap-3">
+        <button id="copyDiagnosticBtn" class="text-xs font-medium text-gray-500 hover:text-gray-900" data-i18n="copyDiagnosticInfo">Copy diagnostic info</button>
+        <button id="clearLogBtn" class="text-xs text-gray-500 hover:text-gray-900">Clear</button>
+      </div>
     </div>
     <div id="apiUsageSummaryBox" class="border-b border-gray-100 px-3 py-2 text-[11px] leading-4 text-gray-500">API usage: no calls yet</div>
     <div id="logBox" class="max-h-56 overflow-auto p-3 font-mono text-[11px] leading-5 text-gray-600"></div>
@@ -381,7 +384,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 
 (function() {
 	//#region \0virtual:fibery-html-editor/manifest-js
-	const APP_VERSION = "8.47.4";
+	const APP_VERSION = "8.47.5";
 	window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 	document.documentElement.dataset.appVersion = APP_VERSION;
 	var UPDATE_REMOTE = Object.freeze({
@@ -420,6 +423,8 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			showLog: "Show log",
 			hideLog: "Hide log",
 			copyFailed: "Could not copy",
+			copyDiagnosticInfo: "Copy diagnostic info",
+			diagnosticCopied: "Diagnostic info copied",
 			updateApp: "Update App",
 			projects: "Projects"
 		},
@@ -454,6 +459,8 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			showLog: "Mostrar log",
 			hideLog: "Ocultar log",
 			copyFailed: "Não foi possível copiar",
+			copyDiagnosticInfo: "Copiar diagnóstico",
+			diagnosticCopied: "Diagnóstico copiado",
 			updateApp: "Atualizar App",
 			projects: "Projetos"
 		}
@@ -618,6 +625,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			logPanel: $("logPanel"),
 			apiUsageSummaryBox: $("apiUsageSummaryBox"),
 			logBox: $("logBox"),
+			copyDiagnosticBtn: $("copyDiagnosticBtn"),
 			clearLogBtn: $("clearLogBtn"),
 			confirmModal: $("confirmModal"),
 			confirmBox: $("confirmBox"),
@@ -6236,6 +6244,63 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		els.splitArea.style.gridTemplateColumns = `minmax(320px, ${clamped}%) 6px minmax(320px, 1fr)`;
 		localStorage.setItem(LS.split, String(clamped));
 	}
+	function diagnosticYesNo(value) {
+		return value ? "yes" : "no";
+	}
+	function sanitizeDiagnosticText(value, maxLength = 500) {
+		let text = String(value ?? "").replace(/\s+/g, " ").trim();
+		if (!text) return "-";
+		text = text.replace(/https?:\/\/\S+/gi, "[url-redacted]").replace(/\/api\/ai-answer\/pages\/[^/\s?#]+/gi, "/api/ai-answer/pages/[redacted]").replace(/\b(?:authorization|bearer|token|cookie|session)\s*[:=]\s*\S+/gi, "[secret-redacted]").replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi, "[id-redacted]");
+		if (text.length > maxLength) return `${text.slice(0, maxLength - 1)}…`;
+		return text;
+	}
+	function recentDiagnosticLogLines(limit = 30) {
+		if (!els.logBox) return [];
+		return Array.from(els.logBox.children).slice(0, limit).map((node) => sanitizeDiagnosticText(node.textContent || "", 320)).filter((line) => line && line !== "-");
+	}
+	function resourcesDiagnosticSummary() {
+		const resources = state.resources;
+		const statuses = (resources.statuses || []).slice(0, 12).map((status) => `${sanitizeDiagnosticText(status.key, 80)}=${sanitizeDiagnosticText(status.status, 40)}`);
+		return [
+			`Resources ready: ${diagnosticYesNo(!!resources.ready)}`,
+			`Resources loading: ${diagnosticYesNo(!!resources.loading)}`,
+			`Resources downloading: ${diagnosticYesNo(!!resources.downloading)}`,
+			`Resources missing count: ${(resources.requiredMissing || []).length}`,
+			`Resources statuses: ${statuses.length ? statuses.join(", ") : "-"}`,
+			`Resources error: ${sanitizeDiagnosticText(resources.errorMessage || "", 240)}`
+		];
+	}
+	function buildDiagnosticReport() {
+		const logs = recentDiagnosticLogLines(30);
+		return `${[
+			"Fibery HTML Editor diagnostic report",
+			`Generated at: ${( new Date()).toLocaleString()}`,
+			`Version: ${APP_VERSION}`,
+			`Language: ${sanitizeDiagnosticText(state.lang, 40)}`,
+			`Navigator language: ${sanitizeDiagnosticText(navigator.language || "", 40)}`,
+			`User agent: ${sanitizeDiagnosticText(navigator.userAgent || "", 240)}`,
+			`Viewport: ${window.innerWidth}x${window.innerHeight}`,
+			`Screen: ${window.screen?.width || 0}x${window.screen?.height || 0} @${window.devicePixelRatio || 1}`,
+			`Admin mode: ${diagnosticYesNo(!!state.isAdmin)}`,
+			`Panel mode: ${sanitizeDiagnosticText(state.panelMode, 40)}`,
+			`Sidebar open: ${diagnosticYesNo(!!state.sidebar.open)}`,
+			`Preview mode: ${sanitizeDiagnosticText(state.preview.mode, 40)}`,
+			`Preview paused: ${diagnosticYesNo(!!state.preview.paused)}`,
+			...resourcesDiagnosticSummary(),
+			`Update status: ${sanitizeDiagnosticText(state.update.status, 80)}`,
+			`Update checking: ${diagnosticYesNo(!!state.update.checking)}`,
+			`Update applying: ${diagnosticYesNo(!!state.update.applying)}`,
+			`Update rollbacking: ${diagnosticYesNo(!!state.update.rollbacking)}`,
+			`Update remote version: ${sanitizeDiagnosticText(state.update.remoteVersion || "", 40)}`,
+			"",
+			`Recent log lines (${logs.length}, newest first):`,
+			...logs.length ? logs.map((line) => `- ${line}`) : ["- none"]
+		].join("\n")}\n`;
+	}
+	async function copyDiagnosticReport(trigger) {
+		const target = trigger || els.copyDiagnosticBtn || els.logPanel;
+		await copyText(buildDiagnosticReport(), target, t("diagnosticCopied"));
+	}
 	function openSettings() {
 		els.settingsModal.classList.remove("hidden");
 		els.moreMenu.classList.add("hidden");
@@ -6360,6 +6425,9 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		els.previewPanelMenuBtn.addEventListener("click", openPreviewPanelMenu);
 		els.previewFocusBtn.addEventListener("click", enterPreviewFocus);
 		els.previewFocusExitBtn.addEventListener("click", exitPreviewFocus);
+		els.copyDiagnosticBtn.addEventListener("click", (e) => {
+			copyDiagnosticReport(e.currentTarget);
+		});
 		els.clearLogBtn.addEventListener("click", () => {
 			els.logBox.innerHTML = "";
 			clearApiUsageStats();
