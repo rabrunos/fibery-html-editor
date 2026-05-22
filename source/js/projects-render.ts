@@ -24,12 +24,12 @@ function renderSidebarProjects(): void {
   els.sidebarProjectsList.innerHTML = projects.map(project => {
     const items = state.projects.itemsByProject[project.id] || [];
     const collapsed = !!project.collapsed;
-    const chevronIcon = collapsed ? iconChevronRight({ className: 'h-4 w-4' }) : iconChevronDown({ className: 'h-4 w-4' });
+    const folderIcon = collapsed ? iconProjectClosed({ className: 'h-4 w-4' }) : iconProjectOpen({ className: 'h-4 w-4' });
     const pagesHtml = collapsed ? '' : `<div class="mt-1 space-y-1 pl-2">${items.length ? items.map(projectPageItemHtml).join('') : `<div class="px-3 py-2 text-xs text-gray-400">${escapeHtml(t('noPages'))}</div>`}</div>`;
     return `<div class="project-block rounded-lg">
       <div class="group group/project flex items-center gap-1 rounded-lg px-1 py-1 hover:bg-gray-100">
         <button class="project-toggle flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-gray-500 hover:bg-gray-200" data-project-id="${escapeHtml(project.id)}" title="${escapeHtml(project.name || t('untitledProject'))}">
-          ${chevronIcon}
+          ${folderIcon}
         </button>
         <div class="min-w-0 flex-1 truncate text-sm font-semibold text-gray-700" data-project-title-id="${escapeHtml(project.id)}" title="${escapeHtml(project.name || t('untitledProject'))}">${escapeHtml(project.name || t('untitledProject'))}</div>
         ${projectMenuButton(project.id, project.name || t('untitledProject'))}
