@@ -1,5 +1,5 @@
 {
-  "version": "8.44.0",
+  "version": "8.45.0",
   "bodyOpenTag": "<body class=\"h-screen overflow-hidden bg-gray-50 text-gray-900 antialiased\">",
   "template": "source/template/index.template.html",
   "appEntry": "source/app/main.ts",
@@ -38,6 +38,7 @@
     "source/js/update-rollback-flow.ts",
     "source/js/update-changelog-render.ts",
     "source/js/update-panel-render.ts",
+    "source/js/update-startup-check.ts",
     "source/js/indexeddb-core.ts",
     "source/js/app-resources-storage.ts",
     "source/js/app-style-resources.ts",

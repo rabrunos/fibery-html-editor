@@ -2,7 +2,6 @@ function bindEvents(): void {
   els.titleInput.addEventListener('input', () => { updateCurrentFromInputs(); markDirty(true); scheduleLocalPreviewRefresh(); });
   els.descriptionInput.addEventListener('input', () => { updateCurrentFromInputs(); markDirty(true); scheduleLocalPreviewRefresh(); });
   els.saveBtn.addEventListener('click', () => { void requestSavePage('save'); });
-  els.updateAppBtn.addEventListener('click', openUpdateAppModal);
   els.refreshBtn.addEventListener('click', () => { els.moreMenu.classList.add('hidden'); els.moreBtn.classList.remove('menu-open'); refreshPreview(); });
   els.newPageBtn.addEventListener('click', () => { void runWithUnsavedPageTransitionGuard(async () => { await newPage(); }); });
   els.welcomeNewPageBtn.addEventListener('click', () => { void runWithUnsavedPageTransitionGuard(async () => { await newPage(); }); });
@@ -65,11 +64,16 @@ function bindEvents(): void {
   els.updateCloseBtn.addEventListener('click', closeUpdateAppModal);
   els.updateVerifyAgainBtn.addEventListener('click', () => { void checkRemoteUpdateInfo(); });
   els.updateApplyBtn.addEventListener('click', () => { void applyRemoteUpdate(); });
-  els.updateBackupsBox.addEventListener('click', (e: MouseEvent) => {
+  if (els.updateBackupsBox) els.updateBackupsBox.addEventListener('click', (e: MouseEvent) => {
     const restoreBtn = (e.target as Element | null)?.closest<HTMLElement>('[data-update-backup-restore-key]');
     if (!restoreBtn) return;
     void restoreUpdateBackupByKey(restoreBtn.dataset.updateBackupRestoreKey || '');
   });
+  els.updateToastLaterBtn.addEventListener('click', hideUpdateAvailableToast);
+  els.updateToastOpenBtn.addEventListener('click', () => { hideUpdateAvailableToast(); openUpdateAppModal(); });
+  if (els.settingsCheckUpdateBtn) els.settingsCheckUpdateBtn.addEventListener('click', () => { void checkRemoteUpdateInfo(); });
+  if (els.settingsOpenUpdateBtn) els.settingsOpenUpdateBtn.addEventListener('click', () => { closeSettings(); openUpdateAppModal(); });
+  if (els.updateCheckOnStartupToggle) els.updateCheckOnStartupToggle.addEventListener('change', () => { localStorage.setItem(LS.updateCheckOnStartup, els.updateCheckOnStartupToggle.checked ? '1' : '0'); });
   els.updateAppModal.addEventListener('click', (e: MouseEvent) => { if (e.target === els.updateAppModal) closeUpdateAppModal(); });
   els.langSelect.addEventListener('change', () => { localStorage.setItem(LS.lang, els.langSelect.value); applyI18n(); if (state.blank) showBlankPage(); else renderCurrent(); });
   els.openLastToggle.addEventListener('change', () => localStorage.setItem(LS.openLast, els.openLastToggle.checked ? '1' : '0'));

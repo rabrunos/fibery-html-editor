@@ -27,4 +27,5 @@ function applyI18n(): void {
   syncCachedOpenCheckNowButtonLabel();
   renderApiUsageSummary();
   renderUpdateAppPanel();
+  if (typeof renderSettingsUpdateSection === 'function') renderSettingsUpdateSection();
 }

@@ -33,6 +33,7 @@ async function init(): Promise<void> {
     showBlankPage();
     void maybePromptUnsavedDraftRecovery(state.drafts.promptToken);
   }
+  void maybeCheckUpdateOnStartup();
 }
 
 init().catch((err: unknown) => { console.error(err); alert((err as Error).message || String(err)); });

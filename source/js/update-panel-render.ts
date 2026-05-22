@@ -66,7 +66,8 @@ function renderUpdateAppPanel(): void {
     els.updateApplyBtn.textContent = state.update.applying ? t('updateApplying') : t('updateApply');
     els.updateApplyBtn.title = disableReason || t('updateApply');
   }
-  renderUpdateBackupList();
+  syncUpdateAvailableToast();
+  renderSettingsUpdateSection();
   const comparison = updateVersionComparisonState();
   if (state.update.changelogLoading) {
     renderUpdateChangelog(els.updateChangelogBox, t('updateChangelogLoading'), comparison);
@@ -81,7 +82,6 @@ function openUpdateAppModal(): void {
   if (!els.updateAppModal) return;
   els.updateAppModal.classList.remove('hidden');
   renderUpdateAppPanel();
-  void loadUpdateBackupList();
   void checkRemoteUpdateInfo();
 }
 

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.44.0" />
+  <meta name="fibery-html-editor-version" content="8.45.0" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -195,7 +195,6 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
         <button id="conflictCompareOpenBtn" class="hidden h-7 shrink-0 rounded border border-red-300 bg-red-50 px-2 text-[11px] font-medium text-red-700 hover:bg-red-100" data-i18n="conflictCompareOpenBtn">Compare versions</button>
         <span id="statusText" class="hidden md:inline-block max-w-40 truncate text-xs text-gray-500">Ready</span>
         <button id="saveBtn" class="h-8 px-3 rounded bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed" data-i18n="save">Save</button>
-        <button id="updateAppBtn" class="hidden h-8 rounded bg-yellow-400 px-3 text-sm font-semibold text-yellow-950 shadow-sm hover:bg-yellow-500" data-i18n="updateApp">Update App</button>
         <div id="quickViewControls" class="hidden md:flex shrink-0 overflow-hidden rounded-lg border border-gray-300 bg-white">
           <button id="quickBothBtn" class="flex h-8 w-8 items-center justify-center text-gray-600 hover:bg-gray-50" data-i18n-title="showBoth" title="Show both">
             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M12 5v14"/></svg>
@@ -283,6 +282,16 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
     </main>
   </div>
 
+  <div id="updateAvailableToast" class="hidden fixed bottom-4 right-4 z-[83] flex items-start gap-3 rounded-xl border border-yellow-200 bg-white px-4 py-3 shadow-xl" style="max-width:280px;">
+    <div class="min-w-0 flex-1">
+      <p class="text-sm font-semibold text-gray-900" data-i18n="updateAvailableToastTitle">Update available</p>
+      <p id="updateAvailableToastVersion" class="mt-0.5 text-xs text-gray-500"></p>
+    </div>
+    <div class="flex shrink-0 gap-3 pt-0.5">
+      <button id="updateToastLaterBtn" class="text-xs text-gray-500 hover:text-gray-700" data-i18n="updateToastLater">Later</button>
+      <button id="updateToastOpenBtn" class="text-xs font-semibold text-yellow-700 hover:text-yellow-900" data-i18n="updateToastOpen">Open</button>
+    </div>
+  </div>
   <div id="dragOverlay" class="hidden fixed inset-0 z-[9999] cursor-col-resize select-none"></div>
   <div id="previewFocusExitZone" class="fixed left-0 right-0 top-0 z-[10000] h-14 items-start justify-center pointer-events-none pt-2">
     <button id="previewFocusExitBtn" class="pointer-events-auto flex h-9 items-center justify-center rounded-full border border-gray-200 bg-white/90 px-4 text-xs font-semibold text-gray-700 shadow-xl backdrop-blur transition-colors hover:border-red-500 hover:bg-red-600 hover:text-white" data-i18n-title="exitPreviewFocus" title="Exit preview focus">
@@ -363,7 +372,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 
 (function() {
 	//#region \0virtual:fibery-html-editor/manifest-js
-	const APP_VERSION = "8.44.0";
+	const APP_VERSION = "8.45.0";
 	window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 	document.documentElement.dataset.appVersion = APP_VERSION;
 	var UPDATE_REMOTE = Object.freeze({
@@ -493,7 +502,8 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		pageMeta: "fibery-pro-editor.pageMeta",
 		panelMode: "fibery-pro-editor.panelMode",
 		dismissedRecovery: "fibery-pro-editor.dismissedRecovery",
-		emergencyDraft: "fibery-pro-editor.emergencyDraft"
+		emergencyDraft: "fibery-pro-editor.emergencyDraft",
+		updateCheckOnStartup: "fibery-pro-editor.updateCheckOnStartup"
 	};
 	var $ = (id) => document.getElementById(id);
 	function buildEls() {
@@ -519,7 +529,6 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			welcomeSearchInput: $("welcomeSearchInput"),
 			welcomeSearchResults: $("welcomeSearchResults"),
 			saveBtn: $("saveBtn"),
-			updateAppBtn: $("updateAppBtn"),
 			refreshBtn: $("refreshBtn"),
 			openViewMenuBtn: $("openViewMenuBtn"),
 			newPageBtn: $("newPageBtn"),
@@ -544,6 +553,10 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			settingsModal: $("settingsModal"),
 			closeSettingsBtn: $("closeSettingsBtn"),
 			langSelect: $("langSelect"),
+			updateAvailableToast: $("updateAvailableToast"),
+			updateAvailableToastVersion: $("updateAvailableToastVersion"),
+			updateToastLaterBtn: $("updateToastLaterBtn"),
+			updateToastOpenBtn: $("updateToastOpenBtn"),
 			updateAppModal: $("updateAppModal"),
 			closeUpdateAppBtn: $("closeUpdateAppBtn"),
 			updateInstalledVersionValue: $("updateInstalledVersionValue"),
@@ -554,6 +567,10 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			updateBackupsBox: $("updateBackupsBox"),
 			updateChangelogBox: $("updateChangelogBox"),
 			updateCloseBtn: $("updateCloseBtn"),
+			updateCheckOnStartupToggle: $("updateCheckOnStartupToggle"),
+			settingsUpdateStatus: $("settingsUpdateStatus"),
+			settingsCheckUpdateBtn: $("settingsCheckUpdateBtn"),
+			settingsOpenUpdateBtn: $("settingsOpenUpdateBtn"),
 			openLastToggle: $("openLastToggle"),
 			versionLimitSelect: $("versionLimitSelect"),
 			codeEditor: $("codeEditor"),
@@ -1372,27 +1389,6 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 	function getUpdateBackupTargetPageId() {
 		return String(state.appPageId || state.current.id || "");
 	}
-	function extractVersionFromUpdateBackupHtml(record = {}) {
-		const source = String(record.html || "");
-		const metaSemver = parseSemverSimple(extractRemoteVersionFromHtml(source));
-		if (metaSemver) return metaSemver.raw;
-		const appSemver = parseSemverSimple(parseAppVersionFromHtmlSource(source));
-		return appSemver ? appSemver.raw : "";
-	}
-	function formatUpdateBackupVersionLabel(record = {}) {
-		const fromVersion = String(record.fromVersion || "").trim();
-		const toVersion = String(record.toVersion || "").trim();
-		if (fromVersion && toVersion) return `${fromVersion} -> ${toVersion}`;
-		const htmlVersion = extractVersionFromUpdateBackupHtml(record);
-		if (fromVersion) return `${t("updateBackupOfVersion")} ${fromVersion}`;
-		if (htmlVersion) return `${t("updateBackupOfVersion")} ${htmlVersion}`;
-		return t("updateBackupVersionUnknown");
-	}
-	function formatUpdateBackupCreatedAt(createdAt) {
-		const value = Number(createdAt || 0);
-		if (!Number.isFinite(value) || value <= 0) return t("updateBackupDateUnknown");
-		return new Date(value).toLocaleString(state.lang === "pt-BR" ? "pt-BR" : "en-US");
-	}
 	async function getUpdateBackupRecordByKey(key = "") {
 		const normalizedKey = String(key || "").trim();
 		if (!normalizedKey) return null;
@@ -1422,66 +1418,6 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			if (loadToken !== updateBackupsLoadToken) return;
 			state.update.backupsLoading = false;
 			renderUpdateAppPanel();
-		}
-	}
-	function renderUpdateBackupList() {
-		if (!els.updateBackupsBox) return;
-		els.updateBackupsBox.textContent = "";
-		if (state.update.backupsLoading) {
-			const loading = document.createElement("div");
-			loading.className = "text-xs text-gray-500";
-			loading.textContent = t("updateBackupsLoading");
-			els.updateBackupsBox.appendChild(loading);
-			return;
-		}
-		const backups = Array.isArray(state.update.backups) ? state.update.backups : [];
-		if (!backups.length) {
-			const empty = document.createElement("div");
-			empty.className = "text-xs text-gray-500";
-			empty.textContent = t("updateBackupsEmpty");
-			els.updateBackupsBox.appendChild(empty);
-			return;
-		}
-		const restoreDisabledReason = getRollbackDisabledReasonText();
-		for (const backup of backups) {
-			const row = document.createElement("div");
-			row.className = "update-backup-item rounded-lg border border-gray-200 bg-white p-3";
-			const top = document.createElement("div");
-			top.className = "flex items-start justify-between gap-3";
-			const info = document.createElement("div");
-			info.className = "min-w-0 flex-1";
-			const version = document.createElement("div");
-			version.className = "truncate text-sm font-semibold text-gray-900";
-			version.textContent = formatUpdateBackupVersionLabel(backup);
-			info.appendChild(version);
-			const created = document.createElement("div");
-			created.className = "mt-1 text-xs text-gray-500";
-			created.textContent = `${t("updateBackupDateLabel")}: ${formatUpdateBackupCreatedAt(backup.createdAt)}`;
-			info.appendChild(created);
-			if (String(backup.title || "").trim()) {
-				const title = document.createElement("div");
-				title.className = "mt-1 truncate text-xs text-gray-500";
-				title.textContent = `${t("title")}: ${String(backup.title || "").trim()}`;
-				info.appendChild(title);
-			}
-			const badge = document.createElement("span");
-			badge.className = "update-backup-badge inline-flex shrink-0 items-center rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold text-blue-800";
-			badge.textContent = t("updateBackupLocalBadge");
-			top.appendChild(info);
-			top.appendChild(badge);
-			row.appendChild(top);
-			const actions = document.createElement("div");
-			actions.className = "mt-3 flex items-center justify-end";
-			const restoreButton = document.createElement("button");
-			restoreButton.type = "button";
-			restoreButton.dataset.updateBackupRestoreKey = String(backup.key || "");
-			restoreButton.className = "h-8 rounded border border-gray-300 bg-white px-3 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40";
-			restoreButton.textContent = t("updateBackupRestore");
-			restoreButton.disabled = !!restoreDisabledReason;
-			restoreButton.title = restoreDisabledReason || t("updateBackupRestore");
-			actions.appendChild(restoreButton);
-			row.appendChild(actions);
-			els.updateBackupsBox.appendChild(row);
 		}
 	}
 	function updateApplyErrorMessage(error) {
@@ -2020,7 +1956,8 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			els.updateApplyBtn.textContent = state.update.applying ? t("updateApplying") : t("updateApply");
 			els.updateApplyBtn.title = disableReason || t("updateApply");
 		}
-		renderUpdateBackupList();
+		syncUpdateAvailableToast();
+		renderSettingsUpdateSection();
 		const comparison = updateVersionComparisonState();
 		if (state.update.changelogLoading) renderUpdateChangelog(els.updateChangelogBox, t("updateChangelogLoading"), comparison);
 		else if (state.update.remoteChangelog) renderUpdateChangelog(els.updateChangelogBox, state.update.remoteChangelog, comparison);
@@ -2030,12 +1967,33 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		if (!els.updateAppModal) return;
 		els.updateAppModal.classList.remove("hidden");
 		renderUpdateAppPanel();
-		loadUpdateBackupList();
 		checkRemoteUpdateInfo();
 	}
 	function closeUpdateAppModal() {
 		if (!els.updateAppModal) return;
 		els.updateAppModal.classList.add("hidden");
+	}
+	function maybeCheckUpdateOnStartup() {
+		if (localStorage.getItem(LS.updateCheckOnStartup) === "0") return;
+		checkRemoteUpdateInfo();
+	}
+	function syncUpdateAvailableToast() {
+		if (!els.updateAvailableToast) return;
+		const show = state.update.status === "available";
+		els.updateAvailableToast.classList.toggle("hidden", !show);
+		if (show && els.updateAvailableToastVersion) els.updateAvailableToastVersion.textContent = state.update.remoteVersion || "";
+	}
+	function hideUpdateAvailableToast() {
+		if (els.updateAvailableToast) els.updateAvailableToast.classList.add("hidden");
+	}
+	function renderSettingsUpdateSection() {
+		if (els.updateCheckOnStartupToggle) els.updateCheckOnStartupToggle.checked = localStorage.getItem(LS.updateCheckOnStartup) !== "0";
+		if (els.settingsUpdateStatus) els.settingsUpdateStatus.textContent = updateStatusMessage();
+		if (els.settingsOpenUpdateBtn) els.settingsOpenUpdateBtn.classList.toggle("hidden", state.update.status !== "available");
+		if (els.settingsCheckUpdateBtn) {
+			els.settingsCheckUpdateBtn.disabled = !!state.update.checking;
+			els.settingsCheckUpdateBtn.textContent = state.update.checking ? t("updateChecking") : t("updateCheckAgain");
+		}
 	}
 	function openDb() {
 		return new Promise((resolve, reject) => {
@@ -4501,7 +4459,6 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		els.historyBtn.disabled = true;
 		els.deleteBtn.disabled = true;
 		if (els.externalSyncCheckNowBtn) els.externalSyncCheckNowBtn.classList.add("hidden");
-		if (els.updateAppBtn) els.updateAppBtn.classList.add("hidden");
 		els.previewFrame.removeAttribute("src");
 		els.previewFrame.srcdoc = "";
 		setStatus(t("noPage"));
@@ -4557,7 +4514,6 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		if (els.openViewMenuBtn) els.openViewMenuBtn.disabled = !state.current.id;
 		els.deleteBtn.disabled = !state.current.id || !state.isAdmin;
 		if (els.externalSyncCheckNowBtn) els.externalSyncCheckNowBtn.classList.toggle("hidden", !state.current.id || !state.externalSync.enabled);
-		if (els.updateAppBtn) els.updateAppBtn.classList.toggle("hidden", !(state.appPageId && state.current.id === state.appPageId && !state.blank));
 		updateSidebarActiveState();
 		updateRecoveryReopenButton();
 		syncSaveAvailabilityState();
@@ -6084,6 +6040,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		syncCachedOpenCheckNowButtonLabel();
 		renderApiUsageSummary();
 		renderUpdateAppPanel();
+		if (typeof renderSettingsUpdateSection === "function") renderSettingsUpdateSection();
 	}
 	function bindEvents() {
 		els.titleInput.addEventListener("input", () => {
@@ -6099,7 +6056,6 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		els.saveBtn.addEventListener("click", () => {
 			requestSavePage("save");
 		});
-		els.updateAppBtn.addEventListener("click", openUpdateAppModal);
 		els.refreshBtn.addEventListener("click", () => {
 			els.moreMenu.classList.add("hidden");
 			els.moreBtn.classList.remove("menu-open");
@@ -6309,10 +6265,25 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		els.updateApplyBtn.addEventListener("click", () => {
 			applyRemoteUpdate();
 		});
-		els.updateBackupsBox.addEventListener("click", (e) => {
+		if (els.updateBackupsBox) els.updateBackupsBox.addEventListener("click", (e) => {
 			const restoreBtn = e.target?.closest("[data-update-backup-restore-key]");
 			if (!restoreBtn) return;
 			restoreUpdateBackupByKey(restoreBtn.dataset.updateBackupRestoreKey || "");
+		});
+		els.updateToastLaterBtn.addEventListener("click", hideUpdateAvailableToast);
+		els.updateToastOpenBtn.addEventListener("click", () => {
+			hideUpdateAvailableToast();
+			openUpdateAppModal();
+		});
+		if (els.settingsCheckUpdateBtn) els.settingsCheckUpdateBtn.addEventListener("click", () => {
+			checkRemoteUpdateInfo();
+		});
+		if (els.settingsOpenUpdateBtn) els.settingsOpenUpdateBtn.addEventListener("click", () => {
+			closeSettings();
+			openUpdateAppModal();
+		});
+		if (els.updateCheckOnStartupToggle) els.updateCheckOnStartupToggle.addEventListener("change", () => {
+			localStorage.setItem(LS.updateCheckOnStartup, els.updateCheckOnStartupToggle.checked ? "1" : "0");
 		});
 		els.updateAppModal.addEventListener("click", (e) => {
 			if (e.target === els.updateAppModal) closeUpdateAppModal();
@@ -6553,6 +6524,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			showBlankPage();
 			maybePromptUnsavedDraftRecovery(state.drafts.promptToken);
 		}
+		maybeCheckUpdateOnStartup();
 	}
 	init().catch((err) => {
 		console.error(err);

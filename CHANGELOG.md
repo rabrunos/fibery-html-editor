@@ -1,3 +1,27 @@
+## [8.45.0] - 2026-05-22
+
+### Added
+
+* Toast notification (`#updateAvailableToast`) in bottom-right corner: shown automatically when a new version is available after the startup check. Buttons: "Later" (dismisses) and "Open" (opens Update App modal).
+* "Updates" section in Settings modal: checkbox "Check for updates on startup" (default on), status text, "Check again" button, and "Update App" button (visible only when update is available).
+* `source/js/update-startup-check.ts` — new module: `maybeCheckUpdateOnStartup()`, `syncUpdateAvailableToast()`, `hideUpdateAvailableToast()`, `renderSettingsUpdateSection()`.
+* New i18n keys: `updateAvailableToastTitle`, `updateToastLater`, `updateToastOpen`, `settingsUpdatesTitle`, `settingsUpdateCheckOnStartup`.
+* `updateCheckOnStartup` added to `LocalStorageKeys` and `LS` map (`fibery-pro-editor.updateCheckOnStartup`). Default: enabled.
+
+### Changed
+
+* Update App access moved from page header button to Settings modal — `#updateAppBtn` removed.
+* Update App modal compacted: "Local update backups" section removed from the visible UI. Internal backup/rollback infrastructure preserved.
+* `updateApplyConfirmMessage` updated to mention that unsaved local drafts are preserved before the update is applied.
+* `renderUpdateAppPanel()` now calls `syncUpdateAvailableToast()` and `renderSettingsUpdateSection()` instead of `renderUpdateBackupList()`.
+* `maybeCheckUpdateOnStartup()` called non-blocking at end of `init()`.
+
+### Validation
+
+* `npm run verify`
+
+---
+
 ## [8.44.0] - 2026-05-22
 
 ### Added

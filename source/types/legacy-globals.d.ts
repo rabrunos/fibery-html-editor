@@ -208,6 +208,10 @@ declare global {
   function renderUpdateBackupList(): void;
   function openUpdateAppModal(): void;
   function closeUpdateAppModal(): void;
+  function maybeCheckUpdateOnStartup(): void;
+  function syncUpdateAvailableToast(): void;
+  function hideUpdateAvailableToast(): void;
+  function renderSettingsUpdateSection(): void;
   function revokeLocalPreviewObjectUrl(): void;
   function hasRealUnsavedChangesForCurrentPage(options?: UnsavedChangeCheckOptions): boolean;
   function resumePreviewIfVisible(options?: ResumePreviewOptions): boolean;

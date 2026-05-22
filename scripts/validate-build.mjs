@@ -14,7 +14,7 @@ const ESSENTIAL_IDS = [
   'welcomeView',
   'splitArea',
   'saveBtn',
-  'updateAppBtn',
+  'updateAvailableToast',
   'codeEditor',
   'codeEditorFallback',
   'previewFrame',

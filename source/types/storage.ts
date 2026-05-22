@@ -21,6 +21,7 @@ export interface LocalStorageKeys {
   panelMode: string;
   dismissedRecovery: string;
   emergencyDraft: string;
+  updateCheckOnStartup: string;
 }
 
 export interface PageContentCacheRecord extends PageSnapshot {
