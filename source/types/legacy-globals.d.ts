@@ -339,6 +339,10 @@ declare global {
   function hideResourceBootOverlay(): void;
   function renderResourceBootOverlay(): void;
   function initResourceBootEvents(): void;
+  function getCachedUpdateChangelog(): Promise<string | null>;
+  function cacheUpdateChangelogFromRemote(content: string): Promise<void>;
+  function loadUpdateChangelogWithCache(): Promise<string | null>;
+  function refreshUpdateChangelogResource(): Promise<string | null>;
   function parseI18nResource(content: string): Record<string, string> | null;
   function mergeI18nTranslations(lang: string, bundle: Record<string, string>): void;
   function loadCachedI18nResources(): Promise<boolean>;

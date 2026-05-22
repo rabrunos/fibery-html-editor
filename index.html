@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.41.0" />
+  <meta name="fibery-html-editor-version" content="8.42.0" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -615,7 +615,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 
 (function() {
 	//#region \0virtual:fibery-html-editor/manifest-js
-	const APP_VERSION = "8.41.0";
+	const APP_VERSION = "8.42.0";
 	window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 	document.documentElement.dataset.appVersion = APP_VERSION;
 	var UPDATE_REMOTE = Object.freeze({
@@ -1391,6 +1391,51 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			});
 		}
 	};
+	var UPDATE_CHANGELOG_RESOURCE_KEY = "update/changelog";
+	async function getCachedUpdateChangelog() {
+		try {
+			const record = await getResourceRecord(UPDATE_CHANGELOG_RESOURCE_KEY);
+			if (!record || record.status !== "cached" || !record.content) return null;
+			return record.content;
+		} catch (_) {
+			return null;
+		}
+	}
+	async function cacheUpdateChangelogFromRemote(content) {
+		const now = Date.now();
+		await putResourceRecord(normalizeResourceRecord({
+			key: UPDATE_CHANGELOG_RESOURCE_KEY,
+			kind: "data",
+			url: UPDATE_REMOTE.changelogUrl,
+			encoding: "utf-8",
+			required: false
+		}, {
+			status: "cached",
+			content,
+			bytes: content.length,
+			cachedAt: now,
+			downloadedAt: now,
+			appVersion: APP_VERSION
+		}));
+	}
+	async function loadUpdateChangelogWithCache() {
+		return getCachedUpdateChangelog();
+	}
+	async function refreshUpdateChangelogResource() {
+		try {
+			const raw = await fetchRemoteText(UPDATE_REMOTE.changelogUrl, {
+				operation: "updateChangelog",
+				source: "update-app"
+			});
+			const text = String(raw || "").trim();
+			if (!text) return "";
+			await cacheUpdateChangelogFromRemote(text);
+			return text;
+		} catch (err) {
+			log(`[changelog] remote fetch failed: ${err.message || String(err)}`);
+			return null;
+		}
+	}
 	function extractRemoteVersionFromHtml(html = "") {
 		const source = String(html || "");
 		const match = source.match(/<meta\b[^>]*name=["']fibery-html-editor-version["'][^>]*content=["']([^"']+)["'][^>]*>/i) || source.match(/<meta\b[^>]*content=["']([^"']+)["'][^>]*name=["']fibery-html-editor-version["'][^>]*>/i);
@@ -1424,15 +1469,16 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		state.update.checking = true;
 		state.update.status = "checking";
 		state.update.remoteVersion = "";
-		state.update.changelogLoading = true;
+		const cached = await loadUpdateChangelogWithCache();
+		if (cached) {
+			state.update.remoteChangelog = cached;
+			state.update.changelogLoading = false;
+		} else state.update.changelogLoading = true;
 		renderUpdateAppPanel();
 		const [indexResult, changelogResult] = await Promise.allSettled([fetchRemoteText(UPDATE_REMOTE.indexHtmlUrl, {
 			operation: "updateIndex",
 			source: "update-app"
-		}), fetchRemoteText(UPDATE_REMOTE.changelogUrl, {
-			operation: "updateChangelog",
-			source: "update-app"
-		})]);
+		}), refreshUpdateChangelogResource()]);
 		if (indexResult.status === "fulfilled") {
 			const remoteVersionRaw = extractRemoteVersionFromHtml(indexResult.value);
 			const localSemver = parseSemverSimple(APP_VERSION);
@@ -1452,13 +1498,9 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			state.update.status = "error";
 			log(`${t("updateCheckErrorLog")}: ${String(indexResult.reason?.message || indexResult.reason || "")}`);
 		}
-		if (changelogResult.status === "fulfilled") {
-			const remoteChangelog = String(changelogResult.value || "").trim();
-			state.update.remoteChangelog = remoteChangelog || t("updateChangelogEmpty");
-		} else {
-			state.update.remoteChangelog = "";
-			log(`${t("updateChangelogErrorLog")}: ${String(changelogResult.reason?.message || changelogResult.reason || "")}`);
-		}
+		const freshChangelog = changelogResult.status === "fulfilled" ? changelogResult.value : null;
+		if (typeof freshChangelog === "string" && freshChangelog) state.update.remoteChangelog = freshChangelog;
+		else if (!state.update.remoteChangelog) state.update.remoteChangelog = freshChangelog === "" ? t("updateChangelogEmpty") : "";
 		state.update.changelogLoading = false;
 		state.update.checking = false;
 		renderUpdateAppPanel();

@@ -1,5 +1,5 @@
 {
-  "version": "8.41.0",
+  "version": "8.42.0",
   "bodyOpenTag": "<body class=\"h-screen overflow-hidden bg-gray-50 text-gray-900 antialiased\">",
   "template": "source/template/index.template.html",
   "appEntry": "source/app/main.ts",
@@ -38,6 +38,7 @@
     "source/js/semver-utils.ts",
     "source/js/snapshot-utils.ts",
     "source/js/fibery-api.ts",
+    "source/js/update-changelog-resource.ts",
     "source/js/update-remote-check.ts",
     "source/js/update-validate-html.ts",
     "source/js/update-backup.ts",

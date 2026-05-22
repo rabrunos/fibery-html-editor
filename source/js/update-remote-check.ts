@@ -35,13 +35,20 @@ async function checkRemoteUpdateInfo(): Promise<void> {
   state.update.checking = true;
   state.update.status = 'checking';
   state.update.remoteVersion = '';
-  state.update.changelogLoading = true;
+
+  const cached = await loadUpdateChangelogWithCache();
+  if (cached) {
+    state.update.remoteChangelog = cached;
+    state.update.changelogLoading = false;
+  } else {
+    state.update.changelogLoading = true;
+  }
   renderUpdateAppPanel();
 
-  const [indexResult, changelogResult]: [PromiseSettledResult<string>, PromiseSettledResult<string>] = await Promise.allSettled([
+  const [indexResult, changelogResult]: [PromiseSettledResult<string>, PromiseSettledResult<string | null>] = await Promise.allSettled([
     fetchRemoteText(UPDATE_REMOTE.indexHtmlUrl, { operation: 'updateIndex', source: 'update-app' }),
-    fetchRemoteText(UPDATE_REMOTE.changelogUrl, { operation: 'updateChangelog', source: 'update-app' })
-  ]) as [PromiseSettledResult<string>, PromiseSettledResult<string>];
+    refreshUpdateChangelogResource()
+  ]) as [PromiseSettledResult<string>, PromiseSettledResult<string | null>];
 
   if (indexResult.status === 'fulfilled') {
     const remoteVersionRaw = extractRemoteVersionFromHtml(indexResult.value);
@@ -63,12 +70,11 @@ async function checkRemoteUpdateInfo(): Promise<void> {
     log(`${t('updateCheckErrorLog')}: ${String(indexResult.reason?.message || indexResult.reason || '')}`);
   }
 
-  if (changelogResult.status === 'fulfilled') {
-    const remoteChangelog = String(changelogResult.value || '').trim();
-    state.update.remoteChangelog = remoteChangelog || t('updateChangelogEmpty');
-  } else {
-    state.update.remoteChangelog = '';
-    log(`${t('updateChangelogErrorLog')}: ${String(changelogResult.reason?.message || changelogResult.reason || '')}`);
+  const freshChangelog = changelogResult.status === 'fulfilled' ? changelogResult.value : null;
+  if (typeof freshChangelog === 'string' && freshChangelog) {
+    state.update.remoteChangelog = freshChangelog;
+  } else if (!state.update.remoteChangelog) {
+    state.update.remoteChangelog = (freshChangelog === '') ? t('updateChangelogEmpty') : '';
   }
 
   state.update.changelogLoading = false;
