@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.47.6" />
+  <meta name="fibery-html-editor-version" content="8.47.7" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -384,7 +384,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 
 (function() {
 	//#region \0virtual:fibery-html-editor/manifest-js
-	const APP_VERSION = "8.47.6";
+	const APP_VERSION = "8.47.7";
 	window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 	document.documentElement.dataset.appVersion = APP_VERSION;
 	var UPDATE_REMOTE = Object.freeze({
@@ -426,7 +426,11 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			copyDiagnosticInfo: "Copy diagnostic info",
 			diagnosticCopied: "Diagnostic info copied",
 			updateApp: "Update App",
-			projects: "Projects"
+			projects: "Projects",
+			settingsAboutTitle: "About",
+			settingsVersion: "Version",
+			settingsGithubProfile: "GitHub profile",
+			settingsRepository: "Repository"
 		},
 		"pt-BR": {
 			save: "Salvar",
@@ -462,7 +466,11 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			copyDiagnosticInfo: "Copiar diagnóstico",
 			diagnosticCopied: "Diagnóstico copiado",
 			updateApp: "Atualizar App",
-			projects: "Projetos"
+			projects: "Projetos",
+			settingsAboutTitle: "Sobre",
+			settingsVersion: "Versão",
+			settingsGithubProfile: "Perfil no GitHub",
+			settingsRepository: "Repositório"
 		}
 	};
 	function parseI18nResource(content) {
@@ -588,6 +596,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			settingsCheckUpdateBtn: $("settingsCheckUpdateBtn"),
 			settingsAboutVersionBtn: $("settingsAboutVersionBtn"),
 			settingsOpenUpdateBtn: $("settingsOpenUpdateBtn"),
+			settingsAppVersionValue: $("settingsAppVersionValue"),
 			openLastToggle: $("openLastToggle"),
 			versionLimitSelect: $("versionLimitSelect"),
 			codeEditor: $("codeEditor"),
@@ -6303,6 +6312,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		await copyText(buildDiagnosticReport(), target, t("diagnosticCopied"));
 	}
 	function openSettings() {
+		if (els.settingsAppVersionValue) els.settingsAppVersionValue.textContent = APP_VERSION;
 		els.settingsModal.classList.remove("hidden");
 		els.moreMenu.classList.add("hidden");
 	}

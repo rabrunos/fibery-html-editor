@@ -71,7 +71,7 @@ async function copyDiagnosticReport(trigger?: HTMLElement): Promise<void> {
   await copyText(buildDiagnosticReport(), target, t('diagnosticCopied'));
 }
 
-function openSettings(): void { els.settingsModal.classList.remove('hidden'); els.moreMenu.classList.add('hidden'); }
+function openSettings(): void { if (els.settingsAppVersionValue) els.settingsAppVersionValue.textContent = APP_VERSION; els.settingsModal.classList.remove('hidden'); els.moreMenu.classList.add('hidden'); }
 function closeSettings(): void { els.settingsModal.classList.add('hidden'); }
 function toggleLog(): void {
   els.logPanel.classList.toggle('hidden');

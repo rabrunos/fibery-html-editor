@@ -1,75 +1,65 @@
-# Fibery HTML Editor — Custom HTML Page for editing HTML pages inside Fibery
+# Fibery HTML Editor
 
-## 1. Short Forum Intro
+I love Fibery. Over the past year I have been gradually centralizing more and more of my work inside it — pages, notes, planning, references. I had used Notion before, and before that a handful of other tools, but Fibery ended up being the one that matched how I actually think and work. When Custom HTML Pages arrived, the platform got significantly more powerful for me.
 
-I am opening the first public testing round for **Fibery HTML Editor**, a **Fibery Custom HTML Page** that helps create, edit, preview, organize, and maintain HTML pages inside Fibery.
+The native editor for Custom HTML Pages is functional, but for more serious work — editing structured HTML, checking the output, keeping multiple pages organized — I kept wishing for something more focused. So I built one.
 
-It runs inside Fibery as a Custom HTML Page. There is no separate backend and no hosted service to sign up for. You install it by adding the generated `index.html` as a Fibery Custom HTML Page in your own workspace.
+## Why I built this
 
-The main goal of this testing round is practical feedback: does it open correctly, does editing feel clear, does preview help, does saving feel safe, and what gets confusing in real use?
+I wanted a dedicated space inside Fibery for creating and maintaining HTML pages without context-switching to an external editor. Something that would let me write HTML, see a preview, keep drafts safely, and save to Fibery only when I was ready. I also wanted it to be easy to keep up to date over time.
 
-If something breaks, a screenshot, short video, or copied diagnostic info from the editor is very helpful.
+The result is a Fibery Custom HTML Page that edits other Fibery HTML pages. It lives inside your Fibery workspace, it has no backend, and it does not require any account or hosted service.
 
-## 2. What It Does
+## What it is
 
-- Edits Fibery-hosted HTML pages from a dedicated editor interface.
-- Shows a local preview while editing, so you can check changes before saving.
-- Saves explicitly to Fibery only when you click **Save**.
-- Keeps local drafts/recovery data in the browser.
-- Keeps local manual history in the browser.
-- Lets you organize pages into local project folders. These folders do not create Fibery entities.
-- Includes an **Update App** flow that can check a newer published version and apply it only after confirmation.
-- Keeps the deployment model simple: one Custom HTML Page, one generated HTML file.
+A Custom HTML Page you install in your own Fibery workspace. You add the generated `index.html` as a new Custom HTML Page, open it, and from there you can create, edit, preview, and organize your other Fibery HTML pages.
 
-## 3. How To Install And Use
+One file. One page. Works inside Fibery.
 
-1. Open the generated `index.html` from the repository.
-2. Copy the full HTML content.
-3. In Fibery, create a new Custom HTML Page.
-4. Paste the HTML content into that Custom HTML Page and save it.
-5. Open the saved Custom HTML Page in view mode.
-6. Click **New Page** to create a draft HTML page.
-7. Edit the title, description, and HTML.
-8. Check the preview panel.
-9. Click **Save** when you want to write the page to Fibery.
-10. Use the sidebar or search to open existing pages.
+## What it can do today
 
-## 4. What To Test
+- Edit HTML with a Monaco-based editor (the same editor that powers VS Code)
+- Show a local preview while you type so you can check changes before saving
+- Save to Fibery only when you explicitly click Save — no automatic writes
+- Keep local drafts and recovery data in the browser so work is not lost
+- Keep a local manual history per page — you can browse and restore previous versions
+- Organize pages into local project folders (browser-only, does not create Fibery entities)
+- Search across all your Fibery HTML pages
+- Check for and apply updates to itself directly from within Fibery via GitHub
 
-- [ ] The Custom HTML Page opens correctly.
-- [ ] Creating a new page works.
-- [ ] Editing HTML works.
-- [ ] Local preview updates as expected.
-- [ ] Save writes the page to Fibery only when requested.
-- [ ] Reloading and reopening a saved page works.
-- [ ] Search finds pages.
-- [ ] Local project folders can be opened, closed, and used for organization.
-- [ ] Settings opens correctly.
-- [ ] Update check works and shows a clear state.
-- [ ] Smaller screens remain usable enough for basic work.
+## Why it is designed this way
 
-## 5. Known Limitations
+Every design decision here was shaped by one constraint: Fibery should only change when you tell it to. The editor keeps all intermediate work local — drafts, history, projects, recovery data — so nothing writes to Fibery accidentally. Preview is local. Autosave is local. When you are ready, you click Save.
 
-- It runs inside Fibery, so Fibery Custom HTML Page permissions and runtime behavior matter.
-- Browser storage matters. Local drafts, recovery data, project folders, and local history are stored in the current browser.
-- Local organization is not synced across browsers or devices.
-- The first run may need to download required resources before the full interface appears.
-- This is early public testing. Please do not treat it as a guaranteed stable workflow yet.
+This also keeps it API-friendly. The editor avoids unnecessary Fibery API calls while you are typing or navigating. API calls happen for real actions: opening a page, saving, checking for external changes. That matters when you are inside a shared workspace.
 
-## 6. How To Report Feedback
+## What I would love people to try
+
+If you install it, I would be glad to hear what happens when you:
+
+- create a new HTML page from scratch;
+- edit an existing page and check the preview;
+- save and reopen the page;
+- use local project folders for organization;
+- open Settings and check for an available update;
+- apply an update through the Update App flow.
+
+Nothing exotic — just real use. If something breaks, feels confusing, or does not match what you expected, that is exactly the feedback I am looking for.
+
+## Feedback I am looking for
 
 Useful feedback usually includes:
 
 - what you tried to do;
 - what happened;
 - what you expected instead;
-- browser and operating system;
-- Fibery HTML Editor version;
-- screenshot or short video, if possible;
-- copied diagnostic info from the editor.
+- browser and OS;
+- editor version (visible in Settings → About);
+- a screenshot, short video, or the diagnostic info copied from the editor.
 
-The diagnostic info is meant to be safe to share. It should include runtime status and recent log lines, but not page HTML, page title, page description, page IDs, cookies, tokens, drafts, or history content.
+The diagnostic info is safe to share. It captures runtime status and recent log lines, but never page HTML, page titles, page IDs, tokens, drafts, or history content.
 
-## 7. Short Message
+## Links
 
-I am testing Fibery HTML Editor, a Custom HTML Page for editing HTML pages inside Fibery. If you can, please try creating, editing, previewing, saving, reopening, searching, project folders, Settings, and Update check. If something breaks or feels confusing, send a screenshot/video and the copied diagnostic info from the editor.
+- [GitHub profile](https://github.com/rabrunos)
+- [Repository](https://github.com/rabrunos/fibery-html-editor)
