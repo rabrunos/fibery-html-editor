@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -13,6 +14,10 @@ function fail(message) {
 
 function ok(message) {
   console.log(`    ok  ${message}`);
+}
+
+function warn(message) {
+  console.warn(`  WARN  ${message}`);
 }
 
 async function readText(rel) {
@@ -117,6 +122,25 @@ async function checkI18nKeyAlignment() {
 
 const RESOURCE_KINDS_ALLOWED = new Set(['script', 'style', 'font', 'image', 'data', 'other']);
 const RESOURCE_ENCODINGS_ALLOWED = new Set(['utf-8', 'base64']);
+const SHA256_HEX_RE = /^[0-9a-f]{64}$/i;
+const GITHUB_RAW_REPO_PREFIX = 'https://raw.githubusercontent.com/rabrunos/fibery-html-editor/main/';
+
+async function fileExists(rel) {
+  try { await fs.access(path.join(rootDir, rel)); return true; }
+  catch (_) { return false; }
+}
+
+async function computeFileSha256(rel) {
+  const bytes = await fs.readFile(path.join(rootDir, rel));
+  return createHash('sha256').update(bytes).digest('hex');
+}
+
+function urlToLocalRel(url) {
+  if (url.startsWith(GITHUB_RAW_REPO_PREFIX)) {
+    return url.slice(GITHUB_RAW_REPO_PREFIX.length);
+  }
+  return null;
+}
 
 async function checkResourceManifest(version) {
   const rel = `support/${version}/resources-manifest.json`;
@@ -134,7 +158,7 @@ async function checkResourceManifest(version) {
   if (data.resources.length > 0) {
     for (let i = 0; i < data.resources.length; i++) {
       const e = data.resources[i];
-      const p = `${rel} resources[${i}]`;
+      const p = `${rel} resources[${i}] (key=${e?.key || '?'})`;
       if (typeof e !== 'object' || e === null) { fail(`${p}: must be an object`); return; }
       if (typeof e.key !== 'string' || !e.key) { fail(`${p}: missing or empty "key"`); return; }
       if (typeof e.url !== 'string' || !e.url) { fail(`${p}: missing or empty "url"`); return; }
@@ -148,6 +172,45 @@ async function checkResourceManifest(version) {
       }
       if (e.required !== undefined && typeof e.required !== 'boolean') {
         fail(`${p}: "required" must be boolean when present`); return;
+      }
+      // sha256 format
+      if (e.sha256 !== undefined && !SHA256_HEX_RE.test(e.sha256)) {
+        fail(`${p}: "sha256" must be 64 lowercase hex chars`); return;
+      }
+      // required resources must have sha256 and version
+      if (e.required === true) {
+        if (typeof e.sha256 !== 'string') { fail(`${p}: required resource must have "sha256"`); return; }
+        if (typeof e.version !== 'string' || !e.version) { fail(`${p}: required resource must have "version"`); return; }
+      }
+      // GitHub URL versioning and local validation
+      const localRel = urlToLocalRel(e.url);
+      if (localRel !== null) {
+        // must point to a versioned path
+        if (!e.url.includes(`/${version}/`)) {
+          fail(`${p}: GitHub raw URL must contain version path /${version}/ — found: ${e.url}`); return;
+        }
+        // must not point into source/
+        if (localRel.startsWith('source/')) {
+          fail(`${p}: resource URL must not point to source/ directory`); return;
+        }
+        // local existence check
+        const exists = await fileExists(localRel);
+        if (!exists) {
+          if (e.required === true) {
+            fail(`${p}: required resource local file not found at ${localRel}`); return;
+          } else {
+            warn(`${p}: local file not found at ${localRel} (not required)`);
+          }
+        } else if (typeof e.sha256 === 'string') {
+          // hash verification
+          const computed = await computeFileSha256(localRel);
+          if (computed.toLowerCase() !== e.sha256.toLowerCase()) {
+            fail(`${p}: sha256 mismatch — manifest=${e.sha256}, computed=${computed}`); return;
+          }
+        }
+      } else if (e.required === true) {
+        // required resource with non-mappable URL — can't verify hash locally
+        fail(`${p}: required resource URL must point to this repo's GitHub raw content for local verification`); return;
       }
     }
     ok(`${data.resources.length} resource entr${data.resources.length === 1 ? 'y' : 'ies'} validated`);

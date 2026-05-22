@@ -1,3 +1,39 @@
+## [8.40.0] - 2026-05-21
+
+### Added
+
+* `scripts/checks.mjs` — resource manifest validation expanded for required-resource constraints:
+  * `sha256` format validated (64 lowercase hex chars) when present;
+  * `required: true` entries must have `sha256` and `version` fields;
+  * GitHub raw URLs from this repo must point to a versioned path (`/${version}/`);
+  * GitHub raw URLs are mapped to local repo paths — local file existence verified;
+  * `sha256` hash computed with Node `crypto.createHash('sha256')` and compared against manifest for resolvable local files;
+  * required resources whose URL cannot be mapped to a local path now fail with a clear error;
+  * resource URL must not point into `source/` directory.
+* `scripts/validate-build.mjs` — resource bootstrap validation added:
+  * `resourceBootOverlay` added to essential DOM IDs list;
+  * inline script must contain `ensureRequiredResources`, `retryRequiredResourcesDownload`, and `appResources` string.
+* `support/8.40.0/resources-manifest.json` — versioned manifest for this release (`resources: []`).
+
+### Technical adjustments
+
+* `resources: []` continues to pass all checks unchanged — no entries means no entry-level checks run.
+* `warn()` helper added to `checks.mjs` for non-fatal resource warnings (optional resource with missing local file).
+* SHA-256 computed on raw file bytes; for UTF-8 text resources line endings should be LF (matching GitHub raw delivery).
+* Functional scripts (`kind: "script"`) remain blocked in `checks.mjs`.
+* No actual i18n/CSS/template/JS externalization in this release.
+
+### Notes
+
+* No intentional UX or runtime behavior changes.
+* Fibery runtime tests remain manual.
+
+### Validation
+
+* `npm run verify`
+
+---
+
 ## [8.39.0] - 2026-05-21
 
 ### Added

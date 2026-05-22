@@ -22,7 +22,14 @@ const ESSENTIAL_IDS = [
   'previewFrame',
   'historyModal',
   'confirmModal',
-  'draftRecoveryModal'
+  'draftRecoveryModal',
+  'resourceBootOverlay'
+];
+
+const RESOURCE_BOOTSTRAP_SYMBOLS = [
+  'ensureRequiredResources',
+  'retryRequiredResourcesDownload',
+  'appResources'
 ];
 
 function assert(condition, message) {
@@ -139,6 +146,10 @@ async function main() {
     encoding: 'utf8'
   });
   assert(checkResult.status === 0, `Inline JavaScript syntax check failed:\n${checkResult.stderr || checkResult.stdout || 'unknown error'}`);
+
+  for (const symbol of RESOURCE_BOOTSTRAP_SYMBOLS) {
+    assert(inlineScript.includes(symbol), `Missing resource bootstrap symbol in inline script: ${symbol}`);
+  }
 
   let baselineContent = '';
   try {
