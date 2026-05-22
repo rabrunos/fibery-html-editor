@@ -10,7 +10,7 @@ function openPageContextMenu(event: MouseEvent, pageId: string, pageTitle = '', 
     <button class="context-menu-item" data-action="copy-page-link">${escapeHtml(t('copyPageLink'))}</button>
     <button class="context-menu-item" data-action="pin-page">${escapeHtml(meta.pinnedAt ? t('unpin') : t('pin'))}</button>
     <button class="context-menu-item" data-action="archive-page">${escapeHtml(meta.archivedAt ? t('unarchive') : t('archive'))}</button>
-    <button class="context-menu-item justify-between" data-action="move-to-project"><span>${escapeHtml(t('moveToProject'))}</span><span class="text-gray-400">›</span></button>
+    <button class="context-menu-item justify-between" data-action="move-to-project"><span>${escapeHtml(t('moveToProject'))}</span><span class="inline-flex items-center text-gray-400">${iconChevronRight({ className: 'h-4 w-4' })}</span></button>
     ${state.context.projectId ? `<button class="context-menu-item" data-action="remove-from-project">${escapeHtml(removeText)}</button>` : ''}
     <div class="my-1 border-t border-gray-100"></div>
     <button class="context-menu-item context-menu-danger" data-action="delete-page">${escapeHtml(t('deletePage'))}</button>`;

@@ -9,6 +9,7 @@ async function init(): Promise<void> {
   await ensureCachedStyleResourcesLoaded();
   await ensureCachedTemplateResourcesLoaded();
   initDomRefs();
+  hydrateCriticalIcons();
   // Guard: if required templates could not be injected, stop init gracefully
   if (!document.getElementById('settingsModal')) {
     log('[init] Template resources not available — some features will be missing');
@@ -19,6 +20,7 @@ async function init(): Promise<void> {
   els.versionLimitSelect.value = localStorage.getItem(LS.versionLimit) || '20';
   await ensureI18nResourcesLoaded();
   applyI18n();
+  hydrateCriticalIcons();
   await setupCodeEditor();
   bindEvents();
   setupResize();

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.45.2" />
+  <meta name="fibery-html-editor-version" content="8.46.0" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -381,7 +381,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 
 (function() {
 	//#region \0virtual:fibery-html-editor/manifest-js
-	const APP_VERSION = "8.45.2";
+	const APP_VERSION = "8.46.0";
 	window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 	document.documentElement.dataset.appVersion = APP_VERSION;
 	var UPDATE_REMOTE = Object.freeze({
@@ -1172,6 +1172,38 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			});
 		}
 	};
+	function iconClassAttr(options, fallback) {
+		return (String(options?.className || "").trim() || fallback).replace(/"/g, "&quot;");
+	}
+	function iconStrokeSvg(pathMarkup, options, fallbackClass) {
+		return `<svg class="${iconClassAttr(options, fallbackClass)}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">${pathMarkup}</svg>`;
+	}
+	function iconFillSvg(pathMarkup, options, fallbackClass) {
+		return `<svg class="${iconClassAttr(options, fallbackClass)}" viewBox="0 0 24 24" fill="currentColor">${pathMarkup}</svg>`;
+	}
+	function iconClose(options) {
+		return iconStrokeSvg("<path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M6 18 18 6M6 6l12 12\"/>", options, "h-4 w-4");
+	}
+	function iconMoreVertical(options) {
+		return iconFillSvg("<path d=\"M12 8.25a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM12 13.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM13.5 17.25a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z\"/>", options, "h-4 w-4");
+	}
+	function iconChevronRight(options) {
+		return iconStrokeSvg("<path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M8.25 4.5 15.75 12l-7.5 7.5\"/>", options, "h-4 w-4");
+	}
+	function iconChevronDown(options) {
+		return iconStrokeSvg("<path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"m19.5 8.25-7.5 7.5-7.5-7.5\"/>", options, "h-4 w-4");
+	}
+	function iconCode(options) {
+		return iconStrokeSvg("<path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"m8 9-3 3 3 3m8-6 3 3-3 3M13 6l-2 12\"/>", options, "h-4 w-4");
+	}
+	function hydrateCriticalIcons() {
+		document.querySelectorAll("button[data-icon=\"close\"]").forEach((button) => {
+			if (button.dataset.iconHydrated === "1") return;
+			button.classList.add("inline-flex", "items-center", "justify-center");
+			button.innerHTML = iconClose({ className: "h-4 w-4" });
+			button.dataset.iconHydrated = "1";
+		});
+	}
 	var UPDATE_CHANGELOG_RESOURCE_KEY = "update/changelog";
 	async function getCachedUpdateChangelog() {
 		try {
@@ -5298,12 +5330,12 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		els.sidebarProjectsList.innerHTML = projects.map((project) => {
 			const items = state.projects.itemsByProject[project.id] || [];
 			const collapsed = !!project.collapsed;
-			const chevron = collapsed ? "M8.25 4.5 15.75 12l-7.5 7.5" : "m19.5 8.25-7.5 7.5-7.5-7.5";
+			const chevronIcon = collapsed ? iconChevronRight({ className: "h-4 w-4" }) : iconChevronDown({ className: "h-4 w-4" });
 			const pagesHtml = collapsed ? "" : `<div class="mt-1 space-y-1 pl-2">${items.length ? items.map(projectPageItemHtml).join("") : `<div class="px-3 py-2 text-xs text-gray-400">${escapeHtml(t("noPages"))}</div>`}</div>`;
 			return `<div class="project-block rounded-lg">
       <div class="group group/project flex items-center gap-1 rounded-lg px-1 py-1 hover:bg-gray-100">
         <button class="project-toggle flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-gray-500 hover:bg-gray-200" data-project-id="${escapeHtml(project.id)}" title="${escapeHtml(project.name || t("untitledProject"))}">
-          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="${chevron}"/></svg>
+          ${chevronIcon}
         </button>
         <div class="min-w-0 flex-1 truncate text-sm font-semibold text-gray-700" data-project-title-id="${escapeHtml(project.id)}" title="${escapeHtml(project.name || t("untitledProject"))}">${escapeHtml(project.name || t("untitledProject"))}</div>
         ${projectMenuButton(project.id, project.name || t("untitledProject"))}
@@ -5470,27 +5502,21 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			state.sidebar.loading = false;
 		}
 	}
-	function codeIconSvg(className = "h-3.5 w-3.5") {
-		return `<svg class="${className}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m8 9-3 3 3 3m8-6 3 3-3 3M13 6l-2 12"/></svg>`;
-	}
 	function appPageBadge(pageId) {
 		if (!state.appPageId || pageId !== state.appPageId) return "";
-		return `<span class="ml-1 inline-flex h-5 w-5 shrink-0 self-center items-center justify-center rounded-md bg-yellow-100 text-yellow-800 ring-1 ring-yellow-200" title="${escapeHtml(t("appPageMarker"))}">${codeIconSvg()}</span>`;
+		return `<span class="ml-1 inline-flex h-5 w-5 shrink-0 self-center items-center justify-center rounded-md bg-yellow-100 text-yellow-800 ring-1 ring-yellow-200" title="${escapeHtml(t("appPageMarker"))}">${iconCode({ className: "h-3.5 w-3.5" })}</span>`;
 	}
 	function projectPageIds() {
 		return new Set((state.projects.items || []).map((item) => item.pageId).filter(Boolean));
-	}
-	function moreIconSvg(className = "h-4 w-4") {
-		return `<svg class="${className}" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8.25a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM12 13.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM13.5 17.25a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z"/></svg>`;
 	}
 	function archivedBadge(pageId) {
 		return getMetaMap()[pageId]?.archivedAt ? `<span class="archived-badge ml-1">${escapeHtml(t("archive"))}</span>` : "";
 	}
 	function pageMenuButton(pageId, title, projectId = "") {
-		return `<button class="page-menu sidebar-more-btn sidebar-page-menu-btn mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-gray-400 hover:bg-gray-200 hover:text-gray-700" data-page-id="${escapeHtml(pageId)}" data-page-title="${escapeHtml(title || "Untitled")}" data-project-id="${escapeHtml(projectId || "")}" title="More">${moreIconSvg()}</button>`;
+		return `<button class="page-menu sidebar-more-btn sidebar-page-menu-btn mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-gray-400 hover:bg-gray-200 hover:text-gray-700" data-page-id="${escapeHtml(pageId)}" data-page-title="${escapeHtml(title || "Untitled")}" data-project-id="${escapeHtml(projectId || "")}" title="More">${iconMoreVertical({ className: "h-4 w-4" })}</button>`;
 	}
 	function projectMenuButton(projectId, projectName) {
-		return `<button class="project-menu sidebar-more-btn flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-gray-400 hover:bg-gray-200 hover:text-gray-700" data-project-id="${escapeHtml(projectId)}" data-project-name="${escapeHtml(projectName || t("untitledProject"))}" title="More">${moreIconSvg()}</button>`;
+		return `<button class="project-menu sidebar-more-btn flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-gray-400 hover:bg-gray-200 hover:text-gray-700" data-project-id="${escapeHtml(projectId)}" data-project-name="${escapeHtml(projectName || t("untitledProject"))}" title="More">${iconMoreVertical({ className: "h-4 w-4" })}</button>`;
 	}
 	function pageItemHtml(page, compact = false) {
 		const active = page.id === state.current.id && !state.blank;
@@ -5643,7 +5669,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		const description = String(page.description || "").trim();
 		const title = page.title || "Untitled";
 		const descriptionHtml = description ? `<div class="${compact ? "truncate" : "clamp-2"} text-xs leading-4 ${active ? "text-blue-600/70" : "text-gray-500"}">${escapeHtml(description)}</div>` : "";
-		return `<div class="search-row group flex items-center gap-2 rounded-xl px-3 py-2 ${active ? "bg-blue-50 ring-1 ring-blue-100" : "hover:bg-gray-100"}" data-page-row-id="${escapeHtml(page.id)}"><button class="page-open min-w-0 flex-1 text-left" data-id="${escapeHtml(page.id)}" title="${escapeHtml(title)}"><div class="flex min-w-0 items-center gap-1"><div class="truncate text-sm font-medium ${active ? "text-blue-800" : "text-gray-900"}" data-page-title-id="${escapeHtml(page.id)}">${escapeHtml(title)}</div>${appPageBadge(page.id)}${archivedBadge(page.id)}</div>${descriptionHtml}</button><a class="shrink-0 rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 hover:bg-gray-50" target="_blank" href="${viewUrl(page.id)}" title="${escapeHtml(t("openPreview"))}">${escapeHtml(t("view"))}</a><button class="page-menu shrink-0 flex h-7 w-7 items-center justify-center rounded border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-900" data-id="${escapeHtml(page.id)}" data-page-id="${escapeHtml(page.id)}" data-page-title="${escapeHtml(title)}" data-project-id="${escapeHtml(projectId)}" title="More">${moreIconSvg("h-4 w-4")}</button></div>`;
+		return `<div class="search-row group flex items-center gap-2 rounded-xl px-3 py-2 ${active ? "bg-blue-50 ring-1 ring-blue-100" : "hover:bg-gray-100"}" data-page-row-id="${escapeHtml(page.id)}"><button class="page-open min-w-0 flex-1 text-left" data-id="${escapeHtml(page.id)}" title="${escapeHtml(title)}"><div class="flex min-w-0 items-center gap-1"><div class="truncate text-sm font-medium ${active ? "text-blue-800" : "text-gray-900"}" data-page-title-id="${escapeHtml(page.id)}">${escapeHtml(title)}</div>${appPageBadge(page.id)}${archivedBadge(page.id)}</div>${descriptionHtml}</button><a class="shrink-0 rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 hover:bg-gray-50" target="_blank" href="${viewUrl(page.id)}" title="${escapeHtml(t("openPreview"))}">${escapeHtml(t("view"))}</a><button class="page-menu shrink-0 flex h-7 w-7 items-center justify-center rounded border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-900" data-id="${escapeHtml(page.id)}" data-page-id="${escapeHtml(page.id)}" data-page-title="${escapeHtml(title)}" data-project-id="${escapeHtml(projectId)}" title="More">${iconMoreVertical({ className: "h-4 w-4" })}</button></div>`;
 	}
 	function renderSearchResults(rows) {
 		if (!rows.length) {
@@ -5837,7 +5863,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
     <button class="context-menu-item" data-action="copy-page-link">${escapeHtml(t("copyPageLink"))}</button>
     <button class="context-menu-item" data-action="pin-page">${escapeHtml(meta.pinnedAt ? t("unpin") : t("pin"))}</button>
     <button class="context-menu-item" data-action="archive-page">${escapeHtml(meta.archivedAt ? t("unarchive") : t("archive"))}</button>
-    <button class="context-menu-item justify-between" data-action="move-to-project"><span>${escapeHtml(t("moveToProject"))}</span><span class="text-gray-400">›</span></button>
+    <button class="context-menu-item justify-between" data-action="move-to-project"><span>${escapeHtml(t("moveToProject"))}</span><span class="inline-flex items-center text-gray-400">${iconChevronRight({ className: "h-4 w-4" })}</span></button>
     ${state.context.projectId ? `<button class="context-menu-item" data-action="remove-from-project">${escapeHtml(removeText)}</button>` : ""}
     <div class="my-1 border-t border-gray-100"></div>
     <button class="context-menu-item context-menu-danger" data-action="delete-page">${escapeHtml(t("deletePage"))}</button>`;
@@ -6511,6 +6537,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		await ensureCachedStyleResourcesLoaded();
 		await ensureCachedTemplateResourcesLoaded();
 		initDomRefs();
+		hydrateCriticalIcons();
 		if (!document.getElementById("settingsModal")) {
 			log("[init] Template resources not available — some features will be missing");
 			return;
@@ -6520,6 +6547,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		els.versionLimitSelect.value = localStorage.getItem(LS.versionLimit) || "20";
 		await ensureI18nResourcesLoaded();
 		applyI18n();
+		hydrateCriticalIcons();
 		await setupCodeEditor();
 		bindEvents();
 		setupResize();

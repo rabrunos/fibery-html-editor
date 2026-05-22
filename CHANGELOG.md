@@ -1,3 +1,26 @@
+## [8.46.0] - 2026-05-22
+
+### Added
+
+- Added a central icon helper module for shared SVG rendering in the legacy shared-scope TypeScript runtime.
+
+### Fixed
+
+- Replaced critical character-based close controls (`&times;`) in externalized modal templates with centralized SVG close icons.
+- Replaced the text-based submenu arrow in the page context menu with a standardized chevron SVG icon.
+
+### Technical adjustments
+
+- Standardized first-batch duplicated icon rendering in TypeScript flows (`more` menu glyphs and project chevrons) using central icon helpers.
+- Propagated cached resources to `support/8.46.0` with updated template markup and recalculated SHA-256 hashes.
+- Preserved the single-file build delivery model (`index.html`) and existing runtime behavior.
+
+### Validation
+
+- Local verify pipeline run (`npm run verify`) with typecheck, checks, build/validate tmp and build/validate final.
+- `git diff --check` run with no whitespace/hunk format issues.
+- Fibery runtime checks remain manual.
+
 ## [8.45.2] - 2026-05-22
 
 ### Fixed
