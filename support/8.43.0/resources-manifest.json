@@ -1,0 +1,42 @@
+{
+  "version": "8.43.0",
+  "generatedAt": 0,
+  "resources": [
+    {
+      "key": "i18n/en",
+      "kind": "data",
+      "url": "https://raw.githubusercontent.com/rabrunos/fibery-html-editor/main/support/8.43.0/i18n/en.json",
+      "version": "8.43.0",
+      "sha256": "225c84c0c0a52a995fee1f2aa54c1a01fce0c323988aa860855287a8730e9137",
+      "encoding": "utf-8",
+      "required": true
+    },
+    {
+      "key": "i18n/pt-BR",
+      "kind": "data",
+      "url": "https://raw.githubusercontent.com/rabrunos/fibery-html-editor/main/support/8.43.0/i18n/pt-BR.json",
+      "version": "8.43.0",
+      "sha256": "15857ec04d1fe10ea345c700d5754a27df3c9d744480cf6e7acb762b2b32d8ba",
+      "encoding": "utf-8",
+      "required": true
+    },
+    {
+      "key": "update/changelog",
+      "kind": "data",
+      "url": "https://raw.githubusercontent.com/rabrunos/fibery-html-editor/main/support/8.43.0/changelog.md",
+      "version": "8.43.0",
+      "sha256": "ed7377a00460002ef334877b1f94a88c56785af2d352c9406b50c596bdb13f4b",
+      "encoding": "utf-8",
+      "required": false
+    },
+    {
+      "key": "css/app-noncritical",
+      "kind": "style",
+      "url": "https://raw.githubusercontent.com/rabrunos/fibery-html-editor/main/support/8.43.0/css/app-noncritical.css",
+      "version": "8.43.0",
+      "sha256": "0de6f30a55d9617bfef2852f14062c446b6ed8f5f4e48096b1d00f04ae6e2719",
+      "encoding": "utf-8",
+      "required": true
+    }
+  ]
+}

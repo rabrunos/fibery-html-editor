@@ -147,6 +147,7 @@ async function retryRequiredResourcesDownload(): Promise<void> {
       state.resources.ready = true;
       hideResourceBootOverlay();
       void ensureI18nResourcesLoaded().then(() => applyI18n());
+      void ensureCachedStyleResourcesLoaded();
     }
   } catch (err) {
     state.resources.errorMessage = (err as Error).message || String(err);

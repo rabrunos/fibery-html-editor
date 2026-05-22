@@ -1,5 +1,5 @@
 {
-  "version": "8.42.0",
+  "version": "8.43.0",
   "bodyOpenTag": "<body class=\"h-screen overflow-hidden bg-gray-50 text-gray-900 antialiased\">",
   "template": "source/template/index.template.html",
   "appEntry": "source/app/main.ts",
@@ -21,9 +21,7 @@
   "css": [
     "source/css/00-base.css",
     "source/css/01-sidebar-alignment.css",
-    "source/css/02-preview-and-diff.css",
-    "source/css/03-update-panel.css",
-    "source/css/04-animations.css"
+    "source/css/02-preview-and-diff.css"
   ],
   "js": [
     "source/js/app-version.ts",
@@ -49,6 +47,7 @@
     "source/js/update-panel-render.ts",
     "source/js/indexeddb-core.ts",
     "source/js/app-resources-storage.ts",
+    "source/js/app-style-resources.ts",
     "source/js/app-resources-loader.ts",
     "source/js/app-resources-boot.ts",
     "source/js/page-content-cache.ts",

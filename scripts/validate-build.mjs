@@ -30,7 +30,8 @@ const RESOURCE_BOOTSTRAP_SYMBOLS = [
   'ensureRequiredResources',
   'retryRequiredResourcesDownload',
   'appResources',
-  'ensureI18nResourcesLoaded'
+  'ensureI18nResourcesLoaded',
+  'ensureCachedStyleResourcesLoaded'
 ];
 
 function assert(condition, message) {
@@ -130,6 +131,7 @@ async function main() {
   assert(!generated.includes('app.bundle.js'), 'Generated HTML should inline the Vite bundle instead of referencing it');
   assert(!generated.includes('i18n-en.js'), 'Generated HTML references removed i18n-en.js');
   assert(!generated.includes('i18n-pt-br.js'), 'Generated HTML references removed i18n-pt-br.js');
+  assert(!/<link[^>]*app-noncritical/i.test(generated), 'Generated HTML must not link to app-noncritical CSS directly');
 
   const styleMatch = extractSingle(/<style>\n([\s\S]*?)\n\s*<\/style>/i, generated, 'inline style block');
   assert(styleMatch[1].trim().length > 1000, 'Inline style block is too short');

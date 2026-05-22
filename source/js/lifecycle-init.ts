@@ -14,6 +14,7 @@ async function init(): Promise<void> {
   await loadDraftsCache();
   await applyEmergencyDraftIfRelevant();
   await ensureRequiredResources();
+  await ensureCachedStyleResourcesLoaded();
   await ensureI18nResourcesLoaded();
   applyI18n();
   try { setAdminMode(await API.checkIsAdmin({ source: 'init' })); } catch (_) { setAdminMode(false); }

@@ -339,6 +339,10 @@ declare global {
   function hideResourceBootOverlay(): void;
   function renderResourceBootOverlay(): void;
   function initResourceBootEvents(): void;
+  function styleResourceElementId(key: string): string;
+  function injectCachedStyle(key: string, css: string): void;
+  function applyCachedStyleResource(key: string): Promise<boolean>;
+  function ensureCachedStyleResourcesLoaded(): Promise<void>;
   function getCachedUpdateChangelog(): Promise<string | null>;
   function cacheUpdateChangelogFromRemote(content: string): Promise<void>;
   function loadUpdateChangelogWithCache(): Promise<string | null>;

@@ -209,6 +209,39 @@ async function checkResourceManifest(version) {
   ok(`${rel} valid (version=${data.version}, resources=${data.resources.length})`);
 }
 
+async function checkCssExternalization() {
+  const manifest = JSON.parse(await readText('source/config/manifest.json'));
+  const cssArray = (manifest.css || []).map(f => path.normalize(f));
+
+  const EXTERNALIZED = ['source/css/03-update-panel.css', 'source/css/04-animations.css'];
+  for (const f of EXTERNALIZED) {
+    if (cssArray.includes(path.normalize(f))) {
+      fail(`${f} was externalized but is still listed in manifest css array`); return;
+    }
+  }
+  ok('Externalized CSS files absent from inline manifest css array');
+
+  const CRITICAL = ['source/css/00-base.css', 'source/css/01-sidebar-alignment.css', 'source/css/02-preview-and-diff.css'];
+  for (const f of CRITICAL) {
+    if (!cssArray.includes(path.normalize(f))) {
+      fail(`${f} is required inline but missing from manifest css array`); return;
+    }
+  }
+  ok('Critical CSS files present in inline manifest css array');
+}
+
+async function checkChangelogResourceNonRequired(version) {
+  const rel = `support/${version}/resources-manifest.json`;
+  let data;
+  try { data = JSON.parse(await readText(rel)); } catch (_) { return; }
+  const entry = (data.resources || []).find(r => r.key === 'update/changelog');
+  if (!entry) { ok('update/changelog resource not listed (skipping required check)'); return; }
+  if (entry.required === true) {
+    fail(`update/changelog resource must have required: false (currently required: true)`); return;
+  }
+  ok('update/changelog resource is not required');
+}
+
 async function main() {
   console.log('Running local checks...');
   const version = await checkVersionAlignment();
@@ -216,6 +249,8 @@ async function main() {
   await checkNoUnexpectedJs();
   await checkI18nJsonFiles(version);
   await checkResourceManifest(version);
+  await checkCssExternalization();
+  await checkChangelogResourceNonRequired(version);
   console.log('\nAll local checks passed.');
 }
 
