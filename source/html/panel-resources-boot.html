@@ -1,0 +1,18 @@
+<!-- Resources boot overlay — hidden by default; shown only when required resources are missing -->
+  <div id="resourceBootOverlay" class="hidden fixed inset-0 z-[9000] bg-black/25 p-6 flex items-center justify-center">
+    <div class="mx-auto w-full max-w-sm overflow-hidden rounded-xl bg-white shadow-2xl">
+      <div class="border-b border-gray-200 p-4 text-center">
+        <div class="mb-2 flex justify-center">
+          <span class="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/></svg>
+          </span>
+        </div>
+        <h2 id="resourceBootTitle" class="text-sm font-bold text-gray-900">Required resources missing</h2>
+        <p id="resourceBootMessage" class="mt-1 text-sm text-gray-500">Some required app resources need to be downloaded.</p>
+      </div>
+      <div class="flex flex-col items-stretch gap-2 p-3">
+        <button id="resourceBootRetryBtn" class="h-8 rounded bg-blue-600 px-3 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed">Download</button>
+        <p id="resourceBootError" class="hidden text-center text-xs text-red-600"></p>
+      </div>
+    </div>
+  </div>

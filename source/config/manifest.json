@@ -1,5 +1,5 @@
 {
-  "version": "8.38.0",
+  "version": "8.39.0",
   "bodyOpenTag": "<body class=\"h-screen overflow-hidden bg-gray-50 text-gray-900 antialiased\">",
   "template": "source/template/index.template.html",
   "appEntry": "source/app/main.ts",
@@ -15,7 +15,8 @@
     "source/html/modal-confirm.html",
     "source/html/modal-unsaved-transition.html",
     "source/html/modal-conflict-compare.html",
-    "source/html/panel-log.html"
+    "source/html/panel-log.html",
+    "source/html/panel-resources-boot.html"
   ],
   "css": [
     "source/css/00-base.css",
@@ -49,6 +50,7 @@
     "source/js/indexeddb-core.ts",
     "source/js/app-resources-storage.ts",
     "source/js/app-resources-loader.ts",
+    "source/js/app-resources-boot.ts",
     "source/js/page-content-cache.ts",
     "source/js/page-meta.ts",
     "source/js/drafts-autosave.ts",

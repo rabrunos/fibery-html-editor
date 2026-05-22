@@ -1,3 +1,36 @@
+## [8.39.0] - 2026-05-21
+
+### Added
+
+* `app-resources-loader.ts` — complete runtime loader: `sha256Hex` (Web Crypto), `validateResourceContentHash`, `fetchResourceContent`, `downloadResourceEntry`, `getRequiredResourceStatuses`, `downloadRequiredResources`, `ensureRequiredResources`, `retryRequiredResourcesDownload`. `checkRequiredResources` kept as backward-compatible alias for `ensureRequiredResources`.
+* `app-resources-storage.ts` — new helpers: `getResourceContent`, `isResourceRecordCompatible` (checks `status`, `sha256`, `version`), `normalizeResourceRecord`.
+* `app-resources-boot.ts` — boot/retry overlay controller: `showResourceBootOverlay`, `hideResourceBootOverlay`, `renderResourceBootOverlay`, `initResourceBootEvents`.
+* `panel-resources-boot.html` — minimal fixed overlay (hidden by default): shown only when required resources are missing; has title, message, Download button, and error area.
+* `state.resources` extended: `downloading`, `statuses`, `lastCheckedAt`, `lastDownloadedAt`.
+* `support/8.39.0/resources-manifest.json` — versioned manifest for this release (`resources: []`).
+* `scripts/checks.mjs` — resource entry validation when `resources.length > 0`: required fields (`key`, `url`, `kind`), allowed `kind` values, allowed `encoding` values, boolean `required`, HTTPS URL, no `script` kind allowed.
+
+### Technical adjustments
+
+* `lifecycle-init.ts`: `void checkRequiredResources()` replaced by `void ensureRequiredResources()`.
+* With `resources: []`, boot is unchanged — no overlay shown, no extra blocking.
+* When required resources are detected missing, overlay is shown with retry/download flow.
+* `fetchRemoteText` (wrapped with `withApiUsage` / `github-remote`) is reused for resource downloads — no duplicate API usage tracking.
+* Web Crypto (`crypto.subtle`) used for SHA-256; throws clearly if unavailable.
+* Functional scripts (`kind: "script"`) blocked in `checks.mjs` — no functional JS externalized.
+* No actual i18n/CSS/template/JS externalization in this release.
+
+### Notes
+
+* No intentional UX changes when `resources: []`.
+* Fibery runtime tests (store, overlay with forced missing resource) remain manual.
+
+### Validation
+
+* `npm run verify`
+
+---
+
 ## [8.38.0] - 2026-05-21
 
 ### Added

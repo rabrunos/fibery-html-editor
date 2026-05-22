@@ -322,7 +322,23 @@ declare global {
   function getResourceRecord(key: string): Promise<ResourceRecord | null>;
   function getAllResourceRecords(): Promise<ResourceRecord[]>;
   function deleteResourceRecord(key: string): Promise<void>;
+  function getResourceContent(key: string): Promise<string | null>;
+  function isResourceRecordCompatible(record: ResourceRecord | null, entry: ResourceManifestEntry): boolean;
+  function normalizeResourceRecord(entry: ResourceManifestEntry, partial?: Partial<ResourceRecord>): ResourceRecord;
+  function validateResourceEntryShape(entry: unknown): entry is ResourceManifestEntry;
+  function sha256Hex(text: string): Promise<string>;
+  function validateResourceContentHash(content: string, entry: ResourceManifestEntry): Promise<ResourceValidationResult>;
+  function fetchResourceContent(entry: ResourceManifestEntry): Promise<string>;
+  function downloadResourceEntry(entry: ResourceManifestEntry): Promise<ResourceRecord>;
+  function getRequiredResourceStatuses(manifest: ResourceManifest): Promise<RequiredResourceStatus[]>;
+  function downloadRequiredResources(manifest: ResourceManifest): Promise<RequiredResourceStatus[]>;
+  function ensureRequiredResources(): Promise<void>;
+  function retryRequiredResourcesDownload(): Promise<void>;
   function checkRequiredResources(): Promise<void>;
+  function showResourceBootOverlay(): void;
+  function hideResourceBootOverlay(): void;
+  function renderResourceBootOverlay(): void;
+  function initResourceBootEvents(): void;
 
   type SearchState = import('./app').SearchState;
 

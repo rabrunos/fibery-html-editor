@@ -115,6 +115,9 @@ async function checkI18nKeyAlignment() {
   ok(`i18n-base.ts en/pt-BR keys aligned (${enKeys.size} keys each)`);
 }
 
+const RESOURCE_KINDS_ALLOWED = new Set(['script', 'style', 'font', 'image', 'data', 'other']);
+const RESOURCE_ENCODINGS_ALLOWED = new Set(['utf-8', 'base64']);
+
 async function checkResourceManifest(version) {
   const rel = `support/${version}/resources-manifest.json`;
   let content;
@@ -127,6 +130,28 @@ async function checkResourceManifest(version) {
   if (typeof data.version !== 'string') { fail(`${rel}: missing or invalid "version" field`); return; }
   if (!Array.isArray(data.resources)) { fail(`${rel}: "resources" must be an array`); return; }
   if (data.version !== version) { fail(`${rel}: version field "${data.version}" does not match manifest version "${version}"`); return; }
+
+  if (data.resources.length > 0) {
+    for (let i = 0; i < data.resources.length; i++) {
+      const e = data.resources[i];
+      const p = `${rel} resources[${i}]`;
+      if (typeof e !== 'object' || e === null) { fail(`${p}: must be an object`); return; }
+      if (typeof e.key !== 'string' || !e.key) { fail(`${p}: missing or empty "key"`); return; }
+      if (typeof e.url !== 'string' || !e.url) { fail(`${p}: missing or empty "url"`); return; }
+      if (!e.url.startsWith('https://')) { fail(`${p}: "url" must be an absolute HTTPS URL`); return; }
+      if (typeof e.kind !== 'string' || !RESOURCE_KINDS_ALLOWED.has(e.kind)) {
+        fail(`${p}: "kind" must be one of: ${[...RESOURCE_KINDS_ALLOWED].join(', ')}`); return;
+      }
+      if (e.kind === 'script') { fail(`${p}: functional script resources are not allowed in this phase`); return; }
+      if (e.encoding !== undefined && !RESOURCE_ENCODINGS_ALLOWED.has(e.encoding)) {
+        fail(`${p}: "encoding" must be one of: ${[...RESOURCE_ENCODINGS_ALLOWED].join(', ')}`); return;
+      }
+      if (e.required !== undefined && typeof e.required !== 'boolean') {
+        fail(`${p}: "required" must be boolean when present`); return;
+      }
+    }
+    ok(`${data.resources.length} resource entr${data.resources.length === 1 ? 'y' : 'ies'} validated`);
+  }
   ok(`${rel} valid (version=${data.version}, resources=${data.resources.length})`);
 }
 

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.38.0" />
+  <meta name="fibery-html-editor-version" content="8.39.0" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -588,6 +588,26 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
     <div id="apiUsageSummaryBox" class="border-b border-gray-100 px-3 py-2 text-[11px] leading-4 text-gray-500">API usage: no calls yet</div>
     <div id="logBox" class="max-h-56 overflow-auto p-3 font-mono text-[11px] leading-5 text-gray-600"></div>
   </div>
+
+
+<!-- Resources boot overlay — hidden by default; shown only when required resources are missing -->
+  <div id="resourceBootOverlay" class="hidden fixed inset-0 z-[9000] bg-black/25 p-6 flex items-center justify-center">
+    <div class="mx-auto w-full max-w-sm overflow-hidden rounded-xl bg-white shadow-2xl">
+      <div class="border-b border-gray-200 p-4 text-center">
+        <div class="mb-2 flex justify-center">
+          <span class="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/></svg>
+          </span>
+        </div>
+        <h2 id="resourceBootTitle" class="text-sm font-bold text-gray-900">Required resources missing</h2>
+        <p id="resourceBootMessage" class="mt-1 text-sm text-gray-500">Some required app resources need to be downloaded.</p>
+      </div>
+      <div class="flex flex-col items-stretch gap-2 p-3">
+        <button id="resourceBootRetryBtn" class="h-8 rounded bg-blue-600 px-3 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed">Download</button>
+        <p id="resourceBootError" class="hidden text-center text-xs text-red-600"></p>
+      </div>
+    </div>
+  </div>
 <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
 <script>
 (() => {
@@ -595,7 +615,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 
 (function() {
 	//#region \0virtual:fibery-html-editor/manifest-js
-	const APP_VERSION = "8.38.0";
+	const APP_VERSION = "8.39.0";
 	window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 	document.documentElement.dataset.appVersion = APP_VERSION;
 	var UPDATE_REMOTE = Object.freeze({
@@ -1557,9 +1577,13 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		resources: {
 			loading: false,
 			ready: false,
+			downloading: false,
 			errorMessage: "",
 			requiredMissing: [],
-			manifest: null
+			manifest: null,
+			statuses: [],
+			lastCheckedAt: 0,
+			lastDownloadedAt: 0
 		}
 	};
 	function apiUsageNow() {
@@ -2795,6 +2819,9 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			req.onerror = () => reject(req.error);
 		});
 	}
+	function putResourceRecord(record) {
+		return txPut("appResources", record);
+	}
 	function getResourceRecord(key) {
 		return new Promise((resolve, reject) => {
 			const req = state.db.transaction("appResources", "readonly").objectStore("appResources").get(key);
@@ -2802,13 +2829,107 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			req.onerror = () => reject(req.error);
 		});
 	}
+	function isResourceRecordCompatible(record, entry) {
+		if (!record || record.status !== "cached") return false;
+		if (entry.sha256 && record.sha256 !== entry.sha256) return false;
+		if (entry.version && record.version !== entry.version) return false;
+		return true;
+	}
+	function normalizeResourceRecord(entry, partial = {}) {
+		return {
+			...entry,
+			status: "missing",
+			cachedAt: Date.now(),
+			...partial
+		};
+	}
+	var RESOURCE_KINDS_VALID = new Set([
+		"script",
+		"style",
+		"font",
+		"image",
+		"data",
+		"other"
+	]);
 	function resourceManifestUrl() {
 		return `https://raw.githubusercontent.com/rabrunos/fibery-html-editor/main/support/${APP_VERSION}/resources-manifest.json`;
+	}
+	function validateResourceEntryShape(entry) {
+		if (!entry || typeof entry !== "object") return false;
+		const e = entry;
+		return typeof e["key"] === "string" && e["key"].length > 0 && typeof e["url"] === "string" && e["url"].length > 0 && typeof e["kind"] === "string" && RESOURCE_KINDS_VALID.has(e["kind"]);
 	}
 	function validateResourceManifestShape(data) {
 		if (!data || typeof data !== "object") return false;
 		const d = data;
-		return typeof d["version"] === "string" && Array.isArray(d["resources"]);
+		if (typeof d["version"] !== "string" || !Array.isArray(d["resources"])) return false;
+		return d["resources"].every(validateResourceEntryShape);
+	}
+	async function sha256Hex(text) {
+		if (!crypto?.subtle) throw new Error("[resources] Web Crypto not available");
+		const data = new TextEncoder().encode(text);
+		const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+		return Array.from(new Uint8Array(hashBuffer)).map((b) => b.toString(16).padStart(2, "0")).join("");
+	}
+	async function validateResourceContentHash(content, entry) {
+		if (!entry.sha256) return { valid: true };
+		try {
+			if (await sha256Hex(content) !== entry.sha256) return {
+				valid: false,
+				reason: `sha256 mismatch (key: ${entry.key})`
+			};
+			return { valid: true };
+		} catch (err) {
+			return {
+				valid: false,
+				reason: err.message || String(err)
+			};
+		}
+	}
+	async function fetchResourceContent(entry) {
+		return fetchRemoteText(entry.url, {
+			source: "resources-download",
+			operation: "resourceFetch"
+		});
+	}
+	async function downloadResourceEntry(entry) {
+		const now = Date.now();
+		try {
+			const content = await fetchResourceContent(entry);
+			const validation = await validateResourceContentHash(content, entry);
+			if (!validation.valid) {
+				const record = normalizeResourceRecord(entry, {
+					status: "failed",
+					cachedAt: now,
+					downloadedAt: now,
+					appVersion: APP_VERSION,
+					errorMessage: validation.reason
+				});
+				await putResourceRecord(record);
+				return record;
+			}
+			const record = normalizeResourceRecord(entry, {
+				status: "cached",
+				content,
+				bytes: content.length,
+				cachedAt: now,
+				downloadedAt: now,
+				verifiedAt: now,
+				appVersion: APP_VERSION
+			});
+			await putResourceRecord(record);
+			return record;
+		} catch (err) {
+			const record = normalizeResourceRecord(entry, {
+				status: "failed",
+				cachedAt: now,
+				downloadedAt: now,
+				appVersion: APP_VERSION,
+				errorMessage: err.message || String(err)
+			});
+			await putResourceRecord(record);
+			return record;
+		}
 	}
 	async function fetchResourceManifest() {
 		try {
@@ -2824,32 +2945,129 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			return null;
 		}
 	}
-	async function checkRequiredResources() {
+	async function getRequiredResourceStatuses(manifest) {
+		const statuses = [];
+		for (const entry of manifest.resources.filter((e) => e.required)) {
+			const record = await getResourceRecord(entry.key);
+			const compatible = isResourceRecordCompatible(record, entry);
+			statuses.push({
+				key: entry.key,
+				status: compatible ? "cached" : record?.status === "failed" ? "failed" : record ? "stale" : "missing",
+				errorMessage: record?.errorMessage
+			});
+		}
+		return statuses;
+	}
+	async function downloadRequiredResources(manifest) {
+		const statuses = [];
+		for (const entry of manifest.resources.filter((e) => e.required)) {
+			const record = await downloadResourceEntry(entry);
+			statuses.push({
+				key: record.key,
+				status: record.status,
+				errorMessage: record.errorMessage
+			});
+		}
+		state.resources.lastDownloadedAt = Date.now();
+		return statuses;
+	}
+	async function ensureRequiredResources() {
 		state.resources.loading = true;
 		try {
 			const manifest = await fetchResourceManifest();
+			state.resources.lastCheckedAt = Date.now();
 			if (!manifest) {
-				state.resources.loading = false;
+				state.resources.ready = true;
 				return;
 			}
 			state.resources.manifest = manifest;
 			if (!manifest.resources.length) {
 				state.resources.ready = true;
-				state.resources.loading = false;
 				return;
 			}
-			const missing = [];
-			for (const entry of manifest.resources.filter((r) => r.required)) {
-				const record = await getResourceRecord(entry.key);
-				if (!record || record.status !== "cached") missing.push(entry.key);
-			}
+			const statuses = await getRequiredResourceStatuses(manifest);
+			state.resources.statuses = statuses;
+			const missing = statuses.filter((s) => s.status !== "cached").map((s) => s.key);
 			state.resources.requiredMissing = missing;
-			state.resources.ready = true;
+			if (missing.length > 0) showResourceBootOverlay();
+			else state.resources.ready = true;
 		} catch (err) {
 			state.resources.errorMessage = err.message || String(err);
-			log(`[resources] boot check failed: ${state.resources.errorMessage}`);
+			log(`[resources] ensureRequiredResources failed: ${state.resources.errorMessage}`);
+			state.resources.ready = true;
 		} finally {
 			state.resources.loading = false;
+		}
+	}
+	async function retryRequiredResourcesDownload() {
+		if (!state.resources.manifest) return;
+		state.resources.downloading = true;
+		state.resources.errorMessage = "";
+		renderResourceBootOverlay();
+		try {
+			const statuses = await downloadRequiredResources(state.resources.manifest);
+			state.resources.statuses = statuses;
+			const missing = statuses.filter((s) => s.status !== "cached").map((s) => s.key);
+			state.resources.requiredMissing = missing;
+			const failedKeys = statuses.filter((s) => s.status === "failed").map((s) => s.key);
+			if (failedKeys.length > 0) state.resources.errorMessage = `Download failed for: ${failedKeys.join(", ")}`;
+			if (missing.length === 0) {
+				state.resources.ready = true;
+				hideResourceBootOverlay();
+			}
+		} catch (err) {
+			state.resources.errorMessage = err.message || String(err);
+			log(`[resources] retry download failed: ${state.resources.errorMessage}`);
+		} finally {
+			state.resources.downloading = false;
+			renderResourceBootOverlay();
+		}
+	}
+	var _resourceBootEventsInit = false;
+	function initResourceBootEvents() {
+		if (_resourceBootEventsInit) return;
+		_resourceBootEventsInit = true;
+		const btn = document.getElementById("resourceBootRetryBtn");
+		if (btn) btn.addEventListener("click", () => {
+			retryRequiredResourcesDownload();
+		});
+	}
+	function showResourceBootOverlay() {
+		initResourceBootEvents();
+		const overlay = document.getElementById("resourceBootOverlay");
+		if (overlay) overlay.classList.remove("hidden");
+		renderResourceBootOverlay();
+	}
+	function hideResourceBootOverlay() {
+		const overlay = document.getElementById("resourceBootOverlay");
+		if (overlay) overlay.classList.add("hidden");
+	}
+	function renderResourceBootOverlay() {
+		const titleEl = document.getElementById("resourceBootTitle");
+		const msgEl = document.getElementById("resourceBootMessage");
+		const retryBtn = document.getElementById("resourceBootRetryBtn");
+		const errorEl = document.getElementById("resourceBootError");
+		if (!titleEl || !msgEl || !retryBtn || !errorEl) return;
+		const { downloading, errorMessage, requiredMissing } = state.resources;
+		if (downloading) {
+			titleEl.textContent = "Downloading resources…";
+			msgEl.textContent = `Downloading ${requiredMissing.length} required resource(s)…`;
+			retryBtn.disabled = true;
+		} else if (requiredMissing.length > 0) {
+			titleEl.textContent = "Required resources missing";
+			msgEl.textContent = `${requiredMissing.length} required resource(s) need to be downloaded.`;
+			retryBtn.disabled = false;
+		} else {
+			titleEl.textContent = "Resources ready";
+			msgEl.textContent = "";
+			retryBtn.disabled = true;
+		}
+		if (errorMessage) {
+			errorEl.classList.remove("hidden");
+			errorEl.textContent = errorMessage;
+		} else {
+			errorEl.classList.add("hidden");
+			errorEl.textContent = "";
 		}
 	}
 	function normalizePageContentCacheRecord(snapshot = {}, options = {}) {
@@ -6941,7 +7159,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		await loadProjectsCache();
 		await loadDraftsCache();
 		await applyEmergencyDraftIfRelevant();
-		checkRequiredResources();
+		ensureRequiredResources();
 		try {
 			setAdminMode(await API.checkIsAdmin({ source: "init" }));
 		} catch (_) {

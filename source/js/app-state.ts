@@ -43,5 +43,5 @@ const state: AppState = {
   context: { pageId: '', pageTitle: '', projectId: '', createProjectTargetPageId: '' },
   drafts: { byKey: {}, autosaveTimer: null, autosaveIntervalMs: 60000, unsavedId: 'local-unsaved-main', lastAutosaveAtByKey: {}, promptToken: 0, diffEditor: null, diffOriginalModel: null, diffModifiedModel: null, fallbackSyncing: false, activeDraftKey: '', activeRecovery: null, reopenCandidate: null, dismissedMap: {} },
   conflictCompare: { diffEditor: null, diffOriginalModel: null, diffModifiedModel: null, diffMode: 'remote', fallbackSyncing: false },
-  resources: { loading: false, ready: false, errorMessage: '', requiredMissing: [], manifest: null }
+  resources: { loading: false, ready: false, downloading: false, errorMessage: '', requiredMissing: [], manifest: null, statuses: [], lastCheckedAt: 0, lastDownloadedAt: 0 }
 };

@@ -18,3 +18,18 @@ function getAllResourceRecords(): Promise<ResourceRecord[]> {
 function deleteResourceRecord(key: string): Promise<void> {
   return txDelete('appResources', key);
 }
+
+function getResourceContent(key: string): Promise<string | null> {
+  return getResourceRecord(key).then(r => r?.content ?? null);
+}
+
+function isResourceRecordCompatible(record: ResourceRecord | null, entry: ResourceManifestEntry): boolean {
+  if (!record || record.status !== 'cached') return false;
+  if (entry.sha256 && record.sha256 !== entry.sha256) return false;
+  if (entry.version && record.version !== entry.version) return false;
+  return true;
+}
+
+function normalizeResourceRecord(entry: ResourceManifestEntry, partial: Partial<ResourceRecord> = {}): ResourceRecord {
+  return { ...entry, status: 'missing', cachedAt: Date.now(), ...partial };
+}

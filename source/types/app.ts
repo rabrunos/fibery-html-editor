@@ -15,7 +15,7 @@ import type {
   ProjectRecord,
   UpdateBackupListRecord
 } from './storage';
-import type { ResourceManifest } from './resources';
+import type { RequiredResourceStatus, ResourceManifest } from './resources';
 
 export type AppLanguage = 'en' | 'pt-BR';
 export type PanelMode = 'both' | 'editor' | 'preview';
@@ -205,9 +205,13 @@ export interface AppState {
   resources: {
     loading: boolean;
     ready: boolean;
+    downloading: boolean;
     errorMessage: string;
     requiredMissing: string[];
     manifest: ResourceManifest | null;
+    statuses: RequiredResourceStatus[];
+    lastCheckedAt: number;
+    lastDownloadedAt: number;
   };
 }
 
