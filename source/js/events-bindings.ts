@@ -72,6 +72,7 @@ function bindEvents(): void {
   els.updateToastLaterBtn.addEventListener('click', hideUpdateAvailableToast);
   els.updateToastOpenBtn.addEventListener('click', () => { hideUpdateAvailableToast(); openUpdateAppModal(); });
   if (els.settingsCheckUpdateBtn) els.settingsCheckUpdateBtn.addEventListener('click', () => { void checkRemoteUpdateInfo(); });
+  if (els.settingsAboutVersionBtn) els.settingsAboutVersionBtn.addEventListener('click', () => { closeSettings(); openUpdateAppModal(); });
   if (els.settingsOpenUpdateBtn) els.settingsOpenUpdateBtn.addEventListener('click', () => { closeSettings(); openUpdateAppModal(); });
   if (els.updateCheckOnStartupToggle) els.updateCheckOnStartupToggle.addEventListener('change', () => { localStorage.setItem(LS.updateCheckOnStartup, els.updateCheckOnStartupToggle.checked ? '1' : '0'); });
   els.updateAppModal.addEventListener('click', (e: MouseEvent) => { if (e.target === els.updateAppModal) closeUpdateAppModal(); });

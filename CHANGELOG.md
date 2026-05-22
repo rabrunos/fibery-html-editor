@@ -1,3 +1,23 @@
+## [8.45.2] - 2026-05-22
+
+### Fixed
+
+- Fixed external resource encoding/hash mismatches that were blocking required resource downloads in Fibery runtime.
+- Removed UTF-8 BOM, CRLF line endings, mojibake markers, and literal CR marker artifacts from cached CSS/template resources.
+- Preserved externalized templates, Tailwind safelist behavior, and Settings access to changelog/about-version flow.
+
+### Technical adjustments
+
+- Strengthened local text-resource checks to fail on BOM, CRLF, mojibake signatures, and literal CR markers.
+- Updated resource-hash verification to match runtime `fetch(...).text()` decoding behavior.
+- Propagated resources to `support/8.45.2` and recalculated manifest hashes.
+- Vite single-file build preserved.
+
+### Validation
+
+- Local verify pipeline run (`npm run verify`) with typecheck, checks, build/validate tmp and build/validate final.
+- Fibery runtime checks remain manual.
+
 ## [8.45.1] - 2026-05-22
 
 ### Fixed

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.45.1" />
+  <meta name="fibery-html-editor-version" content="8.45.2" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -347,7 +347,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
   <div id="templateResourcesHost" style="display:contents;"></div>
 
 
-﻿<!-- Tailwind safelist for externalized modal templates (cached resources). -->
+<!-- Tailwind safelist for externalized modal templates (cached resources). -->
 <div aria-hidden="true" class="hidden pointer-events-none fixed inset-0 -z-50 opacity-0 overflow-hidden select-none">
   <div class="max-w-md max-w-lg max-w-xl max-w-2xl max-w-3xl max-w-4xl max-w-6xl w-full h-full max-h-[70vh] max-h-[84vh] max-h-[90vh] overflow-hidden overflow-auto min-h-0"></div>
   <div class="p-3 p-4 p-5 px-3 px-4 px-5 py-2 py-3 py-4 py-5 mt-2 mt-3 mt-8 mt-10 mt-16 mb-2 space-y-2 space-y-4 gap-2 gap-3 gap-4"></div>
@@ -381,7 +381,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 
 (function() {
 	//#region \0virtual:fibery-html-editor/manifest-js
-	const APP_VERSION = "8.45.1";
+	const APP_VERSION = "8.45.2";
 	window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 	document.documentElement.dataset.appVersion = APP_VERSION;
 	var UPDATE_REMOTE = Object.freeze({
@@ -6292,6 +6292,10 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		});
 		if (els.settingsCheckUpdateBtn) els.settingsCheckUpdateBtn.addEventListener("click", () => {
 			checkRemoteUpdateInfo();
+		});
+		if (els.settingsAboutVersionBtn) els.settingsAboutVersionBtn.addEventListener("click", () => {
+			closeSettings();
+			openUpdateAppModal();
 		});
 		if (els.settingsOpenUpdateBtn) els.settingsOpenUpdateBtn.addEventListener("click", () => {
 			closeSettings();

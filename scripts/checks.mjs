@@ -113,17 +113,79 @@ const RESOURCE_KINDS_ALLOWED = new Set(['script', 'style', 'font', 'image', 'dat
 const RESOURCE_ENCODINGS_ALLOWED = new Set(['utf-8', 'base64']);
 const SHA256_HEX_RE = /^[0-9a-f]{64}$/i;
 const GITHUB_RAW_REPO_PREFIX = 'https://raw.githubusercontent.com/rabrunos/fibery-html-editor/main/';
+const TEXT_RESOURCE_EXTENSIONS = new Set(['.css', '.html', '.json', '.md', '.txt', '.svg']);
+const MOJIBAKE_MARKERS = [
+  '\u00C3', // Ã
+  '\u00C2', // Â
+  '\uFFFD', // replacement char
+  '\u00E2\u20AC\u201D', // â€”
+  '\u00E2\u20AC\u201C', // â€“
+  '\u00E2\u20AC\u02DC', // â˜
+  '\u00E2\u20AC\u2122', // â™
+  '\u00E2\u20AC\u0153', // âœ
+  '\u00E2\u20AC\uFFFD' // â�
+];
 
 async function fileExists(rel) {
   try { await fs.access(path.join(rootDir, rel)); return true; }
   catch (_) { return false; }
 }
 
-async function computeFileSha256(rel) {
+function hasUtf8Bom(bytes) {
+  return bytes.length >= 3 && bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF;
+}
+
+function decodeRuntimeText(bytes) {
+  return new TextDecoder('utf-8').decode(bytes);
+}
+
+function isTextResource(entry, rel) {
+  if (entry.encoding === 'base64') return false;
+  return TEXT_RESOURCE_EXTENSIONS.has(path.extname(rel).toLowerCase());
+}
+
+function findMojibakeMarker(text) {
+  for (const marker of MOJIBAKE_MARKERS) {
+    if (text.includes(marker)) return marker;
+  }
+  return '';
+}
+
+async function checkTextResourceClean(rel, entry) {
+  if (!isTextResource(entry, rel)) return;
   const bytes = await fs.readFile(path.join(rootDir, rel));
-  // Normalize CRLF to LF so the local hash matches GitHub-served LF content and the runtime Web Crypto hash.
-  const normalized = bytes.toString('utf8').replace(/\r\n/g, '\n');
-  return createHash('sha256').update(normalized, 'utf8').digest('hex');
+  if (hasUtf8Bom(bytes)) {
+    fail(`${rel}: UTF-8 BOM is not allowed in text resources`);
+    return;
+  }
+  const text = decodeRuntimeText(bytes);
+  if (text.includes('\r\n')) {
+    fail(`${rel}: CRLF line endings are not allowed (use LF)`);
+    return;
+  }
+  if (text.includes('`r`n')) {
+    fail(`${rel}: literal \`r\`n marker is not allowed`);
+    return;
+  }
+  if (text.includes('\\r\\n')) {
+    fail(`${rel}: literal \\\\r\\\\n marker is not allowed`);
+    return;
+  }
+  const mojibake = findMojibakeMarker(text);
+  if (mojibake) {
+    fail(`${rel}: possible mojibake marker detected (${JSON.stringify(mojibake)})`);
+    return;
+  }
+}
+
+async function computeFileSha256(rel, entry) {
+  const bytes = await fs.readFile(path.join(rootDir, rel));
+  if (isTextResource(entry, rel)) {
+    // Mirror runtime hash input: fetch(...).text() decoded UTF-8 string.
+    const runtimeText = decodeRuntimeText(bytes);
+    return createHash('sha256').update(runtimeText, 'utf8').digest('hex');
+  }
+  return createHash('sha256').update(bytes).digest('hex');
 }
 
 function urlToLocalRel(url) {
@@ -193,8 +255,9 @@ async function checkResourceManifest(version) {
             warn(`${p}: local file not found at ${localRel} (not required)`);
           }
         } else if (typeof e.sha256 === 'string') {
+          await checkTextResourceClean(localRel, e);
           // hash verification
-          const computed = await computeFileSha256(localRel);
+          const computed = await computeFileSha256(localRel, e);
           if (computed.toLowerCase() !== e.sha256.toLowerCase()) {
             fail(`${p}: sha256 mismatch — manifest=${e.sha256}, computed=${computed}`); return;
           }
