@@ -1,3 +1,4 @@
+// TODO(resources-hardening): Runtime still accepts "script" as a ResourceKind for legacy/type compatibility, while checks block script resources. Revisit after #50 validation to align runtime with policy.
 const RESOURCE_KINDS_VALID = new Set<ResourceKind>(['script', 'style', 'font', 'image', 'data', 'other', 'template']);
 
 let _resourcesReadyResolve: (() => void) | null = null;
