@@ -25,6 +25,7 @@ function renderSettingsUpdateSection(applicability: UpdateApplicabilityState = u
   }
   if (els.settingsOpenUpdateBtn) {
     els.settingsOpenUpdateBtn.classList.toggle('hidden', !applicability.canShowApply);
+    els.settingsOpenUpdateBtn.disabled = !applicability.canApplyNow;
     els.settingsOpenUpdateBtn.title = applicability.disabledReasonKey ? `${t('updateApp')}: ${t(applicability.disabledReasonKey)}` : t('updateApp');
   }
   if (els.settingsCheckUpdateBtn) {

@@ -422,6 +422,37 @@ async function checkChangelogResourceNonRequired(version) {
   ok('update/changelog resource is not required');
 }
 
+async function checkUpdateApplyEntrypoint(version) {
+  const eventsContent = await readText('source/js/events-bindings.ts');
+  const lines = eventsContent.split('\n');
+  let applyWired = false;
+  for (const line of lines) {
+    if (!line.includes('settingsOpenUpdateBtn')) continue;
+    if (!line.includes('addEventListener')) continue;
+    if (line.includes('openUpdateAppModal') && !line.includes('applyRemoteUpdate')) {
+      fail('settingsOpenUpdateBtn addEventListener still calls openUpdateAppModal without applyRemoteUpdate — fix the apply entrypoint');
+      return;
+    }
+    if (line.includes('applyRemoteUpdate')) {
+      applyWired = true;
+    }
+  }
+  if (!applyWired) {
+    warn('settingsOpenUpdateBtn addEventListener does not reference applyRemoteUpdate — verify wiring manually');
+  } else {
+    ok('settingsOpenUpdateBtn addEventListener references applyRemoteUpdate');
+  }
+
+  const templateRel = `support/${version}/templates/app-modals.html`;
+  let templateContent;
+  try { templateContent = await readText(templateRel); } catch (_) { return; }
+  if (!templateContent.includes('id="updateApplyBtn"')) {
+    fail(`${templateRel}: updateApplyBtn element not found in template`);
+    return;
+  }
+  ok(`${templateRel}: updateApplyBtn present`);
+}
+
 async function main() {
   console.log('Running local checks...');
   const version = await checkVersionAlignment();
@@ -434,6 +465,7 @@ async function main() {
   await checkHtmlExternalization();
   await checkCssExternalization();
   await checkChangelogResourceNonRequired(version);
+  await checkUpdateApplyEntrypoint(version);
   console.log('\nAll local checks passed.');
 }
 

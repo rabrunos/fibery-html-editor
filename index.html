@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.47.5" />
+  <meta name="fibery-html-editor-version" content="8.47.6" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -384,7 +384,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 
 (function() {
 	//#region \0virtual:fibery-html-editor/manifest-js
-	const APP_VERSION = "8.47.5";
+	const APP_VERSION = "8.47.6";
 	window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 	document.documentElement.dataset.appVersion = APP_VERSION;
 	var UPDATE_REMOTE = Object.freeze({
@@ -2209,6 +2209,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		if (els.settingsUpdateStatus) els.settingsUpdateStatus.textContent = updateStatusMessage();
 		if (els.settingsOpenUpdateBtn) {
 			els.settingsOpenUpdateBtn.classList.toggle("hidden", !applicability.canShowApply);
+			els.settingsOpenUpdateBtn.disabled = !applicability.canApplyNow;
 			els.settingsOpenUpdateBtn.title = applicability.disabledReasonKey ? `${t("updateApp")}: ${t(applicability.disabledReasonKey)}` : t("updateApp");
 		}
 		if (els.settingsCheckUpdateBtn) {
@@ -6614,7 +6615,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		});
 		if (els.settingsOpenUpdateBtn) els.settingsOpenUpdateBtn.addEventListener("click", () => {
 			closeSettings();
-			openUpdateAppModal();
+			applyRemoteUpdate();
 		});
 		if (els.updateCheckOnStartupToggle) els.updateCheckOnStartupToggle.addEventListener("change", () => {
 			localStorage.setItem(LS.updateCheckOnStartup, els.updateCheckOnStartupToggle.checked ? "1" : "0");
