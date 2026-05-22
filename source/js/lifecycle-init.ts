@@ -13,7 +13,9 @@ async function init(): Promise<void> {
   await loadProjectsCache();
   await loadDraftsCache();
   await applyEmergencyDraftIfRelevant();
-  void ensureRequiredResources();
+  await ensureRequiredResources();
+  await ensureI18nResourcesLoaded();
+  applyI18n();
   try { setAdminMode(await API.checkIsAdmin({ source: 'init' })); } catch (_) { setAdminMode(false); }
   setSidebarOpen((localStorage.getItem(LS.sidebarOpen) ?? '1') === '1', false);
   const lastId = localStorage.getItem(LS.lastPageId);

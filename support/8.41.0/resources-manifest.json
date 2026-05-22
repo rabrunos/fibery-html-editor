@@ -1,0 +1,24 @@
+{
+  "version": "8.41.0",
+  "generatedAt": 0,
+  "resources": [
+    {
+      "key": "i18n/en",
+      "kind": "data",
+      "url": "https://raw.githubusercontent.com/rabrunos/fibery-html-editor/main/support/8.41.0/i18n/en.json",
+      "version": "8.41.0",
+      "sha256": "225c84c0c0a52a995fee1f2aa54c1a01fce0c323988aa860855287a8730e9137",
+      "encoding": "utf-8",
+      "required": true
+    },
+    {
+      "key": "i18n/pt-BR",
+      "kind": "data",
+      "url": "https://raw.githubusercontent.com/rabrunos/fibery-html-editor/main/support/8.41.0/i18n/pt-BR.json",
+      "version": "8.41.0",
+      "sha256": "15857ec04d1fe10ea345c700d5754a27df3c9d744480cf6e7acb762b2b32d8ba",
+      "encoding": "utf-8",
+      "required": true
+    }
+  ]
+}

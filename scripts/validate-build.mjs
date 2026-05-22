@@ -29,7 +29,8 @@ const ESSENTIAL_IDS = [
 const RESOURCE_BOOTSTRAP_SYMBOLS = [
   'ensureRequiredResources',
   'retryRequiredResourcesDownload',
-  'appResources'
+  'appResources',
+  'ensureI18nResourcesLoaded'
 ];
 
 function assert(condition, message) {
@@ -127,6 +128,8 @@ async function main() {
   assert(!generated.includes('source/'), 'Generated HTML should not reference modular source files');
   assert(!generated.includes('dist/'), 'Generated HTML should not reference dist files');
   assert(!generated.includes('app.bundle.js'), 'Generated HTML should inline the Vite bundle instead of referencing it');
+  assert(!generated.includes('i18n-en.js'), 'Generated HTML references removed i18n-en.js');
+  assert(!generated.includes('i18n-pt-br.js'), 'Generated HTML references removed i18n-pt-br.js');
 
   const styleMatch = extractSingle(/<style>\n([\s\S]*?)\n\s*<\/style>/i, generated, 'inline style block');
   assert(styleMatch[1].trim().length > 1000, 'Inline style block is too short');

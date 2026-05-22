@@ -1,3 +1,28 @@
+## [8.41.0] - 2026-05-21
+
+### Added
+
+* i18n translations externalized to versioned JSON resources (`support/8.41.0/i18n/en.json` and `support/8.41.0/i18n/pt-BR.json`), covering all 307 translation keys previously split across `i18n-base.ts`, `i18n-en.js`, and `i18n-pt-br.js`.
+* `source/js/i18n-resources.ts` — new module providing `parseI18nResource`, `loadCachedI18nResources`, `applyI18nResourceBundle`, `mergeI18nTranslations`, and `ensureI18nResourcesLoaded`.
+* `resources-manifest.json` for 8.41.0 lists `i18n/en` and `i18n/pt-BR` as required `data` resources with sha256 and version.
+* Boot flow now awaits `ensureRequiredResources()` before loading i18n from cache and re-applying translations. If resources are missing, overlay shows for retry; after successful download, i18n is applied automatically.
+* `scripts/checks.mjs` — new `checkI18nJsonFiles(version)` validates i18n JSON files: presence, valid JSON, all-string values, and key alignment between en/pt-BR.
+* `scripts/validate-build.mjs` — `ensureI18nResourcesLoaded` added to bootstrap symbol checks; assertions added that `i18n-en.js` and `i18n-pt-br.js` are absent from generated HTML.
+
+### Technical adjustments
+
+* `source/js/i18n-base.ts` reduced to ~30 minimal fallback keys covering initial UI render (status bar, search, welcome, sidebar labels, copy error); full translations loaded from `appResources` cache at runtime.
+* `source/js/i18n-en.js` and `source/js/i18n-pt-br.js` removed — content merged into versioned JSON resources.
+* `scripts/checks.mjs` — `checkI18nFilesOnlyExtend` and regex-based `checkI18nKeyAlignment` replaced by `checkI18nJsonFiles`; `ALLOWED_JS` allowlist removed; check now fails if old i18n JS files appear in the manifest.
+* Language switch and `applyI18n()` continue to work as before; second `applyI18n()` call in `lifecycle-init.ts` applies full translations after i18n cache load.
+* No functional JavaScript externalized; all runtime scripts remain inline in `index.html`.
+* Vite single-file build preserved; deploy artifact remains a single `index.html`.
+* Fibery runtime tests remain manual.
+
+### Notes
+
+* On first run with no cached resources, the app shows minimal fallback translations (~30 keys) until the resource boot overlay is used to download and cache `i18n/en` and `i18n/pt-BR`. Subsequent runs use the IndexedDB cache, making i18n available within ~500 ms of opening the DB.
+
 ## [8.40.0] - 2026-05-21
 
 ### Added

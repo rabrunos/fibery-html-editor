@@ -47,77 +47,66 @@ async function checkChangelogVersion(expectedVersion) {
   ok(`CHANGELOG.md top entry is ${expectedVersion}`);
 }
 
-const ALLOWED_JS = new Set(['i18n-en.js', 'i18n-pt-br.js']);
-
 async function checkNoUnexpectedJs() {
   const manifest = JSON.parse(await readText('source/config/manifest.json'));
-  const unexpected = (manifest.js || []).filter(rel => {
-    if (!rel.endsWith('.js')) return false;
-    return !ALLOWED_JS.has(path.basename(rel));
-  });
+  const FORBIDDEN_JS = new Set(['i18n-en.js', 'i18n-pt-br.js']);
+  const unexpected = (manifest.js || []).filter(rel => rel.endsWith('.js'));
+  const forbidden = unexpected.filter(rel => FORBIDDEN_JS.has(path.basename(rel)));
+  if (forbidden.length > 0) {
+    fail(`Removed i18n JS files still listed in manifest: ${forbidden.map(r => path.basename(r)).join(', ')}`);
+  }
   if (unexpected.length > 0) {
-    fail(`Unexpected .js files in manifest (migrate to .ts or allowlist): ${unexpected.map(r => path.basename(r)).join(', ')}`);
+    fail(`Unexpected .js files in manifest (migrate to .ts): ${unexpected.map(r => path.basename(r)).join(', ')}`);
   }
-  ok(`No unexpected .js in manifest (allowed: ${[...ALLOWED_JS].join(', ')})`);
+  ok('No .js files in manifest');
 }
 
-async function checkI18nFilesOnlyExtend() {
-  for (const rel of ['source/js/i18n-en.js', 'source/js/i18n-pt-br.js']) {
-    let content;
-    try { content = await readText(rel); }
-    catch (_) { continue; }
+async function checkI18nJsonFiles(version) {
+  const enRel = `support/${version}/i18n/en.json`;
+  const ptRel = `support/${version}/i18n/pt-BR.json`;
 
-    if (/(?:const|let|var)\s+I18N\s*=/.test(content)) {
-      fail(`${rel}: must not reassign I18N (use Object.assign only)`);
-    }
-    if (/\bdelete\b.*\bI18N\b/.test(content)) {
-      fail(`${rel}: must not delete from I18N`);
-    }
-    if (!content.includes('Object.assign(I18N')) {
-      fail(`${rel}: does not call Object.assign(I18N...)`);
-    }
-    ok(`${path.basename(rel)} only extends I18N`);
+  let enContent, ptContent;
+  try { enContent = await readText(enRel); }
+  catch (_) { fail(`${enRel} not found — create it for this version`); return; }
+  try { ptContent = await readText(ptRel); }
+  catch (_) { fail(`${ptRel} not found — create it for this version`); return; }
+
+  let enData, ptData;
+  try { enData = JSON.parse(enContent); }
+  catch (_) { fail(`${enRel}: invalid JSON`); return; }
+  try { ptData = JSON.parse(ptContent); }
+  catch (_) { fail(`${ptRel}: invalid JSON`); return; }
+
+  if (typeof enData !== 'object' || enData === null || Array.isArray(enData)) {
+    fail(`${enRel}: root must be a plain object`); return;
   }
-}
-
-function extractI18nKeys(block) {
-  // Strip string values first to avoid matching key-like substrings inside them
-  // e.g. 'Read-only: admin...' would otherwise produce a spurious 'only' key
-  const sanitized = block
-    .replace(/'(?:[^'\\]|\\.)*'/g, "''")
-    .replace(/"(?:[^"\\]|\\.)*"/g, '""');
-  const keys = new Set();
-  const re = /\b([a-zA-Z]\w*)\s*:/g;
-  let m;
-  while ((m = re.exec(sanitized)) !== null) {
-    keys.add(m[1]);
+  if (typeof ptData !== 'object' || ptData === null || Array.isArray(ptData)) {
+    fail(`${ptRel}: root must be a plain object`); return;
   }
-  return keys;
-}
 
-async function checkI18nKeyAlignment() {
-  let source;
-  try { source = await readText('source/js/i18n-base.ts'); }
-  catch (_) { fail('source/js/i18n-base.ts not found'); return; }
+  for (const [k, v] of Object.entries(enData)) {
+    if (typeof v !== 'string') { fail(`${enRel}: value for "${k}" is not a string`); return; }
+  }
+  for (const [k, v] of Object.entries(ptData)) {
+    if (typeof v !== 'string') { fail(`${ptRel}: value for "${k}" is not a string`); return; }
+  }
 
-  const enMatch = source.match(/\ben:\s*\{([^}]+)\}/);
-  const ptMatch = source.match(/'pt-BR'\s*:\s*\{([^}]+)\}/);
-  if (!enMatch) { fail('source/js/i18n-base.ts: could not locate en: { } block'); return; }
-  if (!ptMatch) { fail('source/js/i18n-base.ts: could not locate pt-BR: { } block'); return; }
-
-  const enKeys = extractI18nKeys(enMatch[1]);
-  const ptKeys = extractI18nKeys(ptMatch[1]);
-
+  const enKeys = new Set(Object.keys(enData));
+  const ptKeys = new Set(Object.keys(ptData));
   const missingPt = [...enKeys].filter(k => !ptKeys.has(k));
   const missingEn = [...ptKeys].filter(k => !enKeys.has(k));
 
   if (missingPt.length > 0 || missingEn.length > 0) {
     const msgs = [];
-    if (missingPt.length > 0) msgs.push(`missing in pt-BR: ${missingPt.join(', ')}`);
-    if (missingEn.length > 0) msgs.push(`missing in en: ${missingEn.join(', ')}`);
-    fail(`i18n-base.ts key mismatch — ${msgs.join('; ')}`);
+    if (missingPt.length > 0) msgs.push(`missing in pt-BR.json: ${missingPt.join(', ')}`);
+    if (missingEn.length > 0) msgs.push(`missing in en.json: ${missingEn.join(', ')}`);
+    fail(`i18n JSON key mismatch — ${msgs.join('; ')}`);
+    return;
   }
-  ok(`i18n-base.ts en/pt-BR keys aligned (${enKeys.size} keys each)`);
+
+  ok(`${enRel}: valid, ${enKeys.size} string entries`);
+  ok(`${ptRel}: valid, ${ptKeys.size} string entries`);
+  ok(`i18n JSON keys aligned (${enKeys.size} keys each)`);
 }
 
 const RESOURCE_KINDS_ALLOWED = new Set(['script', 'style', 'font', 'image', 'data', 'other']);
@@ -132,7 +121,9 @@ async function fileExists(rel) {
 
 async function computeFileSha256(rel) {
   const bytes = await fs.readFile(path.join(rootDir, rel));
-  return createHash('sha256').update(bytes).digest('hex');
+  // Normalize CRLF to LF so the local hash matches GitHub-served LF content and the runtime Web Crypto hash.
+  const normalized = bytes.toString('utf8').replace(/\r\n/g, '\n');
+  return createHash('sha256').update(normalized, 'utf8').digest('hex');
 }
 
 function urlToLocalRel(url) {
@@ -223,8 +214,7 @@ async function main() {
   const version = await checkVersionAlignment();
   await checkChangelogVersion(version);
   await checkNoUnexpectedJs();
-  await checkI18nFilesOnlyExtend();
-  await checkI18nKeyAlignment();
+  await checkI18nJsonFiles(version);
   await checkResourceManifest(version);
   console.log('\nAll local checks passed.');
 }

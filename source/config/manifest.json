@@ -1,5 +1,5 @@
 {
-  "version": "8.40.0",
+  "version": "8.41.0",
   "bodyOpenTag": "<body class=\"h-screen overflow-hidden bg-gray-50 text-gray-900 antialiased\">",
   "template": "source/template/index.template.html",
   "appEntry": "source/app/main.ts",
@@ -29,8 +29,7 @@
     "source/js/app-version.ts",
     "source/js/update-remote-config.ts",
     "source/js/i18n-base.ts",
-    "source/js/i18n-en.js",
-    "source/js/i18n-pt-br.js",
+    "source/js/i18n-resources.ts",
     "source/js/storage-keys.ts",
     "source/js/dom-refs.ts",
     "source/js/app-state.ts",
