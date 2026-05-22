@@ -20,8 +20,15 @@ function isCurrentAppPageForUpdate(): boolean {
   return state.current.id === targetPageId;
 }
 
+function hasApplicableRemoteUpdate(): boolean {
+  const local = parseSemverSimple(APP_VERSION);
+  const remote = parseSemverSimple(state.update.remoteVersion || '');
+  if (!local || !remote) return false;
+  return compareSemverSimple(local, remote) < 0;
+}
+
 function canShowApplyUpdateButton(): boolean {
-  return state.update.status === 'available';
+  return hasApplicableRemoteUpdate();
 }
 
 function canApplyUpdateNow(): boolean {
@@ -83,7 +90,7 @@ async function applyRemoteUpdate(): Promise<void> {
   if (state.update.rollbacking) { setStatus(t('updateRollbackRestoring')); return; }
   if (state.update.checking) { setStatus(t('updateApplyUnavailableWhileChecking')); return; }
   if (!state.isAdmin) { setStatus(t('updateAdminRequired')); log(t('updateAdminRequired')); return; }
-  if (state.update.status !== 'available') { setStatus(t('updateRemoteVersionNotNewer')); return; }
+  if (!hasApplicableRemoteUpdate()) { setStatus(t('updateRemoteVersionNotNewer')); return; }
   const targetPageId = updateTargetAppPageId();
   if (!targetPageId) { setStatus(t('updateAppPageUnavailable')); log(t('updateAppPageUnavailable')); return; }
   const applyingCurrentPage = !state.blank && String(state.current.id || '') === targetPageId;

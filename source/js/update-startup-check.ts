@@ -5,7 +5,7 @@ function maybeCheckUpdateOnStartup(): void {
 
 function syncUpdateAvailableToast(): void {
   if (!els.updateAvailableToast) return;
-  const show = state.update.status === 'available';
+  const show = hasApplicableRemoteUpdate();
   els.updateAvailableToast.classList.toggle('hidden', !show);
   if (show && els.updateAvailableToastVersion) {
     els.updateAvailableToastVersion.textContent = state.update.remoteVersion || '';
@@ -24,7 +24,7 @@ function renderSettingsUpdateSection(): void {
     els.settingsUpdateStatus.textContent = updateStatusMessage();
   }
   if (els.settingsOpenUpdateBtn) {
-    els.settingsOpenUpdateBtn.classList.toggle('hidden', state.update.status !== 'available');
+    els.settingsOpenUpdateBtn.classList.toggle('hidden', !hasApplicableRemoteUpdate());
   }
   if (els.settingsCheckUpdateBtn) {
     els.settingsCheckUpdateBtn.disabled = !!state.update.checking;

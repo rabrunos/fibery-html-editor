@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.47.1" />
+  <meta name="fibery-html-editor-version" content="8.47.2" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -381,7 +381,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 
 (function() {
 	//#region \0virtual:fibery-html-editor/manifest-js
-	const APP_VERSION = "8.47.1";
+	const APP_VERSION = "8.47.2";
 	window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 	document.documentElement.dataset.appVersion = APP_VERSION;
 	var UPDATE_REMOTE = Object.freeze({
@@ -1483,8 +1483,14 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		if (!state.current.id || !targetPageId) return false;
 		return state.current.id === targetPageId;
 	}
+	function hasApplicableRemoteUpdate() {
+		const local = parseSemverSimple(APP_VERSION);
+		const remote = parseSemverSimple(state.update.remoteVersion || "");
+		if (!local || !remote) return false;
+		return compareSemverSimple(local, remote) < 0;
+	}
 	function canShowApplyUpdateButton() {
-		return state.update.status === "available";
+		return hasApplicableRemoteUpdate();
 	}
 	function canApplyUpdateNow() {
 		return canShowApplyUpdateButton() && !state.update.checking && !state.update.applying && !state.update.rollbacking && state.isAdmin && canResolveAppPageForUpdate();
@@ -1548,7 +1554,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			log(t("updateAdminRequired"));
 			return;
 		}
-		if (state.update.status !== "available") {
+		if (!hasApplicableRemoteUpdate()) {
 			setStatus(t("updateRemoteVersionNotNewer"));
 			return;
 		}
@@ -2118,7 +2124,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 	}
 	function syncUpdateAvailableToast() {
 		if (!els.updateAvailableToast) return;
-		const show = state.update.status === "available";
+		const show = hasApplicableRemoteUpdate();
 		els.updateAvailableToast.classList.toggle("hidden", !show);
 		if (show && els.updateAvailableToastVersion) els.updateAvailableToastVersion.textContent = state.update.remoteVersion || "";
 	}
@@ -2128,7 +2134,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 	function renderSettingsUpdateSection() {
 		if (els.updateCheckOnStartupToggle) els.updateCheckOnStartupToggle.checked = localStorage.getItem(LS.updateCheckOnStartup) !== "0";
 		if (els.settingsUpdateStatus) els.settingsUpdateStatus.textContent = updateStatusMessage();
-		if (els.settingsOpenUpdateBtn) els.settingsOpenUpdateBtn.classList.toggle("hidden", state.update.status !== "available");
+		if (els.settingsOpenUpdateBtn) els.settingsOpenUpdateBtn.classList.toggle("hidden", !hasApplicableRemoteUpdate());
 		if (els.settingsCheckUpdateBtn) {
 			els.settingsCheckUpdateBtn.disabled = !!state.update.checking;
 			els.settingsCheckUpdateBtn.textContent = state.update.checking ? t("updateChecking") : t("updateCheckAgain");
