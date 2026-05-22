@@ -3,7 +3,7 @@
     <div class="mx-auto mt-10 w-full max-w-md overflow-hidden rounded-xl bg-white shadow-2xl">
       <div class="border-b border-gray-200 p-3 flex items-center justify-between">
         <div class="text-sm font-bold text-gray-900" data-i18n="settings">Settings</div>
-        <button id="closeSettingsBtn" class="h-8 w-8 rounded border border-gray-300 bg-white text-gray-600 hover:bg-gray-50">×</button>
+        <button id="closeSettingsBtn" class="h-8 w-8 rounded border border-gray-300 bg-white text-gray-600 hover:bg-gray-50">Ã—</button>
       </div>
       <div class="p-4 space-y-4">
         <label class="block text-sm text-gray-700">
@@ -28,6 +28,19 @@
           <span id="logMenuText">Show log</span>
           <span class="text-xs text-gray-400">Log</span>
         </button>
+        <div class="border-t border-gray-100 pt-4">
+          <div class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500" data-i18n="settingsUpdatesTitle">Updates</div>
+          <label class="flex items-center gap-2 text-sm text-gray-700">
+            <input id="updateCheckOnStartupToggle" type="checkbox" class="h-4 w-4 accent-blue-600" />
+            <span data-i18n="settingsUpdateCheckOnStartup">Check for updates on startup</span>
+          </label>
+          <div id="settingsUpdateStatus" class="mt-2 text-xs text-gray-500"></div>
+          <div class="mt-2 flex gap-2">
+            <button id="settingsCheckUpdateBtn" class="h-7 rounded border border-gray-300 bg-white px-2 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed" data-i18n="updateCheckAgain">Check again</button>
+            <button id="settingsAboutVersionBtn" class="h-7 rounded border border-gray-300 bg-white px-2 text-xs font-medium text-gray-700 hover:bg-gray-50" data-i18n="settingsAboutVersion">About this version</button>
+            <button id="settingsOpenUpdateBtn" class="hidden h-7 rounded bg-yellow-400 px-2 text-xs font-semibold text-yellow-950 hover:bg-yellow-500" data-i18n="updateApp">Update App</button>
+          </div>
+        </div>
         <div class="rounded bg-amber-50 p-2 text-xs leading-5 text-amber-800" data-i18n="historyLocalNote">Version history is saved only in this browser.</div>
       </div>
     </div>

@@ -30,7 +30,7 @@ function updateStatusMessage(): string {
   return t('updateNotChecked');
 }
 
-async function checkRemoteUpdateInfo(): Promise<void> {
+async function checkRemoteUpdateInfo(options: { automatic?: boolean; source?: string } = {}): Promise<void> {
   if (state.update.checking || state.update.applying || state.update.rollbacking) return;
   state.update.checking = true;
   state.update.status = 'checking';
@@ -46,8 +46,8 @@ async function checkRemoteUpdateInfo(): Promise<void> {
   renderUpdateAppPanel();
 
   const [indexResult, changelogResult]: [PromiseSettledResult<string>, PromiseSettledResult<string | null>] = await Promise.allSettled([
-    fetchRemoteText(UPDATE_REMOTE.indexHtmlUrl, { operation: 'updateIndex', source: 'update-app' }),
-    refreshUpdateChangelogResource()
+    fetchRemoteText(UPDATE_REMOTE.indexHtmlUrl, { operation: 'updateIndex', source: options.source || 'update-app', automatic: !!options.automatic }),
+    refreshUpdateChangelogResource(options)
   ]) as [PromiseSettledResult<string>, PromiseSettledResult<string | null>];
 
   if (indexResult.status === 'fulfilled') {

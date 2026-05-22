@@ -22,13 +22,13 @@
 
 * Toast notification (`#updateAvailableToast`) in bottom-right corner: shown automatically when a new version is available after the startup check. Buttons: "Later" (dismisses) and "Open" (opens Update App modal).
 * "Updates" section in Settings modal: checkbox "Check for updates on startup" (default on), status text, "Check again" button, and "Update App" button (visible only when update is available).
-* `source/js/update-startup-check.ts` Ã¢â‚¬â€ new module: `maybeCheckUpdateOnStartup()`, `syncUpdateAvailableToast()`, `hideUpdateAvailableToast()`, `renderSettingsUpdateSection()`.
+* `source/js/update-startup-check.ts` â€” new module: `maybeCheckUpdateOnStartup()`, `syncUpdateAvailableToast()`, `hideUpdateAvailableToast()`, `renderSettingsUpdateSection()`.
 * New i18n keys: `updateAvailableToastTitle`, `updateToastLater`, `updateToastOpen`, `settingsUpdatesTitle`, `settingsUpdateCheckOnStartup`.
 * `updateCheckOnStartup` added to `LocalStorageKeys` and `LS` map (`fibery-pro-editor.updateCheckOnStartup`). Default: enabled.
 
 ### Changed
 
-* Update App access moved from page header button to Settings modal Ã¢â‚¬â€ `#updateAppBtn` removed.
+* Update App access moved from page header button to Settings modal â€” `#updateAppBtn` removed.
 * Update App modal compacted: "Local update backups" section removed from the visible UI. Internal backup/rollback infrastructure preserved.
 * `updateApplyConfirmMessage` updated to mention that unsaved local drafts are preserved before the update is applied.
 * `renderUpdateAppPanel()` now calls `syncUpdateAvailableToast()` and `renderSettingsUpdateSection()` instead of `renderUpdateBackupList()`.
@@ -44,19 +44,19 @@
 
 ### Added
 
-* `source/js/app-template-resources.ts` Ã¢â‚¬â€ new module for cached template HTML injection: `getTemplateResourceKeys`, `validateTemplateHtmlSafety`, `mountTemplateHtml`, `injectCachedTemplate`, `applyCachedTemplateResource`, `ensureCachedTemplateResourcesLoaded`. Injects HTML from `appResources` IndexedDB into `#templateResourcesHost` after validation; idempotent (skips if already loaded with same key).
-* `source/html/template-resources-host.html` Ã¢â‚¬â€ `<div id="templateResourcesHost" style="display:contents;">` host element for runtime template injection; replaces the 8 externalized modal HTML files in the inline build.
-* `support/8.44.0/templates/app-modals.html` Ã¢â‚¬â€ versioned external template resource containing the HTML of 8 non-critical modals: settings, search, update-app, history, create-project, draft-recovery, unsaved-transition, and conflict-compare. Registered as `templates/app-modals` in the resource manifest with `kind: "template"`, `required: true`, sha256, and versionated URL.
-* `support/8.44.0/resources-manifest.json` Ã¢â‚¬â€ includes `i18n/en`, `i18n/pt-BR`, `css/app-noncritical` (required), `templates/app-modals` (required), and `update/changelog` (not required).
+* `source/js/app-template-resources.ts` â€” new module for cached template HTML injection: `getTemplateResourceKeys`, `validateTemplateHtmlSafety`, `mountTemplateHtml`, `injectCachedTemplate`, `applyCachedTemplateResource`, `ensureCachedTemplateResourcesLoaded`. Injects HTML from `appResources` IndexedDB into `#templateResourcesHost` after validation; idempotent (skips if already loaded with same key).
+* `source/html/template-resources-host.html` â€” `<div id="templateResourcesHost" style="display:contents;">` host element for runtime template injection; replaces the 8 externalized modal HTML files in the inline build.
+* `support/8.44.0/templates/app-modals.html` â€” versioned external template resource containing the HTML of 8 non-critical modals: settings, search, update-app, history, create-project, draft-recovery, unsaved-transition, and conflict-compare. Registered as `templates/app-modals` in the resource manifest with `kind: "template"`, `required: true`, sha256, and versionated URL.
+* `support/8.44.0/resources-manifest.json` â€” includes `i18n/en`, `i18n/pt-BR`, `css/app-noncritical` (required), `templates/app-modals` (required), and `update/changelog` (not required).
 * i18n JSON resources propagated to `support/8.44.0/i18n/` (identical to 8.43.0).
 * `css/app-noncritical.css` propagated to `support/8.44.0/css/` (identical to 8.43.0).
 
 ### Technical adjustments
 
-* `source/types/resources.ts` Ã¢â‚¬â€ `ResourceKind` union extended with `'template'`.
-* `source/js/app-resources-loader.ts` Ã¢â‚¬â€ `RESOURCE_KINDS_VALID` updated to include `'template'`; `RESOURCES_READY_SIGNAL` promise added (resolves when all required resources are cached); `signalResourcesReady()` called in all success and graceful-failure paths; `retryRequiredResourcesDownload()` simplified Ã¢â‚¬â€ removed fire-and-forget i18n/style calls, now only signals `signalResourcesReady()` so `lifecycle-init.ts` handles all post-resource setup uniformly.
-* `source/js/dom-refs.ts` Ã¢â‚¬â€ refactored: `const els = { ... }` extracted to `buildEls()` function; `let els: DomRefs = buildEls()` provides valid refs for inline elements at load time (externalized modal refs are null until templates are injected); `initDomRefs()` re-runs `buildEls()` after template injection to populate all refs.
-* `source/js/lifecycle-init.ts` Ã¢â‚¬â€ new boot order: `openDb` Ã¢â€ â€™ `loadCaches` Ã¢â€ â€™ `ensureRequiredResources` Ã¢â€ â€™ `RESOURCES_READY_SIGNAL` Ã¢â€ â€™ `ensureCachedStyleResourcesLoaded` Ã¢â€ â€™ `ensureCachedTemplateResourcesLoaded` Ã¢â€ â€™ `initDomRefs` Ã¢â€ â€™ guard check Ã¢â€ â€™ `ensureI18nResourcesLoaded` Ã¢â€ â€™ `applyI18n` Ã¢â€ â€™ `setupCodeEditor` Ã¢â€ â€™ `bindEvents` Ã¢â€ â€™ `setupResize` Ã¢â€ â€™ `setPanelMode` Ã¢â€ â€™ `applyEmergencyDraftIfRelevant` Ã¢â€ â€™ admin check Ã¢â€ â€™ `setSidebarOpen` Ã¢â€ â€™ last-page open. Guard added: if `settingsModal` not injected after template load, init returns early with log.
+* `source/types/resources.ts` â€” `ResourceKind` union extended with `'template'`.
+* `source/js/app-resources-loader.ts` â€” `RESOURCE_KINDS_VALID` updated to include `'template'`; `RESOURCES_READY_SIGNAL` promise added (resolves when all required resources are cached); `signalResourcesReady()` called in all success and graceful-failure paths; `retryRequiredResourcesDownload()` simplified â€” removed fire-and-forget i18n/style calls, now only signals `signalResourcesReady()` so `lifecycle-init.ts` handles all post-resource setup uniformly.
+* `source/js/dom-refs.ts` â€” refactored: `const els = { ... }` extracted to `buildEls()` function; `let els: DomRefs = buildEls()` provides valid refs for inline elements at load time (externalized modal refs are null until templates are injected); `initDomRefs()` re-runs `buildEls()` after template injection to populate all refs.
+* `source/js/lifecycle-init.ts` â€” new boot order: `openDb` â†’ `loadCaches` â†’ `ensureRequiredResources` â†’ `RESOURCES_READY_SIGNAL` â†’ `ensureCachedStyleResourcesLoaded` â†’ `ensureCachedTemplateResourcesLoaded` â†’ `initDomRefs` â†’ guard check â†’ `ensureI18nResourcesLoaded` â†’ `applyI18n` â†’ `setupCodeEditor` â†’ `bindEvents` â†’ `setupResize` â†’ `setPanelMode` â†’ `applyEmergencyDraftIfRelevant` â†’ admin check â†’ `setSidebarOpen` â†’ last-page open. Guard added: if `settingsModal` not injected after template load, init returns early with log.
 * 8 modal HTML source files removed from the inline manifest `html` array: `modal-settings.html`, `modal-search.html`, `modal-update-app.html`, `modal-history.html`, `modal-create-project.html`, `modal-draft-recovery.html`, `modal-unsaved-transition.html`, `modal-conflict-compare.html`. Source files preserved on disk as references.
 * `scripts/checks.mjs` updated: `'template'` added to `RESOURCE_KINDS_ALLOWED`; new `checkHtmlExternalization()` validates that externalized HTML files are absent from the inline manifest, that required inline HTML files and `template-resources-host.html` remain, and that the template file has no `<script>` tags or inline event handlers.
 * `scripts/validate-build.mjs` updated: `updateAppModal`, `historyModal`, `draftRecoveryModal` removed from `ESSENTIAL_IDS` (now externalized); `templateResourcesHost` added to `ESSENTIAL_IDS`; `ensureCachedTemplateResourcesLoaded` added to `RESOURCE_BOOTSTRAP_SYMBOLS`; ID diff tolerance increased to 70 to accommodate the 60 IDs removed by externalization.
@@ -66,7 +66,7 @@
 ### Notes
 
 * On first run with no cache, the overlay downloads all required resources together (i18n, css, templates). After download, CSS and templates are injected automatically and the full UI becomes available.
-* On subsequent runs with cache, templates are injected in ~1ms from IndexedDB before `initDomRefs()` runs Ã¢â‚¬â€ zero visible delay.
+* On subsequent runs with cache, templates are injected in ~1ms from IndexedDB before `initDomRefs()` runs â€” zero visible delay.
 * The inline HTML covers all boot-critical elements: full layout, sidebar, editor, preview, panel-log, panel-resources-boot, context menus, and confirm modal.
 
 ### Validation
@@ -79,9 +79,9 @@
 
 ### Added
 
-* `source/js/app-style-resources.ts` Ã¢â‚¬â€ new module for cached CSS injection: `styleResourceElementId`, `injectCachedStyle`, `applyCachedStyleResource`, `ensureCachedStyleResourcesLoaded`. Injects CSS from `appResources` IndexedDB as a `<style>` element after validation; idempotent (updates existing element if re-applied).
-* `support/8.43.0/css/app-noncritical.css` Ã¢â‚¬â€ versioned external CSS resource containing non-critical styles: `mini-tooltip`, `draft-diff-*`, all Update App/changelog styles, and `@keyframes miniTooltip`. Registered as `css/app-noncritical` in the resource manifest with `kind: "style"`, `required: true`, sha256, and versionated URL.
-* `support/8.43.0/resources-manifest.json` Ã¢â‚¬â€ includes `i18n/en`, `i18n/pt-BR` (required), `update/changelog` (not required), and `css/app-noncritical` (required).
+* `source/js/app-style-resources.ts` â€” new module for cached CSS injection: `styleResourceElementId`, `injectCachedStyle`, `applyCachedStyleResource`, `ensureCachedStyleResourcesLoaded`. Injects CSS from `appResources` IndexedDB as a `<style>` element after validation; idempotent (updates existing element if re-applied).
+* `support/8.43.0/css/app-noncritical.css` â€” versioned external CSS resource containing non-critical styles: `mini-tooltip`, `draft-diff-*`, all Update App/changelog styles, and `@keyframes miniTooltip`. Registered as `css/app-noncritical` in the resource manifest with `kind: "style"`, `required: true`, sha256, and versionated URL.
+* `support/8.43.0/resources-manifest.json` â€” includes `i18n/en`, `i18n/pt-BR` (required), `update/changelog` (not required), and `css/app-noncritical` (required).
 * i18n JSON resources propagated to `support/8.43.0/i18n/`.
 
 ### Technical adjustments
@@ -111,9 +111,9 @@
 
 ### Added
 
-* `source/js/update-changelog-resource.ts` Ã¢â‚¬â€ new module integrating the Update App changelog with the `appResources` IndexedDB cache. Provides `getCachedUpdateChangelog`, `cacheUpdateChangelogFromRemote`, `loadUpdateChangelogWithCache`, and `refreshUpdateChangelogResource`.
-* `support/8.42.0/changelog.md` Ã¢â‚¬â€ versioned snapshot of CHANGELOG.md for this release, registered in the resource manifest as a non-required `data` resource with sha256 and versionated URL.
-* `support/8.42.0/resources-manifest.json` Ã¢â‚¬â€ includes `i18n/en`, `i18n/pt-BR` (required), and `update/changelog` (not required).
+* `source/js/update-changelog-resource.ts` â€” new module integrating the Update App changelog with the `appResources` IndexedDB cache. Provides `getCachedUpdateChangelog`, `cacheUpdateChangelogFromRemote`, `loadUpdateChangelogWithCache`, and `refreshUpdateChangelogResource`.
+* `support/8.42.0/changelog.md` â€” versioned snapshot of CHANGELOG.md for this release, registered in the resource manifest as a non-required `data` resource with sha256 and versionated URL.
+* `support/8.42.0/resources-manifest.json` â€” includes `i18n/en`, `i18n/pt-BR` (required), and `update/changelog` (not required).
 * Cached changelog fallback: when the Update App opens, any previously cached changelog is displayed immediately while the remote fetch runs in the background. If the remote fetch fails, the cached value is preserved; if there is neither cache nor remote, the "unavailable" message is shown.
 * i18n JSON resources propagated to `support/8.42.0/i18n/` (identical to 8.41.0).
 
@@ -121,7 +121,7 @@
 
 * `checkRemoteUpdateInfo()` updated: cached changelog is loaded before the remote fetch and shown immediately (`changelogLoading = false`) when available; `refreshUpdateChangelogResource()` replaces the direct `fetchRemoteText` call for the changelog and saves the result to `appResources`.
 * `UPDATE_REMOTE.changelogUrl` continues to point to `main/CHANGELOG.md` so future release notes are always fetched from the latest remote version; the versioned `support/8.42.0/changelog.md` serves as the initial cache snapshot only.
-* Changelog resource key is `update/changelog`; kind is `data`; `required: false` Ã¢â‚¬â€ changelog cache failure never blocks boot or version check.
+* Changelog resource key is `update/changelog`; kind is `data`; `required: false` â€” changelog cache failure never blocks boot or version check.
 * No functional JavaScript externalized; all runtime scripts remain inline in `index.html`.
 * Vite single-file build preserved; deploy artifact remains a single `index.html`.
 * Fibery runtime tests remain manual.
@@ -137,17 +137,17 @@
 ### Added
 
 * i18n translations externalized to versioned JSON resources (`support/8.41.0/i18n/en.json` and `support/8.41.0/i18n/pt-BR.json`), covering all 307 translation keys previously split across `i18n-base.ts`, `i18n-en.js`, and `i18n-pt-br.js`.
-* `source/js/i18n-resources.ts` Ã¢â‚¬â€ new module providing `parseI18nResource`, `loadCachedI18nResources`, `applyI18nResourceBundle`, `mergeI18nTranslations`, and `ensureI18nResourcesLoaded`.
+* `source/js/i18n-resources.ts` â€” new module providing `parseI18nResource`, `loadCachedI18nResources`, `applyI18nResourceBundle`, `mergeI18nTranslations`, and `ensureI18nResourcesLoaded`.
 * `resources-manifest.json` for 8.41.0 lists `i18n/en` and `i18n/pt-BR` as required `data` resources with sha256 and version.
 * Boot flow now awaits `ensureRequiredResources()` before loading i18n from cache and re-applying translations. If resources are missing, overlay shows for retry; after successful download, i18n is applied automatically.
-* `scripts/checks.mjs` Ã¢â‚¬â€ new `checkI18nJsonFiles(version)` validates i18n JSON files: presence, valid JSON, all-string values, and key alignment between en/pt-BR.
-* `scripts/validate-build.mjs` Ã¢â‚¬â€ `ensureI18nResourcesLoaded` added to bootstrap symbol checks; assertions added that `i18n-en.js` and `i18n-pt-br.js` are absent from generated HTML.
+* `scripts/checks.mjs` â€” new `checkI18nJsonFiles(version)` validates i18n JSON files: presence, valid JSON, all-string values, and key alignment between en/pt-BR.
+* `scripts/validate-build.mjs` â€” `ensureI18nResourcesLoaded` added to bootstrap symbol checks; assertions added that `i18n-en.js` and `i18n-pt-br.js` are absent from generated HTML.
 
 ### Technical adjustments
 
 * `source/js/i18n-base.ts` reduced to ~30 minimal fallback keys covering initial UI render (status bar, search, welcome, sidebar labels, copy error); full translations loaded from `appResources` cache at runtime.
-* `source/js/i18n-en.js` and `source/js/i18n-pt-br.js` removed Ã¢â‚¬â€ content merged into versioned JSON resources.
-* `scripts/checks.mjs` Ã¢â‚¬â€ `checkI18nFilesOnlyExtend` and regex-based `checkI18nKeyAlignment` replaced by `checkI18nJsonFiles`; `ALLOWED_JS` allowlist removed; check now fails if old i18n JS files appear in the manifest.
+* `source/js/i18n-en.js` and `source/js/i18n-pt-br.js` removed â€” content merged into versioned JSON resources.
+* `scripts/checks.mjs` â€” `checkI18nFilesOnlyExtend` and regex-based `checkI18nKeyAlignment` replaced by `checkI18nJsonFiles`; `ALLOWED_JS` allowlist removed; check now fails if old i18n JS files appear in the manifest.
 * Language switch and `applyI18n()` continue to work as before; second `applyI18n()` call in `lifecycle-init.ts` applies full translations after i18n cache load.
 * No functional JavaScript externalized; all runtime scripts remain inline in `index.html`.
 * Vite single-file build preserved; deploy artifact remains a single `index.html`.
@@ -161,22 +161,22 @@
 
 ### Added
 
-* `scripts/checks.mjs` Ã¢â‚¬â€ resource manifest validation expanded for required-resource constraints:
+* `scripts/checks.mjs` â€” resource manifest validation expanded for required-resource constraints:
   * `sha256` format validated (64 lowercase hex chars) when present;
   * `required: true` entries must have `sha256` and `version` fields;
   * GitHub raw URLs from this repo must point to a versioned path (`/${version}/`);
-  * GitHub raw URLs are mapped to local repo paths Ã¢â‚¬â€ local file existence verified;
+  * GitHub raw URLs are mapped to local repo paths â€” local file existence verified;
   * `sha256` hash computed with Node `crypto.createHash('sha256')` and compared against manifest for resolvable local files;
   * required resources whose URL cannot be mapped to a local path now fail with a clear error;
   * resource URL must not point into `source/` directory.
-* `scripts/validate-build.mjs` Ã¢â‚¬â€ resource bootstrap validation added:
+* `scripts/validate-build.mjs` â€” resource bootstrap validation added:
   * `resourceBootOverlay` added to essential DOM IDs list;
   * inline script must contain `ensureRequiredResources`, `retryRequiredResourcesDownload`, and `appResources` string.
-* `support/8.40.0/resources-manifest.json` Ã¢â‚¬â€ versioned manifest for this release (`resources: []`).
+* `support/8.40.0/resources-manifest.json` â€” versioned manifest for this release (`resources: []`).
 
 ### Technical adjustments
 
-* `resources: []` continues to pass all checks unchanged Ã¢â‚¬â€ no entries means no entry-level checks run.
+* `resources: []` continues to pass all checks unchanged â€” no entries means no entry-level checks run.
 * `warn()` helper added to `checks.mjs` for non-fatal resource warnings (optional resource with missing local file).
 * SHA-256 computed on raw file bytes; for UTF-8 text resources line endings should be LF (matching GitHub raw delivery).
 * Functional scripts (`kind: "script"`) remain blocked in `checks.mjs`.
@@ -197,22 +197,22 @@
 
 ### Added
 
-* `app-resources-loader.ts` Ã¢â‚¬â€ complete runtime loader: `sha256Hex` (Web Crypto), `validateResourceContentHash`, `fetchResourceContent`, `downloadResourceEntry`, `getRequiredResourceStatuses`, `downloadRequiredResources`, `ensureRequiredResources`, `retryRequiredResourcesDownload`. `checkRequiredResources` kept as backward-compatible alias for `ensureRequiredResources`.
-* `app-resources-storage.ts` Ã¢â‚¬â€ new helpers: `getResourceContent`, `isResourceRecordCompatible` (checks `status`, `sha256`, `version`), `normalizeResourceRecord`.
-* `app-resources-boot.ts` Ã¢â‚¬â€ boot/retry overlay controller: `showResourceBootOverlay`, `hideResourceBootOverlay`, `renderResourceBootOverlay`, `initResourceBootEvents`.
-* `panel-resources-boot.html` Ã¢â‚¬â€ minimal fixed overlay (hidden by default): shown only when required resources are missing; has title, message, Download button, and error area.
+* `app-resources-loader.ts` â€” complete runtime loader: `sha256Hex` (Web Crypto), `validateResourceContentHash`, `fetchResourceContent`, `downloadResourceEntry`, `getRequiredResourceStatuses`, `downloadRequiredResources`, `ensureRequiredResources`, `retryRequiredResourcesDownload`. `checkRequiredResources` kept as backward-compatible alias for `ensureRequiredResources`.
+* `app-resources-storage.ts` â€” new helpers: `getResourceContent`, `isResourceRecordCompatible` (checks `status`, `sha256`, `version`), `normalizeResourceRecord`.
+* `app-resources-boot.ts` â€” boot/retry overlay controller: `showResourceBootOverlay`, `hideResourceBootOverlay`, `renderResourceBootOverlay`, `initResourceBootEvents`.
+* `panel-resources-boot.html` â€” minimal fixed overlay (hidden by default): shown only when required resources are missing; has title, message, Download button, and error area.
 * `state.resources` extended: `downloading`, `statuses`, `lastCheckedAt`, `lastDownloadedAt`.
-* `support/8.39.0/resources-manifest.json` Ã¢â‚¬â€ versioned manifest for this release (`resources: []`).
-* `scripts/checks.mjs` Ã¢â‚¬â€ resource entry validation when `resources.length > 0`: required fields (`key`, `url`, `kind`), allowed `kind` values, allowed `encoding` values, boolean `required`, HTTPS URL, no `script` kind allowed.
+* `support/8.39.0/resources-manifest.json` â€” versioned manifest for this release (`resources: []`).
+* `scripts/checks.mjs` â€” resource entry validation when `resources.length > 0`: required fields (`key`, `url`, `kind`), allowed `kind` values, allowed `encoding` values, boolean `required`, HTTPS URL, no `script` kind allowed.
 
 ### Technical adjustments
 
 * `lifecycle-init.ts`: `void checkRequiredResources()` replaced by `void ensureRequiredResources()`.
-* With `resources: []`, boot is unchanged Ã¢â‚¬â€ no overlay shown, no extra blocking.
+* With `resources: []`, boot is unchanged â€” no overlay shown, no extra blocking.
 * When required resources are detected missing, overlay is shown with retry/download flow.
-* `fetchRemoteText` (wrapped with `withApiUsage` / `github-remote`) is reused for resource downloads Ã¢â‚¬â€ no duplicate API usage tracking.
+* `fetchRemoteText` (wrapped with `withApiUsage` / `github-remote`) is reused for resource downloads â€” no duplicate API usage tracking.
 * Web Crypto (`crypto.subtle`) used for SHA-256; throws clearly if unavailable.
-* Functional scripts (`kind: "script"`) blocked in `checks.mjs` Ã¢â‚¬â€ no functional JS externalized.
+* Functional scripts (`kind: "script"`) blocked in `checks.mjs` â€” no functional JS externalized.
 * No actual i18n/CSS/template/JS externalization in this release.
 
 ### Notes
@@ -230,24 +230,24 @@
 
 ### Added
 
-* `support/8.38.0/resources-manifest.json` Ã¢â‚¬â€ versioned resource manifest (empty `resources: []` nesta fase; base para externalizaÃƒÂ§ÃƒÂ£o futura).
-* `appResources` store no IndexedDB (`FiberyHtmlEditorPro` schema v6) com ÃƒÂ­ndices `appVersion`, `kind` e `downloadedAt`.
+* `support/8.38.0/resources-manifest.json` â€” versioned resource manifest (empty `resources: []` nesta fase; base para externalizaÃ§Ã£o futura).
+* `appResources` store no IndexedDB (`FiberyHtmlEditorPro` schema v6) com Ã­ndices `appVersion`, `kind` e `downloadedAt`.
 * `source/types/resources.ts` extendido: `ResourceEncoding`, `ResourceValidationResult`, `RequiredResourceStatus`; campos `sha256`, `encoding`, `version` em `ResourceManifestEntry`; campos `appVersion`, `downloadedAt` em `ResourceRecord`.
-* `source/js/app-resources-storage.ts` Ã¢â‚¬â€ helpers de persistÃƒÂªncia: `putResourceRecord`, `getResourceRecord`, `getAllResourceRecords`, `deleteResourceRecord`.
-* `source/js/app-resources-loader.ts` Ã¢â‚¬â€ `fetchResourceManifest` (busca e valida shape) e `checkRequiredResources` (boot check nÃƒÂ£o-bloqueante).
+* `source/js/app-resources-storage.ts` â€” helpers de persistÃªncia: `putResourceRecord`, `getResourceRecord`, `getAllResourceRecords`, `deleteResourceRecord`.
+* `source/js/app-resources-loader.ts` â€” `fetchResourceManifest` (busca e valida shape) e `checkRequiredResources` (boot check nÃ£o-bloqueante).
 * `state.resources` em `AppState`: `loading`, `ready`, `errorMessage`, `requiredMissing`, `manifest`.
-* Hook de boot em `lifecycle-init.ts`: `void checkRequiredResources()` chamado apÃƒÂ³s `applyEmergencyDraftIfRelevant`, nÃƒÂ£o bloqueia o boot quando `resources: []`.
-* `scripts/checks.mjs` agora valida que `support/<version>/resources-manifest.json` existe, ÃƒÂ© JSON vÃƒÂ¡lido, tem `version` string e `resources` array, e que `version` bate com a versÃƒÂ£o do manifest.
+* Hook de boot em `lifecycle-init.ts`: `void checkRequiredResources()` chamado apÃ³s `applyEmergencyDraftIfRelevant`, nÃ£o bloqueia o boot quando `resources: []`.
+* `scripts/checks.mjs` agora valida que `support/<version>/resources-manifest.json` existe, Ã© JSON vÃ¡lido, tem `version` string e `resources` array, e que `version` bate com a versÃ£o do manifest.
 
 ### Technical adjustments
 
-* `IndexedDbStoreName` union extendida com `'appResources'`; DB bump de versÃƒÂ£o 5 Ã¢â€ â€™ 6.
-* `legacy-globals.d.ts` atualizado com type aliases de resources e declaraÃƒÂ§ÃƒÂµes das novas funÃƒÂ§ÃƒÂµes.
-* Nenhum recurso real externalizado nesta fase Ã¢â‚¬â€ i18n, CSS e template permanecem no bundle.
+* `IndexedDbStoreName` union extendida com `'appResources'`; DB bump de versÃ£o 5 â†’ 6.
+* `legacy-globals.d.ts` atualizado com type aliases de resources e declaraÃ§Ãµes das novas funÃ§Ãµes.
+* Nenhum recurso real externalizado nesta fase â€” i18n, CSS e template permanecem no bundle.
 
 ### Notes
 
-* Sem mudanÃƒÂ§as de UX ou comportamento de runtime nesta versÃƒÂ£o.
+* Sem mudanÃ§as de UX ou comportamento de runtime nesta versÃ£o.
 
 ### Validation
 
@@ -259,8 +259,8 @@
 
 ### Added
 
-* `npm run verify` Ã¢â‚¬â€ local validation aggregator that runs, in order: `typecheck`, local checks (`scripts/checks.mjs`), `build:tmp`, `validate:tmp`, `build`, `validate`. Fails fast on the first failing step with a clear label.
-* `scripts/checks.mjs` Ã¢â‚¬â€ lightweight Node-only pre-build checks:
+* `npm run verify` â€” local validation aggregator that runs, in order: `typecheck`, local checks (`scripts/checks.mjs`), `build:tmp`, `validate:tmp`, `build`, `validate`. Fails fast on the first failing step with a clear label.
+* `scripts/checks.mjs` â€” lightweight Node-only pre-build checks:
   * manifest version and `package.json` version are aligned;
   * `CHANGELOG.md` top entry matches the manifest version;
   * no unexpected `.js` files in the manifest (only `i18n-en.js` and `i18n-pt-br.js` are allowed);
@@ -355,7 +355,7 @@
 ### Notes
 
 * No intentional UX or runtime behavior changes.
-* `state.code.editor` cast to `MonacoSingleEditorInstance` where required by strict TypeScript; `monaco` cast to `MonacoGlobal` inside try/catch (undefined at runtime triggers catch Ã¢â€ â€™ fallback).
+* `state.code.editor` cast to `MonacoSingleEditorInstance` where required by strict TypeScript; `monaco` cast to `MonacoGlobal` inside try/catch (undefined at runtime triggers catch â†’ fallback).
 
 ### Validation
 
@@ -571,7 +571,7 @@
 
 ### Technical adjustments
 
-* Migrated save availability state to TypeScript (`save-availability-state.ts`): typed save-blocked reason, remote status helpers, check-now button label sync, and `requestSavePage`; all save-blocked rules (`checking`Ã¢â€ â€™`pending`, `failed`, `conflict`, `conflict-resolved-local`Ã¢â€ â€™unblocked) preserved exactly.
+* Migrated save availability state to TypeScript (`save-availability-state.ts`): typed save-blocked reason, remote status helpers, check-now button label sync, and `requestSavePage`; all save-blocked rules (`checking`â†’`pending`, `failed`, `conflict`, `conflict-resolved-local`â†’unblocked) preserved exactly.
 * Migrated cached page open flow to TypeScript (`cached-page-open-flow.ts`): typed request-id creation, remote verification timer, stale-request protection, Last Saved Cache update rules, conflict candidate capture, and all open/retry/external-sync-check-now action flows; 2-second delay before remote verification preserved.
 * Migrated conflict resolution flow to TypeScript (`conflict-resolution-flow.ts`): typed Monaco diff editor wrappers, fallback diff renderer, scroll sync, conflict modal open/close, keep-local and load-Fibery actions; draft preservation before loading Fibery version preserved; mandatory comparator with no silent remote-apply preserved.
 * Added type aliases `RemoteStatus`, `SaveBlockedReason`, `ConflictCandidate`, `ConflictResolution` to `legacy-globals.d.ts`.
@@ -648,7 +648,7 @@
 ### Notes
 
 * No intentional UX or runtime behavior changes.
-* `drafts-recovery-modal.js`, `drafts-diff-utils.js`, and `drafts-diff-render.js` remain in JavaScript Ã¢â‚¬â€ deferred to next lot.
+* `drafts-recovery-modal.js`, `drafts-diff-utils.js`, and `drafts-diff-render.js` remain in JavaScript â€” deferred to next lot.
 * The final Fibery deployment remains a single generated `index.html` with the Vite bundle inlined.
 
 ### Validation
@@ -841,11 +841,11 @@
 
 ### Fixed
 
-* **Bug 1 Ã¢â‚¬â€ Last Saved Cache premature update**: `savePageContentCacheSafe` was called unconditionally during remote verification, updating the cache with Fibery content even before the user chose. Cache write (and `cacheSignature` update) is now inside the `if (sameAsCache)` branch only. On conflict, the cache is never touched until the user picks "Load Fibery version".
-* **Bug 2 Ã¢â‚¬â€ "Load Fibery version" button broken**: `loadFiberyVersionFromConflict` called `openConfirm()` which rendered behind the conflict modal (z-[60] < z-[80]), making the confirm dialog invisible and blocking the action. The intermediate `openConfirm` step is removed; choosing "Load Fibery version" now applies directly.
-* **Bug 3 Ã¢â‚¬â€ Mandatory comparator**: Removed X button, "Continue editing" button, and ESC/backdrop close handlers from the conflict modal. The modal is now truly modal Ã¢â‚¬â€ the user must pick one of the two explicit actions before proceeding.
-* **Bug 4 Ã¢â‚¬â€ "Compare versions" header button**: The header button is now hidden while the conflict modal is already open, preventing duplicate UI. It reappears if the conflict persists and the modal is closed.
-* **Bug 5 Ã¢â‚¬â€ Simplified comparator layout**: Removed the three-column (Base/Local/Fibery) layout and replaced with two columns: "Cache version" (no local edits) or "Local draft" (with local edits), and "Fibery version". Removed tab switcher; single diff always shows local/cache vs Fibery.
+* **Bug 1 â€” Last Saved Cache premature update**: `savePageContentCacheSafe` was called unconditionally during remote verification, updating the cache with Fibery content even before the user chose. Cache write (and `cacheSignature` update) is now inside the `if (sameAsCache)` branch only. On conflict, the cache is never touched until the user picks "Load Fibery version".
+* **Bug 2 â€” "Load Fibery version" button broken**: `loadFiberyVersionFromConflict` called `openConfirm()` which rendered behind the conflict modal (z-[60] < z-[80]), making the confirm dialog invisible and blocking the action. The intermediate `openConfirm` step is removed; choosing "Load Fibery version" now applies directly.
+* **Bug 3 â€” Mandatory comparator**: Removed X button, "Continue editing" button, and ESC/backdrop close handlers from the conflict modal. The modal is now truly modal â€” the user must pick one of the two explicit actions before proceeding.
+* **Bug 4 â€” "Compare versions" header button**: The header button is now hidden while the conflict modal is already open, preventing duplicate UI. It reappears if the conflict persists and the modal is closed.
+* **Bug 5 â€” Simplified comparator layout**: Removed the three-column (Base/Local/Fibery) layout and replaced with two columns: "Cache version" (no local edits) or "Local draft" (with local edits), and "Fibery version". Removed tab switcher; single diff always shows local/cache vs Fibery.
 
 ### Technical adjustments
 
@@ -896,7 +896,7 @@
 ### Fixed
 
 * Added ~2-second delay before automatic remote verification after cached page open, preventing API spam when navigating rapidly between cached pages and giving the user time to start editing before conflict detection fires.
-* Cancellation of pending remote verification timer when navigating to another page, creating a new page, showing blank page, or completing a save Ã¢â‚¬â€ stale timers no longer fire.
+* Cancellation of pending remote verification timer when navigating to another page, creating a new page, showing blank page, or completing a save â€” stale timers no longer fire.
 * Moved `savePageContentCacheSafe` inside the active-request guard so stale remote results from a previous page can no longer update the Last Saved Cache for a page the user has already left.
 * Added `state.dirty` as a conservative fast-path in `hasUserEditedSinceCachedOpen`: if the dirty flag is set for any reason, conflict is preferred over silent remote apply.
 * Added discrete `log()` output when a stale remote verification is skipped and when the conflict/apply decision is made.
@@ -930,7 +930,7 @@
   * **Load Fibery version**: saves local edits as a draft first, then applies the remote candidate into the editor, updates Last Saved Cache, and marks verification as confirmed.
   * **Continue editing**: closes the modal without changing conflict state; save remains blocked.
 * Added "Compare versions" button in the page header, visible only when `remoteStatus === 'conflict'`, to open the comparison modal.
-* Added two diff tabs inside the conflict modal (Fibery changes / My changes) to switch the Monaco diff view between baseÃ¢â€ â€™remote and baseÃ¢â€ â€™local comparisons.
+* Added two diff tabs inside the conflict modal (Fibery changes / My changes) to switch the Monaco diff view between baseâ†’remote and baseâ†’local comparisons.
 
 ### Fixed
 
@@ -1265,7 +1265,7 @@
 * Added an Update App panel with remote version checking through GitHub.
 * Added display of the installed version and the available remote version.
 * Added simple `x.y.z` semver comparison for update status.
-* Added a Ã¢â‚¬Å“What changedÃ¢â‚¬Â section that loads the remote `CHANGELOG.md`.
+* Added a â€œWhat changedâ€ section that loads the remote `CHANGELOG.md`.
 * Added status states for up-to-date, update available, and verification failure.
 
 ### Technical adjustments
@@ -1321,7 +1321,7 @@
 
 * The generated local iframe HTML is kept separate from the editor HTML.
 * Tailwind browser/CDN is injected only into the temporary iframe document.
-* Saved Fibery content remains only the userÃ¢â‚¬â„¢s original HTML.
+* Saved Fibery content remains only the userâ€™s original HTML.
 * Real/local preview decisions use a reliable baseline instead of only `dirty` state.
 
 ### Visual changes
@@ -1421,7 +1421,7 @@
 
 * Adjusted search cleanup.
 * Fixed three-dot menus.
-* Fixed the Ã¢â‚¬Å“Move to projectÃ¢â‚¬Â submenu so it stays open during interaction.
+* Fixed the â€œMove to projectâ€ submenu so it stays open during interaction.
 * Refined sidebar, context menu, and local organization behavior.
 
 ### Technical adjustments
@@ -1448,3 +1448,5 @@
 * Kept the architecture as a single frontend with no owned backend.
 * Used available Fibery APIs/behavior.
 * Used IndexedDB/localStorage for local app persistence.
+
+

@@ -1,0 +1,51 @@
+{
+  "version": "8.45.1",
+  "generatedAt": 0,
+  "resources": [
+    {
+      "key": "i18n/en",
+      "kind": "data",
+      "url": "https://raw.githubusercontent.com/rabrunos/fibery-html-editor/main/support/8.45.1/i18n/en.json",
+      "version": "8.45.1",
+      "sha256": "ba8ae9dc172903d403c98188a38bb9dfce32a860ea765d6cb5f0df44a0d08269",
+      "encoding": "utf-8",
+      "required": true
+    },
+    {
+      "key": "i18n/pt-BR",
+      "kind": "data",
+      "url": "https://raw.githubusercontent.com/rabrunos/fibery-html-editor/main/support/8.45.1/i18n/pt-BR.json",
+      "version": "8.45.1",
+      "sha256": "cc4bf873a24e842db366d68e1437e7b72bbea3705d3a038e5719367fc9f1aede",
+      "encoding": "utf-8",
+      "required": true
+    },
+    {
+      "key": "css/app-noncritical",
+      "kind": "style",
+      "url": "https://raw.githubusercontent.com/rabrunos/fibery-html-editor/main/support/8.45.1/css/app-noncritical.css",
+      "version": "8.45.1",
+      "sha256": "faa957810d5d74107ad507e6449a38e4a262c35a9e0382e5e15ec9965b168477",
+      "encoding": "utf-8",
+      "required": true
+    },
+    {
+      "key": "templates/app-modals",
+      "kind": "template",
+      "url": "https://raw.githubusercontent.com/rabrunos/fibery-html-editor/main/support/8.45.1/templates/app-modals.html",
+      "version": "8.45.1",
+      "sha256": "cc082384c0c6596b8103a004b1c8591e46d67d77b1dc4931559e748a4b717c69",
+      "encoding": "utf-8",
+      "required": true
+    },
+    {
+      "key": "update/changelog",
+      "kind": "data",
+      "url": "https://raw.githubusercontent.com/rabrunos/fibery-html-editor/main/support/8.45.1/changelog.md",
+      "version": "8.45.1",
+      "sha256": "7ee01f993ef3a91359195803cf4221876688bbefe836bc3479744b07d9f70365",
+      "encoding": "utf-8",
+      "required": false
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 function maybeCheckUpdateOnStartup(): void {
   if (localStorage.getItem(LS.updateCheckOnStartup) === '0') return;
-  void checkRemoteUpdateInfo();
+  void checkRemoteUpdateInfo({ automatic: true, source: 'update-startup' });
 }
 
 function syncUpdateAvailableToast(): void {

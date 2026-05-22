@@ -23,9 +23,9 @@ async function loadUpdateChangelogWithCache(): Promise<string | null> {
   return getCachedUpdateChangelog();
 }
 
-async function refreshUpdateChangelogResource(): Promise<string | null> {
+async function refreshUpdateChangelogResource(options: { automatic?: boolean; source?: string } = {}): Promise<string | null> {
   try {
-    const raw = await fetchRemoteText(UPDATE_REMOTE.changelogUrl, { operation: 'updateChangelog', source: 'update-app' });
+    const raw = await fetchRemoteText(UPDATE_REMOTE.changelogUrl, { operation: 'updateChangelog', source: options.source || 'update-app', automatic: !!options.automatic });
     const text = String(raw || '').trim();
     if (!text) return '';
     await cacheUpdateChangelogFromRemote(text);
