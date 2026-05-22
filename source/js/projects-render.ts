@@ -25,14 +25,15 @@ function renderSidebarProjects(): void {
     const items = state.projects.itemsByProject[project.id] || [];
     const collapsed = !!project.collapsed;
     const folderIcon = collapsed ? iconProjectClosed({ className: 'h-4 w-4' }) : iconProjectOpen({ className: 'h-4 w-4' });
+    const projectTitle = project.name || t('untitledProject');
     const pagesHtml = collapsed ? '' : `<div class="mt-1 space-y-1 pl-2">${items.length ? items.map(projectPageItemHtml).join('') : `<div class="px-3 py-2 text-xs text-gray-400">${escapeHtml(t('noPages'))}</div>`}</div>`;
     return `<div class="project-block rounded-lg">
-      <div class="group group/project flex items-center gap-1 rounded-lg px-1 py-1 hover:bg-gray-100">
-        <button class="project-toggle flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-gray-500 hover:bg-gray-200" data-project-id="${escapeHtml(project.id)}" title="${escapeHtml(project.name || t('untitledProject'))}">
+      <div class="group group/project flex cursor-pointer items-center gap-1 rounded-lg px-1 py-1 hover:bg-gray-100" data-project-toggle-row="1" data-project-id="${escapeHtml(project.id)}" title="${escapeHtml(projectTitle)}">
+        <button class="project-toggle flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-gray-500 hover:bg-gray-200" data-project-id="${escapeHtml(project.id)}" title="${escapeHtml(projectTitle)}" aria-label="${escapeHtml(projectTitle)}" aria-expanded="${collapsed ? 'false' : 'true'}">
           ${folderIcon}
         </button>
-        <div class="min-w-0 flex-1 truncate text-sm font-semibold text-gray-700" data-project-title-id="${escapeHtml(project.id)}" title="${escapeHtml(project.name || t('untitledProject'))}">${escapeHtml(project.name || t('untitledProject'))}</div>
-        ${projectMenuButton(project.id, project.name || t('untitledProject'))}
+        <div class="min-w-0 flex-1 truncate text-sm font-semibold text-gray-700" data-project-title-id="${escapeHtml(project.id)}" title="${escapeHtml(projectTitle)}">${escapeHtml(projectTitle)}</div>
+        ${projectMenuButton(project.id, projectTitle)}
       </div>
       ${pagesHtml}
     </div>`;

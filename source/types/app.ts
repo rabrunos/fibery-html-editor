@@ -158,7 +158,9 @@ export interface AppState {
     visibleLimit: number;
     pageCache: Record<string, FiberyPage | PageContentCacheRecord>;
     lastRemoteLoadAt: number;
+    lastOpenRemoteLoadAt: number;
     remoteCacheTtlMs: number;
+    openRemoteCooldownMs: number;
     autoRefreshEnabled: boolean;
     autoRefreshIntervalMs: number;
   };

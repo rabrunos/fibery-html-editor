@@ -5,6 +5,7 @@ interface SidebarLoadOptions {
   automatic?: boolean;
   source?: string;
   remote?: boolean;
+  bypassRemoteTtl?: boolean;
 }
 
 function normalizePageRows(rows: FiberyPage[]): FiberyPage[] {
@@ -78,8 +79,8 @@ function refreshSidebarFromLocalCache(options: { reset?: boolean; append?: boole
   }
 }
 
-function shouldUseRecentSidebarRemoteLoad(options: { force?: boolean } = {}): boolean {
-  if (options.force) return false;
+function shouldUseRecentSidebarRemoteLoad(options: { force?: boolean; bypassRemoteTtl?: boolean } = {}): boolean {
+  if (options.force || options.bypassRemoteTtl) return false;
   const lastRemoteLoadAt = Number(state.sidebar.lastRemoteLoadAt || 0);
   const ttl = Math.max(60000, Number(state.sidebar.remoteCacheTtlMs || 300000));
   return !!lastRemoteLoadAt && (Date.now() - lastRemoteLoadAt) < ttl;
@@ -97,7 +98,7 @@ async function loadSidebarPages(options: SidebarLoadOptions | boolean = {}): Pro
 
   refreshSidebarFromLocalCache({ reset, append });
   if (!force && !opts.remote) return;
-  if (shouldUseRecentSidebarRemoteLoad({ force })) return;
+  if (shouldUseRecentSidebarRemoteLoad({ force, bypassRemoteTtl: !!opts.bypassRemoteTtl })) return;
   if (automatic && !canRunAutomaticFiberyCall('sidebar')) {
     logAutomaticFiberySkip('sidebar');
     return;

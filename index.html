@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.47.3" />
+  <meta name="fibery-html-editor-version" content="8.47.4" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -381,7 +381,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 
 (function() {
 	//#region \0virtual:fibery-html-editor/manifest-js
-	const APP_VERSION = "8.47.3";
+	const APP_VERSION = "8.47.4";
 	window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 	document.documentElement.dataset.appVersion = APP_VERSION;
 	var UPDATE_REMOTE = Object.freeze({
@@ -708,7 +708,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			recentCalls: [],
 			maxRecentCalls: 100,
 			summaryWindowMs: 3e5,
-			automaticCooldownMs: 18e4,
+			automaticCooldownMs: 6e4,
 			slowCallThresholdMs: 4e3,
 			slowModeMs: 3e5,
 			lastAutomaticFiberyCallAt: 0,
@@ -786,9 +786,11 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			visibleLimit: 20,
 			pageCache: {},
 			lastRemoteLoadAt: 0,
+			lastOpenRemoteLoadAt: 0,
 			remoteCacheTtlMs: 3e5,
-			autoRefreshEnabled: false,
-			autoRefreshIntervalMs: 6e5
+			openRemoteCooldownMs: 1e4,
+			autoRefreshEnabled: true,
+			autoRefreshIntervalMs: 6e4
 		},
 		projects: {
 			rows: [],
@@ -1285,43 +1287,50 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		if (state.update.checking || state.update.applying || state.update.rollbacking) return;
 		state.update.checking = true;
 		state.update.status = "checking";
-		state.update.remoteVersion = "";
-		const cached = await loadUpdateChangelogWithCache();
-		if (cached) {
-			state.update.remoteChangelog = cached;
-			state.update.changelogLoading = false;
-		} else state.update.changelogLoading = true;
-		renderUpdateAppPanel();
-		const [indexResult, changelogResult] = await Promise.allSettled([fetchRemoteText(UPDATE_REMOTE.indexHtmlUrl, {
-			operation: "updateIndex",
-			source: options.source || "update-app",
-			automatic: !!options.automatic
-		}), refreshUpdateChangelogResource(options)]);
-		if (indexResult.status === "fulfilled") {
-			const remoteVersionRaw = extractRemoteVersionFromHtml(indexResult.value);
-			const localSemver = parseSemverSimple(APP_VERSION);
-			const remoteSemver = parseSemverSimple(remoteVersionRaw);
-			if (!remoteVersionRaw) {
-				state.update.status = "error";
-				log(t("updateRemoteVersionNotFound"));
-			} else if (!localSemver || !remoteSemver) {
-				state.update.status = "invalid";
-				state.update.remoteVersion = remoteVersionRaw;
+		try {
+			const cached = await loadUpdateChangelogWithCache();
+			if (cached) {
+				state.update.remoteChangelog = cached;
+				state.update.changelogLoading = false;
+			} else state.update.changelogLoading = true;
+			renderUpdateAppPanel();
+			const [indexResult, changelogResult] = await Promise.allSettled([fetchRemoteText(UPDATE_REMOTE.indexHtmlUrl, {
+				operation: "updateIndex",
+				source: options.source || "update-app",
+				automatic: !!options.automatic
+			}), refreshUpdateChangelogResource(options)]);
+			if (indexResult.status === "fulfilled") {
+				const remoteVersionRaw = extractRemoteVersionFromHtml(indexResult.value);
+				const localSemver = parseSemverSimple(APP_VERSION);
+				const remoteSemver = parseSemverSimple(remoteVersionRaw);
+				if (!remoteVersionRaw) {
+					state.update.status = "error";
+					log(t("updateRemoteVersionNotFound"));
+				} else if (!localSemver || !remoteSemver) {
+					state.update.status = "invalid";
+					state.update.remoteVersion = remoteVersionRaw;
+				} else {
+					state.update.remoteVersion = remoteSemver.raw;
+					const cmp = compareSemverSimple(localSemver, remoteSemver);
+					state.update.status = cmp === 0 ? "latest" : cmp < 0 ? "available" : "local-newer";
+				}
 			} else {
-				state.update.remoteVersion = remoteSemver.raw;
-				const cmp = compareSemverSimple(localSemver, remoteSemver);
-				state.update.status = cmp === 0 ? "latest" : cmp < 0 ? "available" : "local-newer";
+				state.update.status = "error";
+				log(`${t("updateCheckErrorLog")}: ${String(indexResult.reason?.message || indexResult.reason || "")}`);
 			}
-		} else {
+			const freshChangelog = changelogResult.status === "fulfilled" ? changelogResult.value : null;
+			if (typeof freshChangelog === "string" && freshChangelog) state.update.remoteChangelog = freshChangelog;
+			else if (!state.update.remoteChangelog) state.update.remoteChangelog = freshChangelog === "" ? t("updateChangelogEmpty") : "";
+		} catch (err) {
 			state.update.status = "error";
-			log(`${t("updateCheckErrorLog")}: ${String(indexResult.reason?.message || indexResult.reason || "")}`);
+			log(`${t("updateCheckErrorLog")}: ${err.message || String(err)}`);
+		} finally {
+			state.update.changelogLoading = false;
+			state.update.checking = false;
+			renderUpdateAppPanel();
+			const applicability = updateApplicabilityState();
+			if (applicability.isRemoteNewer || applicability.status === "available" || applicability.status === "invalid" || applicability.status === "error") logUpdateApplicabilityDiagnostic("check-complete", applicability);
 		}
-		const freshChangelog = changelogResult.status === "fulfilled" ? changelogResult.value : null;
-		if (typeof freshChangelog === "string" && freshChangelog) state.update.remoteChangelog = freshChangelog;
-		else if (!state.update.remoteChangelog) state.update.remoteChangelog = freshChangelog === "" ? t("updateChangelogEmpty") : "";
-		state.update.changelogLoading = false;
-		state.update.checking = false;
-		renderUpdateAppPanel();
 	}
 	function parseAppVersionFromHtmlSource(html = "") {
 		const match = String(html || "").match(/\b(?:const|let|var)\s+APP_VERSION\s*=\s*["']([^"']+)["']/);
@@ -1483,17 +1492,59 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		if (!state.current.id || !targetPageId) return false;
 		return state.current.id === targetPageId;
 	}
-	function hasApplicableRemoteUpdate() {
-		const local = parseSemverSimple(APP_VERSION);
-		const remote = parseSemverSimple(state.update.remoteVersion || "");
-		if (!local || !remote) return false;
-		return compareSemverSimple(local, remote) < 0;
+	var updateApplicabilityLogCache = {};
+	function updateApplicabilityState() {
+		const localVersion = String(APP_VERSION || "").trim();
+		const remoteVersion = String(state.update.remoteVersion || "").trim();
+		const localParsed = parseSemverSimple(localVersion);
+		const remoteParsed = parseSemverSimple(remoteVersion);
+		const status = String(state.update.status || "idle");
+		const comparison = localParsed && remoteParsed ? compareSemverSimple(localParsed, remoteParsed) : null;
+		const isRemoteNewer = comparison !== null && comparison < 0;
+		const canShowApply = isRemoteNewer || status === "available";
+		let disabledReasonKey = "";
+		if (canShowApply) {
+			if (state.update.checking) disabledReasonKey = "updateApplyUnavailableWhileChecking";
+			else if (state.update.applying) disabledReasonKey = "updateApplying";
+			else if (state.update.rollbacking) disabledReasonKey = "updateRollbackRestoring";
+			else if (!localParsed || !remoteParsed) disabledReasonKey = "updateStatusInvalid";
+			else if (!isRemoteNewer) disabledReasonKey = "updateRemoteVersionNotNewer";
+			else if (!state.isAdmin) disabledReasonKey = "updateAdminRequired";
+			else if (!canResolveAppPageForUpdate()) disabledReasonKey = "updateAppPageUnavailable";
+		}
+		return {
+			localVersion,
+			remoteVersion,
+			localParsed,
+			remoteParsed,
+			isRemoteNewer,
+			canShowApply,
+			canApplyNow: canShowApply && isRemoteNewer && !disabledReasonKey,
+			disabledReasonKey,
+			status
+		};
 	}
-	function canShowApplyUpdateButton() {
-		return hasApplicableRemoteUpdate();
+	function updateApplicabilityDiagnosticSummary(applicability = updateApplicabilityState()) {
+		return [
+			`local=${applicability.localVersion || "-"}`,
+			`remote=${applicability.remoteVersion || "-"}`,
+			`localParsed=${applicability.localParsed?.raw || "-"}`,
+			`remoteParsed=${applicability.remoteParsed?.raw || "-"}`,
+			`status=${applicability.status || "-"}`,
+			`isRemoteNewer=${String(applicability.isRemoteNewer)}`,
+			`canShowApply=${String(applicability.canShowApply)}`,
+			`canApplyNow=${String(applicability.canApplyNow)}`,
+			`reason=${applicability.disabledReasonKey || "-"}`,
+			`isAdmin=${String(!!state.isAdmin)}`,
+			`appPageId=${updateTargetAppPageId() || "-"}`
+		].join(" ");
 	}
-	function canApplyUpdateNow() {
-		return canShowApplyUpdateButton() && !state.update.checking && !state.update.applying && !state.update.rollbacking && state.isAdmin && canResolveAppPageForUpdate();
+	function logUpdateApplicabilityDiagnostic(context = "state", applicability = updateApplicabilityState(), options = {}) {
+		const summary = updateApplicabilityDiagnosticSummary(applicability);
+		const key = String(context || "state");
+		if (!options.force && updateApplicabilityLogCache[key] === summary) return;
+		updateApplicabilityLogCache[key] = summary;
+		log(`[update] ${key}: ${summary}`);
 	}
 	function normalizeUpdateTargetPage(pageId, page) {
 		return {
@@ -1541,21 +1592,10 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 	}
 	async function applyRemoteUpdate() {
 		if (state.update.applying) return;
-		if (state.update.rollbacking) {
-			setStatus(t("updateRollbackRestoring"));
-			return;
-		}
-		if (state.update.checking) {
-			setStatus(t("updateApplyUnavailableWhileChecking"));
-			return;
-		}
-		if (!state.isAdmin) {
-			setStatus(t("updateAdminRequired"));
-			log(t("updateAdminRequired"));
-			return;
-		}
-		if (!hasApplicableRemoteUpdate()) {
-			setStatus(t("updateRemoteVersionNotNewer"));
+		const applicability = updateApplicabilityState();
+		if (!applicability.canApplyNow) {
+			setStatus(t(applicability.disabledReasonKey || "updateRemoteVersionNotNewer"));
+			logUpdateApplicabilityDiagnostic("apply-blocked", applicability, { force: true });
 			return;
 		}
 		const targetPageId = updateTargetAppPageId();
@@ -2063,9 +2103,9 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			return;
 		}
 	}
-	function updateVersionComparisonState() {
-		const localSemver = parseSemverSimple(APP_VERSION);
-		const remoteSemver = parseSemverSimple(state.update.remoteVersion || "");
+	function updateVersionComparisonState(applicability = updateApplicabilityState()) {
+		const localSemver = applicability.localParsed;
+		const remoteSemver = applicability.remoteParsed;
 		if (localSemver && remoteSemver) return {
 			localSemver,
 			remoteSemver,
@@ -2079,29 +2119,53 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			localVsRemote: null
 		};
 	}
+	var updatePanelRenderLogCache = {};
+	function logUpdatePanelRenderIssue(key, message) {
+		if (updatePanelRenderLogCache[key] === message) return;
+		updatePanelRenderLogCache[key] = message;
+		log(message);
+	}
+	function resolveUpdateApplyButton() {
+		const direct = document.getElementById("updateApplyBtn");
+		if (direct) {
+			els.updateApplyBtn = direct;
+			return direct;
+		}
+		return els.updateApplyBtn || null;
+	}
 	function renderUpdateAppPanel() {
-		if (!els.updateInstalledVersionValue || !els.updateAvailableVersionValue || !els.updateCheckStatusText || !els.updateChangelogBox) return;
-		els.updateInstalledVersionValue.textContent = APP_VERSION;
-		els.updateAvailableVersionValue.textContent = state.update.remoteVersion || t("updateNotChecked");
-		els.updateCheckStatusText.textContent = updateStatusMessage();
+		const applicability = updateApplicabilityState();
+		if (applicability.status === "available" && !applicability.remoteVersion) logUpdatePanelRenderIssue("available-without-version", `[update] status is available but remoteVersion is empty: ${updateApplicabilityDiagnosticSummary(applicability)}`);
+		if (applicability.status === "latest" && applicability.isRemoteNewer) logUpdatePanelRenderIssue("latest-with-newer-version", `[update] status is latest but remoteVersion is newer: ${updateApplicabilityDiagnosticSummary(applicability)}`);
+		const missingRefs = [
+			["updateInstalledVersionValue", els.updateInstalledVersionValue],
+			["updateAvailableVersionValue", els.updateAvailableVersionValue],
+			["updateCheckStatusText", els.updateCheckStatusText],
+			["updateChangelogBox", els.updateChangelogBox]
+		].filter(([, ref]) => !ref).map(([name]) => name);
+		if (missingRefs.length > 0) logUpdatePanelRenderIssue("missing-panel-refs", `[update] panel refs missing: ${missingRefs.join(", ")} (${updateApplicabilityDiagnosticSummary(applicability)})`);
+		if (els.updateInstalledVersionValue) els.updateInstalledVersionValue.textContent = applicability.localVersion || APP_VERSION;
+		if (els.updateAvailableVersionValue) els.updateAvailableVersionValue.textContent = applicability.remoteVersion || t("updateNotChecked");
+		if (els.updateCheckStatusText) els.updateCheckStatusText.textContent = updateStatusMessage();
 		setUpdateVersionValueTone();
 		if (els.updateVerifyAgainBtn) {
 			els.updateVerifyAgainBtn.disabled = !!state.update.checking || !!state.update.applying || !!state.update.rollbacking;
 			els.updateVerifyAgainBtn.textContent = state.update.checking ? t("updateChecking") : t("updateCheckAgain");
 		}
-		if (els.updateApplyBtn) {
-			const showApply = canShowApplyUpdateButton();
-			els.updateApplyBtn.classList.toggle("hidden", !showApply);
-			const disableReason = !showApply ? "" : state.update.checking ? t("updateApplyUnavailableWhileChecking") : state.update.applying ? t("updateApplying") : state.update.rollbacking ? t("updateRollbackRestoring") : !state.isAdmin ? t("updateAdminRequired") : !canResolveAppPageForUpdate() ? t("updateAppPageUnavailable") : "";
-			const disabled = !!disableReason || !canApplyUpdateNow();
-			els.updateApplyBtn.disabled = disabled;
-			els.updateApplyBtn.textContent = state.update.applying ? t("updateApplying") : t("updateApply");
-			els.updateApplyBtn.title = disableReason || t("updateApply");
-		}
-		syncUpdateAvailableToast();
-		renderSettingsUpdateSection();
-		const comparison = updateVersionComparisonState();
-		if (state.update.changelogLoading) renderUpdateChangelog(els.updateChangelogBox, t("updateChangelogLoading"), comparison);
+		const updateApplyBtn = resolveUpdateApplyButton();
+		if (updateApplyBtn) {
+			updateApplyBtn.classList.toggle("hidden", !applicability.canShowApply);
+			const disableReason = applicability.disabledReasonKey ? t(applicability.disabledReasonKey) : "";
+			updateApplyBtn.disabled = !applicability.canApplyNow;
+			updateApplyBtn.textContent = state.update.applying ? t("updateApplying") : t("updateApply");
+			updateApplyBtn.title = disableReason || t("updateApply");
+			updateApplyBtn.setAttribute("aria-disabled", updateApplyBtn.disabled ? "true" : "false");
+			if (applicability.canShowApply && updateApplyBtn.classList.contains("hidden")) logUpdatePanelRenderIssue("apply-hidden-mismatch", `[update] apply button still has hidden class despite applicable state: ${updateApplicabilityDiagnosticSummary(applicability)}`);
+		} else logUpdatePanelRenderIssue("missing-apply-btn", `[update] updateApplyBtn missing from DOM: ${updateApplicabilityDiagnosticSummary(applicability)}`);
+		syncUpdateAvailableToast(applicability);
+		renderSettingsUpdateSection(applicability);
+		const comparison = updateVersionComparisonState(applicability);
+		if (els.updateChangelogBox) if (state.update.changelogLoading) renderUpdateChangelog(els.updateChangelogBox, t("updateChangelogLoading"), comparison);
 		else if (state.update.remoteChangelog) renderUpdateChangelog(els.updateChangelogBox, state.update.remoteChangelog, comparison);
 		else renderUpdateChangelog(els.updateChangelogBox, t("updateChangelogUnavailable"), comparison);
 	}
@@ -2109,6 +2173,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		if (!els.updateAppModal) return;
 		els.updateAppModal.classList.remove("hidden");
 		renderUpdateAppPanel();
+		logUpdateApplicabilityDiagnostic("modal-open", updateApplicabilityState(), { force: true });
 		checkRemoteUpdateInfo();
 	}
 	function closeUpdateAppModal() {
@@ -2122,19 +2187,22 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			source: "update-startup"
 		});
 	}
-	function syncUpdateAvailableToast() {
+	function syncUpdateAvailableToast(applicability = updateApplicabilityState()) {
 		if (!els.updateAvailableToast) return;
-		const show = hasApplicableRemoteUpdate();
+		const show = applicability.canShowApply;
 		els.updateAvailableToast.classList.toggle("hidden", !show);
-		if (show && els.updateAvailableToastVersion) els.updateAvailableToastVersion.textContent = state.update.remoteVersion || "";
+		if (show && els.updateAvailableToastVersion) els.updateAvailableToastVersion.textContent = applicability.remoteVersion || t("updateNotChecked");
 	}
 	function hideUpdateAvailableToast() {
 		if (els.updateAvailableToast) els.updateAvailableToast.classList.add("hidden");
 	}
-	function renderSettingsUpdateSection() {
+	function renderSettingsUpdateSection(applicability = updateApplicabilityState()) {
 		if (els.updateCheckOnStartupToggle) els.updateCheckOnStartupToggle.checked = localStorage.getItem(LS.updateCheckOnStartup) !== "0";
 		if (els.settingsUpdateStatus) els.settingsUpdateStatus.textContent = updateStatusMessage();
-		if (els.settingsOpenUpdateBtn) els.settingsOpenUpdateBtn.classList.toggle("hidden", !hasApplicableRemoteUpdate());
+		if (els.settingsOpenUpdateBtn) {
+			els.settingsOpenUpdateBtn.classList.toggle("hidden", !applicability.canShowApply);
+			els.settingsOpenUpdateBtn.title = applicability.disabledReasonKey ? `${t("updateApp")}: ${t(applicability.disabledReasonKey)}` : t("updateApp");
+		}
 		if (els.settingsCheckUpdateBtn) {
 			els.settingsCheckUpdateBtn.disabled = !!state.update.checking;
 			els.settingsCheckUpdateBtn.textContent = state.update.checking ? t("updateChecking") : t("updateCheckAgain");
@@ -5447,14 +5515,15 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			const items = state.projects.itemsByProject[project.id] || [];
 			const collapsed = !!project.collapsed;
 			const folderIcon = collapsed ? iconProjectClosed({ className: "h-4 w-4" }) : iconProjectOpen({ className: "h-4 w-4" });
+			const projectTitle = project.name || t("untitledProject");
 			const pagesHtml = collapsed ? "" : `<div class="mt-1 space-y-1 pl-2">${items.length ? items.map(projectPageItemHtml).join("") : `<div class="px-3 py-2 text-xs text-gray-400">${escapeHtml(t("noPages"))}</div>`}</div>`;
 			return `<div class="project-block rounded-lg">
-      <div class="group group/project flex items-center gap-1 rounded-lg px-1 py-1 hover:bg-gray-100">
-        <button class="project-toggle flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-gray-500 hover:bg-gray-200" data-project-id="${escapeHtml(project.id)}" title="${escapeHtml(project.name || t("untitledProject"))}">
+      <div class="group group/project flex cursor-pointer items-center gap-1 rounded-lg px-1 py-1 hover:bg-gray-100" data-project-toggle-row="1" data-project-id="${escapeHtml(project.id)}" title="${escapeHtml(projectTitle)}">
+        <button class="project-toggle flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-gray-500 hover:bg-gray-200" data-project-id="${escapeHtml(project.id)}" title="${escapeHtml(projectTitle)}" aria-label="${escapeHtml(projectTitle)}" aria-expanded="${collapsed ? "false" : "true"}">
           ${folderIcon}
         </button>
-        <div class="min-w-0 flex-1 truncate text-sm font-semibold text-gray-700" data-project-title-id="${escapeHtml(project.id)}" title="${escapeHtml(project.name || t("untitledProject"))}">${escapeHtml(project.name || t("untitledProject"))}</div>
-        ${projectMenuButton(project.id, project.name || t("untitledProject"))}
+        <div class="min-w-0 flex-1 truncate text-sm font-semibold text-gray-700" data-project-title-id="${escapeHtml(project.id)}" title="${escapeHtml(projectTitle)}">${escapeHtml(projectTitle)}</div>
+        ${projectMenuButton(project.id, projectTitle)}
       </div>
       ${pagesHtml}
     </div>`;
@@ -5549,7 +5618,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		}
 	}
 	function shouldUseRecentSidebarRemoteLoad(options = {}) {
-		if (options.force) return false;
+		if (options.force || options.bypassRemoteTtl) return false;
 		const lastRemoteLoadAt = Number(state.sidebar.lastRemoteLoadAt || 0);
 		const ttl = Math.max(6e4, Number(state.sidebar.remoteCacheTtlMs || 3e5));
 		return !!lastRemoteLoadAt && Date.now() - lastRemoteLoadAt < ttl;
@@ -5571,7 +5640,10 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			append
 		});
 		if (!force && !opts.remote) return;
-		if (shouldUseRecentSidebarRemoteLoad({ force })) return;
+		if (shouldUseRecentSidebarRemoteLoad({
+			force,
+			bypassRemoteTtl: !!opts.bypassRemoteTtl
+		})) return;
 		if (automatic && !canRunAutomaticFiberyCall("sidebar")) {
 			logAutomaticFiberySkip("sidebar");
 			return;
@@ -5673,14 +5745,15 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 	function startSidebarAutoRefresh() {
 		stopSidebarAutoRefresh();
 		if (!state.sidebar.open || !state.sidebar.autoRefreshEnabled) return;
-		const intervalMs = Math.max(6e5, Number(state.sidebar.autoRefreshIntervalMs || 6e5));
+		const intervalMs = Math.max(1e4, Number(state.sidebar.autoRefreshIntervalMs || 6e4));
 		state.sidebar.refreshTimer = window.setTimeout(async () => {
 			state.sidebar.refreshTimer = null;
-			if (state.sidebar.open && !document.hidden && !state.dirty && !hasRealUnsavedChangesForCurrentPage({ syncFromInputs: false })) await loadSidebarPages({
-				force: true,
+			if (state.sidebar.open && !document.hidden) await loadSidebarPages({
+				remote: true,
 				reset: false,
 				automatic: true,
-				source: "sidebar-auto"
+				source: "sidebar-auto",
+				bypassRemoteTtl: true
 			});
 			startSidebarAutoRefresh();
 		}, intervalMs);
@@ -5690,6 +5763,25 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			window.clearTimeout(state.sidebar.refreshTimer);
 			state.sidebar.refreshTimer = null;
 		}
+	}
+	function shouldRefreshSidebarOnOpen(now = Date.now()) {
+		if (!state.sidebar.open || document.hidden || state.sidebar.loading) return false;
+		const cooldownMs = Math.max(1e4, Number(state.sidebar.openRemoteCooldownMs || 1e4));
+		const lastOpenRemoteLoadAt = Number(state.sidebar.lastOpenRemoteLoadAt || 0);
+		const lastRemoteLoadAt = Number(state.sidebar.lastRemoteLoadAt || 0);
+		const lastRemoteAttemptAt = Math.max(lastOpenRemoteLoadAt, lastRemoteLoadAt);
+		return !lastRemoteAttemptAt || now - lastRemoteAttemptAt >= cooldownMs;
+	}
+	async function refreshSidebarFromRemoteOnOpen() {
+		if (!shouldRefreshSidebarOnOpen()) return;
+		state.sidebar.lastOpenRemoteLoadAt = Date.now();
+		await loadSidebarPages({
+			remote: true,
+			reset: false,
+			automatic: true,
+			source: "sidebar-open",
+			bypassRemoteTtl: true
+		});
 	}
 	function setSidebarOpen(open, persist = true) {
 		state.sidebar.open = !!open;
@@ -5702,6 +5794,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		if (persist) localStorage.setItem(LS.sidebarOpen, state.sidebar.open ? "1" : "0");
 		if (state.sidebar.open) {
 			refreshSidebarFromLocalCache({ reset: !state.sidebar.pages.length });
+			refreshSidebarFromRemoteOnOpen();
 			startSidebarAutoRefresh();
 		} else stopSidebarAutoRefresh();
 	}
@@ -6296,27 +6389,41 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			const target = e.target;
 			const pageMenu = target?.closest(".page-menu");
 			if (pageMenu) {
+				e.preventDefault();
+				e.stopPropagation();
 				openPageContextMenu(e, pageMenu.dataset.pageId || "", pageMenu.dataset.pageTitle || "", pageMenu.dataset.projectId || "");
 				return;
 			}
 			const projectMenu = target?.closest(".project-menu");
 			if (projectMenu) {
+				e.preventDefault();
+				e.stopPropagation();
 				openProjectContextMenu(e, projectMenu.dataset.projectId || "", projectMenu.dataset.projectName || "");
 				return;
 			}
-			const toggle = target?.closest(".project-toggle");
-			if (toggle) {
-				e.preventDefault();
-				e.stopPropagation();
-				await toggleProject(toggle.dataset.projectId || "");
+			const btn = target?.closest(".page-open");
+			if (btn) {
+				if (!state.blank && btn.dataset.id === state.current.id) return;
+				await runWithUnsavedPageTransitionGuard(async () => {
+					await loadPage(btn.dataset.id || "");
+				});
 				return;
 			}
-			const btn = target?.closest(".page-open");
-			if (!btn) return;
-			if (!state.blank && btn.dataset.id === state.current.id) return;
-			await runWithUnsavedPageTransitionGuard(async () => {
-				await loadPage(btn.dataset.id || "");
-			});
+			const toggleRow = target?.closest("[data-project-toggle-row]");
+			if (toggleRow) {
+				e.preventDefault();
+				e.stopPropagation();
+				await toggleProject(toggleRow.dataset.projectId || "");
+			}
+		});
+		els.sidebarProjectsList.addEventListener("keydown", async (e) => {
+			if (e.key !== "Enter" && e.key !== " ") return;
+			const target = e.target;
+			if (target?.closest("button")) return;
+			const toggleRow = target?.closest("[data-project-toggle-row]");
+			if (!toggleRow) return;
+			e.preventDefault();
+			await toggleProject(toggleRow.dataset.projectId || "");
 		});
 		els.sidebarPagesList.addEventListener("click", async (e) => {
 			const target = e.target;
@@ -6419,9 +6526,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		els.updateVerifyAgainBtn.addEventListener("click", () => {
 			checkRemoteUpdateInfo();
 		});
-		els.updateApplyBtn.addEventListener("click", () => {
-			applyRemoteUpdate();
-		});
+		if (!els.updateApplyBtn) log("[update] updateApplyBtn missing during event binding; modal delegation remains active");
 		if (els.updateBackupsBox) els.updateBackupsBox.addEventListener("click", (e) => {
 			const restoreBtn = e.target?.closest("[data-update-backup-restore-key]");
 			if (!restoreBtn) return;
@@ -6447,6 +6552,12 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			localStorage.setItem(LS.updateCheckOnStartup, els.updateCheckOnStartupToggle.checked ? "1" : "0");
 		});
 		els.updateAppModal.addEventListener("click", (e) => {
+			if (e.target?.closest("#updateApplyBtn")) {
+				e.preventDefault();
+				e.stopPropagation();
+				applyRemoteUpdate();
+				return;
+			}
 			if (e.target === els.updateAppModal) closeUpdateAppModal();
 		});
 		els.langSelect.addEventListener("change", () => {

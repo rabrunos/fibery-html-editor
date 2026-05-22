@@ -55,6 +55,7 @@ declare global {
   type UpdateBackupRecord = import('./storage').UpdateBackupRecord;
   type UpdateChangelogVersionHeading = import('./domain').UpdateChangelogVersionHeading;
   type UpdateCheckStatus = import('./domain').UpdateCheckStatus;
+  type UpdateApplicabilityState = import('./domain').UpdateApplicabilityState;
   type UpdateRemoteConfig = import('./domain').UpdateRemoteConfig;
   type UpdateValidationReason = import('./domain').UpdateValidationReason;
   type UpdateVersionComparisonState = import('./domain').UpdateVersionComparisonState;
@@ -209,9 +210,9 @@ declare global {
   function openUpdateAppModal(): void;
   function closeUpdateAppModal(): void;
   function maybeCheckUpdateOnStartup(): void;
-  function syncUpdateAvailableToast(): void;
+  function syncUpdateAvailableToast(applicability?: UpdateApplicabilityState): void;
   function hideUpdateAvailableToast(): void;
-  function renderSettingsUpdateSection(): void;
+  function renderSettingsUpdateSection(applicability?: UpdateApplicabilityState): void;
   function revokeLocalPreviewObjectUrl(): void;
   function hasRealUnsavedChangesForCurrentPage(options?: UnsavedChangeCheckOptions): boolean;
   function resumePreviewIfVisible(options?: ResumePreviewOptions): boolean;
@@ -235,6 +236,9 @@ declare global {
   function shouldForceLocalPreviewForCachedOpen(): boolean;
   function canRunAutomaticFiberyCall(source?: string): boolean;
   function canResolveAppPageForUpdate(): boolean;
+  function updateApplicabilityState(): UpdateApplicabilityState;
+  function updateApplicabilityDiagnosticSummary(applicability?: UpdateApplicabilityState): string;
+  function logUpdateApplicabilityDiagnostic(context?: string, applicability?: UpdateApplicabilityState, options?: { force?: boolean }): void;
   function canShowApplyUpdateButton(): boolean;
   function canApplyUpdateNow(): boolean;
   function clearExternalSyncCandidateForCurrentPage(options?: { clearDismissed?: boolean; clearNotified?: boolean }): void;
@@ -258,7 +262,7 @@ declare global {
   function validateRemoteUpdateHtml(remoteHtml?: string): RemoteUpdateValidationResult;
   function updateRollbackValidationReasonText(reason?: RollbackValidationReason | string): string;
   function updateValidationReasonText(reason?: UpdateValidationReason | string): string;
-  function checkRemoteUpdateInfo(): Promise<void>;
+  function checkRemoteUpdateInfo(options?: { automatic?: boolean; source?: string }): Promise<void>;
   function t(key: string): string;
   function txPut<TValue>(storeName: 'versions' | 'pageMeta' | 'projects' | 'projectItems' | 'drafts' | 'pageContentCache' | 'appResources', value: TValue): Promise<void>;
   function updateCurrentFromInputs(): void;
@@ -275,8 +279,8 @@ declare global {
   function savedLocalPages(): FiberyPage[];
   function knownLocalPages(): FiberyPage[];
   function sidebarPagesFromCache(): FiberyPage[];
-  function shouldUseRecentSidebarRemoteLoad(options?: { force?: boolean }): boolean;
-  function loadSidebarPages(options?: { force?: boolean; append?: boolean; reset?: boolean; automatic?: boolean; source?: string; remote?: boolean } | boolean): Promise<void>;
+  function shouldUseRecentSidebarRemoteLoad(options?: { force?: boolean; bypassRemoteTtl?: boolean }): boolean;
+  function loadSidebarPages(options?: { force?: boolean; append?: boolean; reset?: boolean; automatic?: boolean; source?: string; remote?: boolean; bypassRemoteTtl?: boolean } | boolean): Promise<void>;
   function iconClose(options?: { className?: string }): string;
   function iconPlus(options?: { className?: string }): string;
   function iconSearch(options?: { className?: string }): string;
@@ -297,6 +301,8 @@ declare global {
   function updateSidebarLoadMore(): void;
   function startSidebarAutoRefresh(): void;
   function stopSidebarAutoRefresh(): void;
+  function shouldRefreshSidebarOnOpen(now?: number): boolean;
+  function refreshSidebarFromRemoteOnOpen(): Promise<void>;
   function setSidebarOpen(open: boolean, persist?: boolean): void;
   function searchCacheEntry(searchState: SearchState, query: string): { at: number; pages: FiberyPage[] } | null;
   function setSearchCacheEntry(searchState: SearchState, query: string, pages: FiberyPage[]): void;
@@ -366,7 +372,7 @@ declare global {
   function getCachedUpdateChangelog(): Promise<string | null>;
   function cacheUpdateChangelogFromRemote(content: string): Promise<void>;
   function loadUpdateChangelogWithCache(): Promise<string | null>;
-  function refreshUpdateChangelogResource(): Promise<string | null>;
+  function refreshUpdateChangelogResource(options?: { automatic?: boolean; source?: string }): Promise<string | null>;
   function parseI18nResource(content: string): Record<string, string> | null;
   function mergeI18nTranslations(lang: string, bundle: Record<string, string>): void;
   function loadCachedI18nResources(): Promise<boolean>;

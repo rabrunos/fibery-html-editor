@@ -34,50 +34,58 @@ async function checkRemoteUpdateInfo(options: { automatic?: boolean; source?: st
   if (state.update.checking || state.update.applying || state.update.rollbacking) return;
   state.update.checking = true;
   state.update.status = 'checking';
-  state.update.remoteVersion = '';
 
-  const cached = await loadUpdateChangelogWithCache();
-  if (cached) {
-    state.update.remoteChangelog = cached;
-    state.update.changelogLoading = false;
-  } else {
-    state.update.changelogLoading = true;
-  }
-  renderUpdateAppPanel();
-
-  const [indexResult, changelogResult]: [PromiseSettledResult<string>, PromiseSettledResult<string | null>] = await Promise.allSettled([
-    fetchRemoteText(UPDATE_REMOTE.indexHtmlUrl, { operation: 'updateIndex', source: options.source || 'update-app', automatic: !!options.automatic }),
-    refreshUpdateChangelogResource(options)
-  ]) as [PromiseSettledResult<string>, PromiseSettledResult<string | null>];
-
-  if (indexResult.status === 'fulfilled') {
-    const remoteVersionRaw = extractRemoteVersionFromHtml(indexResult.value);
-    const localSemver = parseSemverSimple(APP_VERSION);
-    const remoteSemver = parseSemverSimple(remoteVersionRaw);
-    if (!remoteVersionRaw) {
-      state.update.status = 'error';
-      log(t('updateRemoteVersionNotFound'));
-    } else if (!localSemver || !remoteSemver) {
-      state.update.status = 'invalid';
-      state.update.remoteVersion = remoteVersionRaw;
+  try {
+    const cached = await loadUpdateChangelogWithCache();
+    if (cached) {
+      state.update.remoteChangelog = cached;
+      state.update.changelogLoading = false;
     } else {
-      state.update.remoteVersion = remoteSemver.raw;
-      const cmp = compareSemverSimple(localSemver, remoteSemver);
-      state.update.status = cmp === 0 ? 'latest' : (cmp < 0 ? 'available' : 'local-newer');
+      state.update.changelogLoading = true;
     }
-  } else {
+    renderUpdateAppPanel();
+
+    const [indexResult, changelogResult]: [PromiseSettledResult<string>, PromiseSettledResult<string | null>] = await Promise.allSettled([
+      fetchRemoteText(UPDATE_REMOTE.indexHtmlUrl, { operation: 'updateIndex', source: options.source || 'update-app', automatic: !!options.automatic }),
+      refreshUpdateChangelogResource(options)
+    ]) as [PromiseSettledResult<string>, PromiseSettledResult<string | null>];
+
+    if (indexResult.status === 'fulfilled') {
+      const remoteVersionRaw = extractRemoteVersionFromHtml(indexResult.value);
+      const localSemver = parseSemverSimple(APP_VERSION);
+      const remoteSemver = parseSemverSimple(remoteVersionRaw);
+      if (!remoteVersionRaw) {
+        state.update.status = 'error';
+        log(t('updateRemoteVersionNotFound'));
+      } else if (!localSemver || !remoteSemver) {
+        state.update.status = 'invalid';
+        state.update.remoteVersion = remoteVersionRaw;
+      } else {
+        state.update.remoteVersion = remoteSemver.raw;
+        const cmp = compareSemverSimple(localSemver, remoteSemver);
+        state.update.status = cmp === 0 ? 'latest' : (cmp < 0 ? 'available' : 'local-newer');
+      }
+    } else {
+      state.update.status = 'error';
+      log(`${t('updateCheckErrorLog')}: ${String(indexResult.reason?.message || indexResult.reason || '')}`);
+    }
+
+    const freshChangelog = changelogResult.status === 'fulfilled' ? changelogResult.value : null;
+    if (typeof freshChangelog === 'string' && freshChangelog) {
+      state.update.remoteChangelog = freshChangelog;
+    } else if (!state.update.remoteChangelog) {
+      state.update.remoteChangelog = (freshChangelog === '') ? t('updateChangelogEmpty') : '';
+    }
+  } catch (err) {
     state.update.status = 'error';
-    log(`${t('updateCheckErrorLog')}: ${String(indexResult.reason?.message || indexResult.reason || '')}`);
+    log(`${t('updateCheckErrorLog')}: ${(err as Error).message || String(err)}`);
+  } finally {
+    state.update.changelogLoading = false;
+    state.update.checking = false;
+    renderUpdateAppPanel();
+    const applicability = updateApplicabilityState();
+    if (applicability.isRemoteNewer || applicability.status === 'available' || applicability.status === 'invalid' || applicability.status === 'error') {
+      logUpdateApplicabilityDiagnostic('check-complete', applicability);
+    }
   }
-
-  const freshChangelog = changelogResult.status === 'fulfilled' ? changelogResult.value : null;
-  if (typeof freshChangelog === 'string' && freshChangelog) {
-    state.update.remoteChangelog = freshChangelog;
-  } else if (!state.update.remoteChangelog) {
-    state.update.remoteChangelog = (freshChangelog === '') ? t('updateChangelogEmpty') : '';
-  }
-
-  state.update.changelogLoading = false;
-  state.update.checking = false;
-  renderUpdateAppPanel();
 }

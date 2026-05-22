@@ -20,19 +20,77 @@ function isCurrentAppPageForUpdate(): boolean {
   return state.current.id === targetPageId;
 }
 
+const updateApplicabilityLogCache: Record<string, string> = {};
+
+function updateApplicabilityState(): UpdateApplicabilityState {
+  const localVersion = String(APP_VERSION || '').trim();
+  const remoteVersion = String(state.update.remoteVersion || '').trim();
+  const localParsed = parseSemverSimple(localVersion);
+  const remoteParsed = parseSemverSimple(remoteVersion);
+  const status = String(state.update.status || 'idle');
+  const comparison = localParsed && remoteParsed ? compareSemverSimple(localParsed, remoteParsed) : null;
+  const isRemoteNewer = comparison !== null && comparison < 0;
+  const statusClaimsAvailable = status === 'available';
+  const canShowApply = isRemoteNewer || statusClaimsAvailable;
+  let disabledReasonKey = '';
+
+  if (canShowApply) {
+    if (state.update.checking) disabledReasonKey = 'updateApplyUnavailableWhileChecking';
+    else if (state.update.applying) disabledReasonKey = 'updateApplying';
+    else if (state.update.rollbacking) disabledReasonKey = 'updateRollbackRestoring';
+    else if (!localParsed || !remoteParsed) disabledReasonKey = 'updateStatusInvalid';
+    else if (!isRemoteNewer) disabledReasonKey = 'updateRemoteVersionNotNewer';
+    else if (!state.isAdmin) disabledReasonKey = 'updateAdminRequired';
+    else if (!canResolveAppPageForUpdate()) disabledReasonKey = 'updateAppPageUnavailable';
+  }
+
+  return {
+    localVersion,
+    remoteVersion,
+    localParsed,
+    remoteParsed,
+    isRemoteNewer,
+    canShowApply,
+    canApplyNow: canShowApply && isRemoteNewer && !disabledReasonKey,
+    disabledReasonKey,
+    status
+  };
+}
+
+function updateApplicabilityDiagnosticSummary(applicability: UpdateApplicabilityState = updateApplicabilityState()): string {
+  return [
+    `local=${applicability.localVersion || '-'}`,
+    `remote=${applicability.remoteVersion || '-'}`,
+    `localParsed=${applicability.localParsed?.raw || '-'}`,
+    `remoteParsed=${applicability.remoteParsed?.raw || '-'}`,
+    `status=${applicability.status || '-'}`,
+    `isRemoteNewer=${String(applicability.isRemoteNewer)}`,
+    `canShowApply=${String(applicability.canShowApply)}`,
+    `canApplyNow=${String(applicability.canApplyNow)}`,
+    `reason=${applicability.disabledReasonKey || '-'}`,
+    `isAdmin=${String(!!state.isAdmin)}`,
+    `appPageId=${updateTargetAppPageId() || '-'}`
+  ].join(' ');
+}
+
+function logUpdateApplicabilityDiagnostic(context = 'state', applicability: UpdateApplicabilityState = updateApplicabilityState(), options: { force?: boolean } = {}): void {
+  const summary = updateApplicabilityDiagnosticSummary(applicability);
+  const key = String(context || 'state');
+  if (!options.force && updateApplicabilityLogCache[key] === summary) return;
+  updateApplicabilityLogCache[key] = summary;
+  log(`[update] ${key}: ${summary}`);
+}
+
 function hasApplicableRemoteUpdate(): boolean {
-  const local = parseSemverSimple(APP_VERSION);
-  const remote = parseSemverSimple(state.update.remoteVersion || '');
-  if (!local || !remote) return false;
-  return compareSemverSimple(local, remote) < 0;
+  return updateApplicabilityState().isRemoteNewer;
 }
 
 function canShowApplyUpdateButton(): boolean {
-  return hasApplicableRemoteUpdate();
+  return updateApplicabilityState().canShowApply;
 }
 
 function canApplyUpdateNow(): boolean {
-  return canShowApplyUpdateButton() && !state.update.checking && !state.update.applying && !state.update.rollbacking && state.isAdmin && canResolveAppPageForUpdate();
+  return updateApplicabilityState().canApplyNow;
 }
 
 function normalizeUpdateTargetPage(pageId: string, page: Partial<FiberyPage> | null | undefined): FiberyPage {
@@ -87,10 +145,13 @@ async function offerOpenAppPageFallback(reasonKey: string): Promise<void> {
 
 async function applyRemoteUpdate(): Promise<void> {
   if (state.update.applying) return;
-  if (state.update.rollbacking) { setStatus(t('updateRollbackRestoring')); return; }
-  if (state.update.checking) { setStatus(t('updateApplyUnavailableWhileChecking')); return; }
-  if (!state.isAdmin) { setStatus(t('updateAdminRequired')); log(t('updateAdminRequired')); return; }
-  if (!hasApplicableRemoteUpdate()) { setStatus(t('updateRemoteVersionNotNewer')); return; }
+  const applicability = updateApplicabilityState();
+  if (!applicability.canApplyNow) {
+    const reasonKey = applicability.disabledReasonKey || 'updateRemoteVersionNotNewer';
+    setStatus(t(reasonKey));
+    logUpdateApplicabilityDiagnostic('apply-blocked', applicability, { force: true });
+    return;
+  }
   const targetPageId = updateTargetAppPageId();
   if (!targetPageId) { setStatus(t('updateAppPageUnavailable')); log(t('updateAppPageUnavailable')); return; }
   const applyingCurrentPage = !state.blank && String(state.current.id || '') === targetPageId;

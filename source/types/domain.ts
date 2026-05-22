@@ -220,3 +220,15 @@ export interface UpdateVersionComparisonState {
   comparable: boolean;
   localVsRemote: number | null;
 }
+
+export interface UpdateApplicabilityState {
+  localVersion: string;
+  remoteVersion: string;
+  localParsed: SemverSimple | null;
+  remoteParsed: SemverSimple | null;
+  isRemoteNewer: boolean;
+  canShowApply: boolean;
+  canApplyNow: boolean;
+  disabledReasonKey: string;
+  status: string;
+}

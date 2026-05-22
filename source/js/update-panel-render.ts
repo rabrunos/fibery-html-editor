@@ -26,55 +26,84 @@ function setUpdateVersionValueTone(): void {
   }
 }
 
-function updateVersionComparisonState(): UpdateVersionComparisonState {
-  const localSemver = parseSemverSimple(APP_VERSION);
-  const remoteSemver = parseSemverSimple(state.update.remoteVersion || '');
+function updateVersionComparisonState(applicability: UpdateApplicabilityState = updateApplicabilityState()): UpdateVersionComparisonState {
+  const localSemver = applicability.localParsed;
+  const remoteSemver = applicability.remoteParsed;
   if (localSemver && remoteSemver) {
     return { localSemver, remoteSemver, comparable: true, localVsRemote: compareSemverSimple(localSemver, remoteSemver) };
   }
   return { localSemver, remoteSemver, comparable: false, localVsRemote: null };
 }
 
+const updatePanelRenderLogCache: Record<string, string> = {};
+
+function logUpdatePanelRenderIssue(key: string, message: string): void {
+  if (updatePanelRenderLogCache[key] === message) return;
+  updatePanelRenderLogCache[key] = message;
+  log(message);
+}
+
+function resolveUpdateApplyButton(): HTMLButtonElement | null {
+  const direct = document.getElementById('updateApplyBtn') as HTMLButtonElement | null;
+  if (direct) {
+    els.updateApplyBtn = direct;
+    return direct;
+  }
+  return els.updateApplyBtn || null;
+}
+
 function renderUpdateAppPanel(): void {
-  if (!els.updateInstalledVersionValue || !els.updateAvailableVersionValue || !els.updateCheckStatusText || !els.updateChangelogBox) return;
-  els.updateInstalledVersionValue.textContent = APP_VERSION;
-  els.updateAvailableVersionValue.textContent = state.update.remoteVersion || t('updateNotChecked');
-  els.updateCheckStatusText.textContent = updateStatusMessage();
+  const applicability = updateApplicabilityState();
+  if (applicability.status === 'available' && !applicability.remoteVersion) {
+    logUpdatePanelRenderIssue('available-without-version', `[update] status is available but remoteVersion is empty: ${updateApplicabilityDiagnosticSummary(applicability)}`);
+  }
+  if (applicability.status === 'latest' && applicability.isRemoteNewer) {
+    logUpdatePanelRenderIssue('latest-with-newer-version', `[update] status is latest but remoteVersion is newer: ${updateApplicabilityDiagnosticSummary(applicability)}`);
+  }
+
+  const missingRefs = [
+    ['updateInstalledVersionValue', els.updateInstalledVersionValue],
+    ['updateAvailableVersionValue', els.updateAvailableVersionValue],
+    ['updateCheckStatusText', els.updateCheckStatusText],
+    ['updateChangelogBox', els.updateChangelogBox]
+  ].filter(([, ref]) => !ref).map(([name]) => name);
+  if (missingRefs.length > 0) {
+    logUpdatePanelRenderIssue('missing-panel-refs', `[update] panel refs missing: ${missingRefs.join(', ')} (${updateApplicabilityDiagnosticSummary(applicability)})`);
+  }
+
+  if (els.updateInstalledVersionValue) els.updateInstalledVersionValue.textContent = applicability.localVersion || APP_VERSION;
+  if (els.updateAvailableVersionValue) els.updateAvailableVersionValue.textContent = applicability.remoteVersion || t('updateNotChecked');
+  if (els.updateCheckStatusText) els.updateCheckStatusText.textContent = updateStatusMessage();
   setUpdateVersionValueTone();
   if (els.updateVerifyAgainBtn) {
     els.updateVerifyAgainBtn.disabled = !!state.update.checking || !!state.update.applying || !!state.update.rollbacking;
     els.updateVerifyAgainBtn.textContent = state.update.checking ? t('updateChecking') : t('updateCheckAgain');
   }
-  if (els.updateApplyBtn) {
-    const showApply = canShowApplyUpdateButton();
-    els.updateApplyBtn.classList.toggle('hidden', !showApply);
-    const disableReason = !showApply
-      ? ''
-      : state.update.checking
-        ? t('updateApplyUnavailableWhileChecking')
-        : state.update.applying
-          ? t('updateApplying')
-          : state.update.rollbacking
-            ? t('updateRollbackRestoring')
-          : !state.isAdmin
-            ? t('updateAdminRequired')
-            : !canResolveAppPageForUpdate()
-              ? t('updateAppPageUnavailable')
-              : '';
-    const disabled = !!disableReason || !canApplyUpdateNow();
-    els.updateApplyBtn.disabled = disabled;
-    els.updateApplyBtn.textContent = state.update.applying ? t('updateApplying') : t('updateApply');
-    els.updateApplyBtn.title = disableReason || t('updateApply');
-  }
-  syncUpdateAvailableToast();
-  renderSettingsUpdateSection();
-  const comparison = updateVersionComparisonState();
-  if (state.update.changelogLoading) {
-    renderUpdateChangelog(els.updateChangelogBox, t('updateChangelogLoading'), comparison);
-  } else if (state.update.remoteChangelog) {
-    renderUpdateChangelog(els.updateChangelogBox, state.update.remoteChangelog, comparison);
+  const updateApplyBtn = resolveUpdateApplyButton();
+  if (updateApplyBtn) {
+    updateApplyBtn.classList.toggle('hidden', !applicability.canShowApply);
+    const disableReason = applicability.disabledReasonKey ? t(applicability.disabledReasonKey) : '';
+    updateApplyBtn.disabled = !applicability.canApplyNow;
+    updateApplyBtn.textContent = state.update.applying ? t('updateApplying') : t('updateApply');
+    updateApplyBtn.title = disableReason || t('updateApply');
+    updateApplyBtn.setAttribute('aria-disabled', updateApplyBtn.disabled ? 'true' : 'false');
+    if (applicability.canShowApply && updateApplyBtn.classList.contains('hidden')) {
+      logUpdatePanelRenderIssue('apply-hidden-mismatch', `[update] apply button still has hidden class despite applicable state: ${updateApplicabilityDiagnosticSummary(applicability)}`);
+    }
   } else {
-    renderUpdateChangelog(els.updateChangelogBox, t('updateChangelogUnavailable'), comparison);
+    logUpdatePanelRenderIssue('missing-apply-btn', `[update] updateApplyBtn missing from DOM: ${updateApplicabilityDiagnosticSummary(applicability)}`);
+  }
+  syncUpdateAvailableToast(applicability);
+  renderSettingsUpdateSection(applicability);
+  const comparison = updateVersionComparisonState(applicability);
+  if (els.updateChangelogBox) {
+    if (state.update.changelogLoading) {
+      renderUpdateChangelog(els.updateChangelogBox, t('updateChangelogLoading'), comparison);
+    } else if (state.update.remoteChangelog) {
+      renderUpdateChangelog(els.updateChangelogBox, state.update.remoteChangelog, comparison);
+    } else {
+      renderUpdateChangelog(els.updateChangelogBox, t('updateChangelogUnavailable'), comparison);
+    }
   }
 }
 
@@ -82,6 +111,7 @@ function openUpdateAppModal(): void {
   if (!els.updateAppModal) return;
   els.updateAppModal.classList.remove('hidden');
   renderUpdateAppPanel();
+  logUpdateApplicabilityDiagnostic('modal-open', updateApplicabilityState(), { force: true });
   void checkRemoteUpdateInfo();
 }
 

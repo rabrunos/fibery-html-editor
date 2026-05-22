@@ -12,7 +12,7 @@ const state: AppState = {
   isAdmin: false, lang: 'en', appPageId: detectCurrentAppPageId(), current: { id: '', title: '', description: '', html: '' }, currentBaseline: { id: '', title: '', description: '', html: '' }, blank: true, dirty: false, db: null, saving: false, loadingPage: false,
   code: { editor: null, suppress: false, fallback: false }, confirmResolver: null, unsavedTransitionResolver: null, unsavedTransitionBusy: false, unsavedBeforeUnloadWarningActive: false,
   apiUsage: {
-    recentCalls: [], maxRecentCalls: 100, summaryWindowMs: 300000, automaticCooldownMs: 180000, slowCallThresholdMs: 4000, slowModeMs: 300000,
+    recentCalls: [], maxRecentCalls: 100, summaryWindowMs: 300000, automaticCooldownMs: 60000, slowCallThresholdMs: 4000, slowModeMs: 300000,
     lastAutomaticFiberyCallAt: 0, slowModeUntil: 0, inFlight: {}
   },
   pageLoads: { inFlightById: {} },
@@ -35,7 +35,7 @@ const state: AppState = {
   },
   update: { checking: false, applying: false, rollbacking: false, status: 'idle', remoteVersion: '', remoteChangelog: '', changelogLoading: false, backupsLoading: false, backups: [] },
   preview: { mode: 'real', paused: false, needsSync: false, pendingForceRealReload: false, localObjectUrl: '', localStatusLabel: '', activeRequestId: '', debounceTimer: null, debounceMs: 500, lastLocalDocSignature: '', lastLocalHtmlSignature: '', lastLocalUsesTailwind: false, lastRealUrl: '', lastLoggedMode: '' },
-  sidebar: { open: true, pages: [], loading: false, refreshTimer: null, hasMore: false, limit: 20, visibleLimit: 20, pageCache: {}, lastRemoteLoadAt: 0, remoteCacheTtlMs: 300000, autoRefreshEnabled: false, autoRefreshIntervalMs: 600000 },
+  sidebar: { open: true, pages: [], loading: false, refreshTimer: null, hasMore: false, limit: 20, visibleLimit: 20, pageCache: {}, lastRemoteLoadAt: 0, lastOpenRemoteLoadAt: 0, remoteCacheTtlMs: 300000, openRemoteCooldownMs: 10000, autoRefreshEnabled: true, autoRefreshIntervalMs: 60000 },
   projects: { rows: [], items: [], pageToProject: {}, itemsByProject: {} },
   search: { debounce: null, query: '', pages: [], cache: {}, loading: false, remoteQuery: '' },
   welcomeSearch: { debounce: null, query: '', pages: [], cache: {}, loading: false, remoteQuery: '' },

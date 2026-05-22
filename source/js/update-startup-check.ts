@@ -3,12 +3,12 @@ function maybeCheckUpdateOnStartup(): void {
   void checkRemoteUpdateInfo({ automatic: true, source: 'update-startup' });
 }
 
-function syncUpdateAvailableToast(): void {
+function syncUpdateAvailableToast(applicability: UpdateApplicabilityState = updateApplicabilityState()): void {
   if (!els.updateAvailableToast) return;
-  const show = hasApplicableRemoteUpdate();
+  const show = applicability.canShowApply;
   els.updateAvailableToast.classList.toggle('hidden', !show);
   if (show && els.updateAvailableToastVersion) {
-    els.updateAvailableToastVersion.textContent = state.update.remoteVersion || '';
+    els.updateAvailableToastVersion.textContent = applicability.remoteVersion || t('updateNotChecked');
   }
 }
 
@@ -16,7 +16,7 @@ function hideUpdateAvailableToast(): void {
   if (els.updateAvailableToast) els.updateAvailableToast.classList.add('hidden');
 }
 
-function renderSettingsUpdateSection(): void {
+function renderSettingsUpdateSection(applicability: UpdateApplicabilityState = updateApplicabilityState()): void {
   if (els.updateCheckOnStartupToggle) {
     els.updateCheckOnStartupToggle.checked = localStorage.getItem(LS.updateCheckOnStartup) !== '0';
   }
@@ -24,7 +24,8 @@ function renderSettingsUpdateSection(): void {
     els.settingsUpdateStatus.textContent = updateStatusMessage();
   }
   if (els.settingsOpenUpdateBtn) {
-    els.settingsOpenUpdateBtn.classList.toggle('hidden', !hasApplicableRemoteUpdate());
+    els.settingsOpenUpdateBtn.classList.toggle('hidden', !applicability.canShowApply);
+    els.settingsOpenUpdateBtn.title = applicability.disabledReasonKey ? `${t('updateApp')}: ${t(applicability.disabledReasonKey)}` : t('updateApp');
   }
   if (els.settingsCheckUpdateBtn) {
     els.settingsCheckUpdateBtn.disabled = !!state.update.checking;

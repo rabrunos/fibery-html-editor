@@ -37,17 +37,28 @@ function bindEvents(): void {
   els.sidebarProjectsList.addEventListener('click', async (e: MouseEvent) => {
     const target = e.target as Element | null;
     const pageMenu = target?.closest<HTMLElement>('.page-menu');
-    if (pageMenu) { openPageContextMenu(e, pageMenu.dataset.pageId || '', pageMenu.dataset.pageTitle || '', pageMenu.dataset.projectId || ''); return; }
+    if (pageMenu) { e.preventDefault(); e.stopPropagation(); openPageContextMenu(e, pageMenu.dataset.pageId || '', pageMenu.dataset.pageTitle || '', pageMenu.dataset.projectId || ''); return; }
     const projectMenu = target?.closest<HTMLElement>('.project-menu');
-    if (projectMenu) { openProjectContextMenu(e, projectMenu.dataset.projectId || '', projectMenu.dataset.projectName || ''); return; }
-    const toggle = target?.closest<HTMLElement>('.project-toggle');
-    if (toggle) { e.preventDefault(); e.stopPropagation(); await toggleProject(toggle.dataset.projectId || ''); return; }
+    if (projectMenu) { e.preventDefault(); e.stopPropagation(); openProjectContextMenu(e, projectMenu.dataset.projectId || '', projectMenu.dataset.projectName || ''); return; }
     const btn = target?.closest<HTMLElement>('.page-open');
-    if (!btn) return;
-    if (!state.blank && btn.dataset.id === state.current.id) return;
-    await runWithUnsavedPageTransitionGuard(async () => {
-      await loadPage(btn.dataset.id || '');
-    });
+    if (btn) {
+      if (!state.blank && btn.dataset.id === state.current.id) return;
+      await runWithUnsavedPageTransitionGuard(async () => {
+        await loadPage(btn.dataset.id || '');
+      });
+      return;
+    }
+    const toggleRow = target?.closest<HTMLElement>('[data-project-toggle-row]');
+    if (toggleRow) { e.preventDefault(); e.stopPropagation(); await toggleProject(toggleRow.dataset.projectId || ''); }
+  });
+  els.sidebarProjectsList.addEventListener('keydown', async (e: KeyboardEvent) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const target = e.target as Element | null;
+    if (target?.closest('button')) return;
+    const toggleRow = target?.closest<HTMLElement>('[data-project-toggle-row]');
+    if (!toggleRow) return;
+    e.preventDefault();
+    await toggleProject(toggleRow.dataset.projectId || '');
   });
   els.sidebarPagesList.addEventListener('click', async (e: MouseEvent) => { const target = e.target as Element | null; const menu = target?.closest<HTMLElement>('.page-menu'); if (menu) { openPageContextMenu(e, menu.dataset.pageId || '', menu.dataset.pageTitle || '', menu.dataset.projectId || ''); return; } const btn = target?.closest<HTMLElement>('.page-open'); if (!btn) return; if (!state.blank && btn.dataset.id === state.current.id) return; await runWithUnsavedPageTransitionGuard(async () => { await loadPage(btn.dataset.id || ''); }); });
   els.globalSearchInput.addEventListener('input', () => { clearTimeout(state.search.debounce ?? undefined); state.search.query = els.globalSearchInput.value.trim(); state.search.debounce = window.setTimeout(loadSearchResults, 480); });
@@ -63,7 +74,7 @@ function bindEvents(): void {
   els.closeUpdateAppBtn.addEventListener('click', closeUpdateAppModal);
   els.updateCloseBtn.addEventListener('click', closeUpdateAppModal);
   els.updateVerifyAgainBtn.addEventListener('click', () => { void checkRemoteUpdateInfo(); });
-  els.updateApplyBtn.addEventListener('click', () => { void applyRemoteUpdate(); });
+  if (!els.updateApplyBtn) log('[update] updateApplyBtn missing during event binding; modal delegation remains active');
   if (els.updateBackupsBox) els.updateBackupsBox.addEventListener('click', (e: MouseEvent) => {
     const restoreBtn = (e.target as Element | null)?.closest<HTMLElement>('[data-update-backup-restore-key]');
     if (!restoreBtn) return;
@@ -75,7 +86,12 @@ function bindEvents(): void {
   if (els.settingsAboutVersionBtn) els.settingsAboutVersionBtn.addEventListener('click', () => { closeSettings(); openUpdateAppModal(); });
   if (els.settingsOpenUpdateBtn) els.settingsOpenUpdateBtn.addEventListener('click', () => { closeSettings(); openUpdateAppModal(); });
   if (els.updateCheckOnStartupToggle) els.updateCheckOnStartupToggle.addEventListener('change', () => { localStorage.setItem(LS.updateCheckOnStartup, els.updateCheckOnStartupToggle.checked ? '1' : '0'); });
-  els.updateAppModal.addEventListener('click', (e: MouseEvent) => { if (e.target === els.updateAppModal) closeUpdateAppModal(); });
+  els.updateAppModal.addEventListener('click', (e: MouseEvent) => {
+    const target = e.target as Element | null;
+    const applyBtn = target?.closest<HTMLElement>('#updateApplyBtn');
+    if (applyBtn) { e.preventDefault(); e.stopPropagation(); void applyRemoteUpdate(); return; }
+    if (e.target === els.updateAppModal) closeUpdateAppModal();
+  });
   els.langSelect.addEventListener('change', () => { localStorage.setItem(LS.lang, els.langSelect.value); applyI18n(); if (state.blank) showBlankPage(); else renderCurrent(); });
   els.openLastToggle.addEventListener('change', () => localStorage.setItem(LS.openLast, els.openLastToggle.checked ? '1' : '0'));
   els.versionLimitSelect.addEventListener('change', async () => { localStorage.setItem(LS.versionLimit, els.versionLimitSelect.value); if (state.current.id) await enforceHistoryLimit(state.current.id); });
