@@ -84,7 +84,6 @@ function renderCurrent(): void {
   els.historyBtn.disabled = !state.current.id;
   if (els.openViewMenuBtn) els.openViewMenuBtn.disabled = !state.current.id;
   els.deleteBtn.disabled = !state.current.id || !state.isAdmin;
-  if (els.externalSyncCheckNowBtn) els.externalSyncCheckNowBtn.classList.toggle('hidden', !state.current.id || !state.externalSync.enabled);
   updateSidebarActiveState();
   updateRecoveryReopenButton();
   syncSaveAvailabilityState();

@@ -1,3 +1,26 @@
+## [8.46.1] - 2026-05-22
+
+### Fixed
+
+- Update App can now be applied from any currently edited page by targeting the real app page ID (`state.appPageId`) instead of requiring the app page to be open in the editor.
+- Fixed Update App apply-button behavior so it stays visible when an update is available and is only disabled with explicit reason/tooltips when apply preconditions are not met.
+- Reduced technical remote-verification noise in the main header by moving non-actionable statuses (cache-checking/cache-confirmed/page-loaded) to log-first behavior.
+- Header retry/check action now appears only when user action is actually needed (verification failure/conflict), while preserving conflict safety and save blocking where applicable.
+
+### Technical adjustments
+
+- Update apply flow now loads and backs up the app page snapshot directly via API before saving remote HTML, without replacing `state.current` when another page is being edited.
+- Added explicit post-apply reload confirmation flow (reload now vs later) with local draft preservation before reload prompt when unsaved edits exist.
+- Added safe fallback prompt to open the app page when direct update apply cannot proceed due target load/save limitations.
+- Propagated versioned resources to `support/8.46.1` and recalculated resource manifest hashes.
+- Single-file build delivery (`index.html`) preserved.
+
+### Validation
+
+- Local verify pipeline run (`npm run verify`) with typecheck, checks, build/validate tmp and build/validate final.
+- `git diff --check` run with no whitespace/hunk format issues.
+- Fibery runtime checks remain manual.
+
 ## [8.46.0] - 2026-05-22
 
 ### Added

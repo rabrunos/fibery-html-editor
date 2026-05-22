@@ -107,15 +107,18 @@ async function checkExternalSyncNow(options: ExternalSyncSkipOptions = {}): Prom
     state.externalSync.lastSkipReason = '';
     state.externalSync.lastSkipLoggedAt = 0;
     logExternalSyncDebug(manual ? t('externalSyncManualCheckCompletedLog') : t('externalSyncCheckCompletedLog'));
+    syncSaveAvailabilityState();
     return true;
   } catch (err) {
     state.externalSync.lastErrorAt = Date.now();
     state.externalSync.lastErrorMessage = String((err as Error)?.message || err || '');
     state.externalSync.status = 'error';
     log(`${t('externalSyncCheckErrorLog')}: ${state.externalSync.lastErrorMessage}`);
+    syncSaveAvailabilityState();
     return false;
   } finally {
     state.externalSync.checking = false;
+    syncSaveAvailabilityState();
   }
 }
 

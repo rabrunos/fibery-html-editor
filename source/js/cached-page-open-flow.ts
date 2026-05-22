@@ -114,7 +114,7 @@ async function loadPageFromRemoteDirect(pageId: string, promptToken: number): Pr
   localStorage.setItem(LS.lastPageId, state.current.id);
   syncPreviewMode({ immediate: true });
   markCurrentPageRemoteVerified({ openedFromCache: false });
-  setStatus(t('pageLoaded'));
+  setStatus('');
   log(`${t('pageLoaded')}: ${state.current.title || state.current.id}`);
   void maybePromptDraftRecoveryForCurrentPage(promptToken);
 }
@@ -128,7 +128,7 @@ async function startCachedPageRemoteVerification(pageId: string, requestId: stri
     state.cachedPageOpen.saveBlockedReason = 'pending';
     state.cachedPageOpen.lastErrorMessage = '';
     syncSaveAvailabilityState();
-    setStatus(t('cachedOpenLoadedFromCacheChecking'));
+    log(t('cachedOpenLoadedFromCacheChecking'));
   }
 
   try {
@@ -169,7 +169,7 @@ async function startCachedPageRemoteVerification(pageId: string, requestId: stri
       }
       syncSaveAvailabilityState();
       syncPreviewMode({ immediate: true });
-      setStatus(t('cachedOpenVerifiedStatus'));
+      log(t('cachedOpenVerifiedStatus'));
       return true;
     }
 
@@ -256,7 +256,8 @@ async function openPageFromLastSavedCacheIfAvailable(pageId: string, promptToken
   syncSaveAvailabilityState();
 
   syncPreviewMode({ immediate: true });
-  setStatus(t('cachedOpenLoadedFromCacheChecking'));
+  setStatus('');
+  log(t('cachedOpenLoadedFromCacheChecking'));
   void maybePromptDraftRecoveryForCurrentPage(promptToken);
   // Delay remote verification ~2s to avoid API spam on rapid navigation and give
   // the user a moment to start editing before conflict detection fires
@@ -276,7 +277,7 @@ async function retryCurrentPageRemoteVerification(): Promise<boolean> {
   const status = String(state.cachedPageOpen.remoteStatus || '');
   if (!pageId || !samePage || !state.cachedPageOpen.openedFromCache) return false;
   if (status === 'checking') {
-    setStatus(t('cachedOpenLoadedFromCacheChecking'));
+    log(t('cachedOpenLoadedFromCacheChecking'));
     return false;
   }
   if (!canRetryCurrentPageRemoteVerification()) return false;
@@ -289,7 +290,7 @@ async function retryCurrentPageRemoteVerification(): Promise<boolean> {
   state.cachedPageOpen.saveBlockedReason = 'pending';
   state.cachedPageOpen.lastErrorMessage = '';
   syncSaveAvailabilityState();
-  setStatus(t('cachedOpenLoadedFromCacheChecking'));
+  log(t('cachedOpenLoadedFromCacheChecking'));
   return startCachedPageRemoteVerification(pageId, requestId, { promptToken: state.drafts.promptToken, source: 'load-page-cache-verify-manual' });
 }
 

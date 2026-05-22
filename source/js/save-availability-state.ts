@@ -19,7 +19,7 @@ function shouldForceLocalPreviewForCachedOpen(): boolean {
 function shouldKeepCachedOpenStatusMessage(): boolean {
   const status = currentCachedPageRemoteStatus();
   if (!String(state.cachedPageOpen.openedFromCache || '')) return false;
-  return status === 'checking' || status === 'verified' || status === 'stale-applied' || status === 'failed' || status === 'conflict';
+  return status === 'failed' || status === 'conflict';
 }
 
 function saveBlockedReasonForCurrentPage(): SaveBlockedReason {
@@ -70,6 +70,24 @@ function syncCachedOpenCheckNowButtonLabel(): void {
   els.externalSyncCheckNowBtn.title = label;
 }
 
+function shouldShowExternalSyncCheckNowButton(): boolean {
+  if (state.blank || !state.current.id || !state.externalSync.enabled) return false;
+  const currentPageId = String(state.current.id || '');
+  const cachedPageId = String(state.cachedPageOpen.pageId || '');
+  const cachedStatus = String(state.cachedPageOpen.remoteStatus || 'idle');
+  const hasCachedRetryAction = !!state.cachedPageOpen.openedFromCache && cachedPageId === currentPageId && (cachedStatus === 'failed' || cachedStatus === 'conflict');
+  if (hasCachedRetryAction) return true;
+  const hasExternalSyncErrorAction = state.externalSync.pageId === currentPageId && (state.externalSync.status === 'error' || !!state.externalSync.lastErrorMessage);
+  return hasExternalSyncErrorAction;
+}
+
+function syncExternalSyncCheckNowVisibility(): void {
+  if (!els.externalSyncCheckNowBtn) return;
+  const shouldShow = shouldShowExternalSyncCheckNowButton();
+  els.externalSyncCheckNowBtn.classList.toggle('hidden', !shouldShow);
+  if (!shouldShow) els.externalSyncCheckNowBtn.disabled = false;
+}
+
 function syncSaveAvailabilityState(options: SyncSaveAvailabilityOptions = {}): boolean {
   if (!els.saveBtn) return true;
   const blockedReason = saveBlockedReasonForCurrentPage();
@@ -87,6 +105,7 @@ function syncSaveAvailabilityState(options: SyncSaveAvailabilityOptions = {}): b
   }
 
   syncCachedOpenCheckNowButtonLabel();
+  syncExternalSyncCheckNowVisibility();
 
   if (options.announce && blockedReason) {
     const statusKey = saveBlockedStatusKey(blockedReason);

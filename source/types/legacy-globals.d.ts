@@ -234,6 +234,7 @@ declare global {
   function snapshotSignature(snapshot?: Partial<PageSnapshot> | null): ContentSignature;
   function shouldForceLocalPreviewForCachedOpen(): boolean;
   function canRunAutomaticFiberyCall(source?: string): boolean;
+  function canResolveAppPageForUpdate(): boolean;
   function canShowApplyUpdateButton(): boolean;
   function canApplyUpdateNow(): boolean;
   function clearExternalSyncCandidateForCurrentPage(options?: { clearDismissed?: boolean; clearNotified?: boolean }): void;

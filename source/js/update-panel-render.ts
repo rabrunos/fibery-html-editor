@@ -58,8 +58,8 @@ function renderUpdateAppPanel(): void {
             ? t('updateRollbackRestoring')
           : !state.isAdmin
             ? t('updateAdminRequired')
-            : !isCurrentAppPageForUpdate()
-              ? t('updateAppPageRequired')
+            : !canResolveAppPageForUpdate()
+              ? t('updateAppPageUnavailable')
               : '';
     const disabled = !!disableReason || !canApplyUpdateNow();
     els.updateApplyBtn.disabled = disabled;

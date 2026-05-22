@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fibery HTML Editor</title>
-  <meta name="fibery-html-editor-version" content="8.46.0" />
+  <meta name="fibery-html-editor-version" content="8.46.1" />
   <meta name="fibery-html-editor-name" content="Fibery HTML Editor" />
   <!-- Keep this version metadata in sync with APP_VERSION for future update checks. -->
   <link rel="stylesheet" href="tailwind.css" />
@@ -381,7 +381,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 
 (function() {
 	//#region \0virtual:fibery-html-editor/manifest-js
-	const APP_VERSION = "8.46.0";
+	const APP_VERSION = "8.46.1";
 	window.FIBERY_HTML_EDITOR_VERSION = APP_VERSION;
 	document.documentElement.dataset.appVersion = APP_VERSION;
 	var UPDATE_REMOTE = Object.freeze({
@@ -1468,16 +1468,67 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		if (typeof error === "object" && error !== null && "message" in error) return String(error.message || error || "");
 		return String(error || "");
 	}
+	function updateTargetAppPageId() {
+		return String(state.appPageId || "").trim();
+	}
+	function canResolveAppPageForUpdate() {
+		return !!updateTargetAppPageId();
+	}
 	function isCurrentAppPageForUpdate() {
 		if (state.blank) return false;
-		if (!state.current.id || !state.appPageId) return false;
-		return state.current.id === state.appPageId;
+		const targetPageId = updateTargetAppPageId();
+		if (!state.current.id || !targetPageId) return false;
+		return state.current.id === targetPageId;
 	}
 	function canShowApplyUpdateButton() {
 		return state.update.status === "available";
 	}
 	function canApplyUpdateNow() {
-		return canShowApplyUpdateButton() && !state.update.checking && !state.update.applying && !state.update.rollbacking && state.isAdmin && isCurrentAppPageForUpdate();
+		return canShowApplyUpdateButton() && !state.update.checking && !state.update.applying && !state.update.rollbacking && state.isAdmin && canResolveAppPageForUpdate();
+	}
+	function normalizeUpdateTargetPage(pageId, page) {
+		return {
+			id: String(page?.id || pageId || ""),
+			title: String(page?.title || ""),
+			description: String(page?.description || ""),
+			html: String(page?.html || "")
+		};
+	}
+	async function preserveLocalDraftBeforeReloadIfNeeded() {
+		if (state.blank || !state.current.id || !state.dirty || !state.isAdmin) return;
+		try {
+			await saveCurrentDraftNow({ force: true });
+			log(t("updateReloadDraftPreservedLog"));
+		} catch (err) {
+			log(`${t("updateReloadDraftPreservedLog")}: ${updateApplyErrorMessage(err)}`);
+		}
+	}
+	async function confirmReloadAfterUpdate() {
+		await preserveLocalDraftBeforeReloadIfNeeded();
+		if (await confirmAction({
+			title: t("updateReloadConfirmTitle"),
+			message: t("updateReloadConfirmMessage"),
+			okText: t("updateReloadConfirmButton"),
+			showPreview: false
+		})) {
+			window.location.reload();
+			return;
+		}
+		setStatus(t("updateAppliedReloadLater"));
+	}
+	async function offerOpenAppPageFallback(reasonKey) {
+		const targetPageId = updateTargetAppPageId();
+		if (!targetPageId) return;
+		if (!state.blank && state.current.id === targetPageId) return;
+		if (!await confirmAction({
+			title: t("updateOpenAppPageFallbackTitle"),
+			message: `${t(reasonKey)}\n\n${t("updateOpenAppPageFallbackPrompt")}`,
+			okText: t("updateOpenAppPageFallbackButton"),
+			showPreview: false
+		})) return;
+		await runWithUnsavedPageTransitionGuard(async () => {
+			await loadPage(targetPageId);
+		});
 	}
 	async function applyRemoteUpdate() {
 		if (state.update.applying) return;
@@ -1494,15 +1545,17 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			log(t("updateAdminRequired"));
 			return;
 		}
-		if (!isCurrentAppPageForUpdate()) {
-			setStatus(t("updateAppPageRequired"));
-			log(t("updateAppPageRequired"));
-			return;
-		}
 		if (state.update.status !== "available") {
 			setStatus(t("updateRemoteVersionNotNewer"));
 			return;
 		}
+		const targetPageId = updateTargetAppPageId();
+		if (!targetPageId) {
+			setStatus(t("updateAppPageUnavailable"));
+			log(t("updateAppPageUnavailable"));
+			return;
+		}
+		const applyingCurrentPage = !state.blank && String(state.current.id || "") === targetPageId;
 		state.update.applying = true;
 		const previousStatus = state.update.status;
 		state.update.status = "applying";
@@ -1523,24 +1576,33 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			}
 			if (!await confirmAction({
 				title: t("updateApplyConfirmTitle"),
-				message: `${t("updateApplyConfirmMessage")}\n\n${t("updateInstalledVersion")}: ${validation.localVersion}\n${t("updateAvailableVersion")}: ${validation.remoteVersion}`,
+				message: `${t("updateApplyConfirmMessage")}\n\n${t("updateInstalledVersion")}: ${validation.localVersion}\n${t("updateAvailableVersion")}: ${validation.remoteVersion}\n${t("updateApplyTargetPageNotice")}`,
 				okText: t("updateApplyConfirmButton"),
 				showPreview: false
 			})) {
 				setStatus(t("updateApplyCanceled"));
 				return;
 			}
-			updateCurrentFromInputs();
 			setStatus(t("updateBackupCreating"));
+			let targetBeforeUpdate;
+			try {
+				targetBeforeUpdate = normalizeUpdateTargetPage(targetPageId, await API.loadPage(targetPageId, { source: "update-apply-load-target" }));
+			} catch (targetLoadErr) {
+				const targetLoadMsg = updateApplyErrorMessage(targetLoadErr);
+				setStatus(t("updateApplyTargetLoadFailed"));
+				log(`${t("updateApplyTargetLoadFailed")}: ${targetLoadMsg}`);
+				await offerOpenAppPageFallback("updateOpenAppPageReasonLoadFailed");
+				return;
+			}
 			let backupRecord = null;
 			try {
 				backupRecord = await createUpdateBackupRecord({
-					pageId: state.current.id,
+					pageId: targetPageId,
 					fromVersion: validation.localVersion,
 					toVersion: validation.remoteVersion,
-					title: state.current.title,
-					description: state.current.description,
-					html: state.current.html
+					title: targetBeforeUpdate.title,
+					description: targetBeforeUpdate.description,
+					html: targetBeforeUpdate.html
 				});
 			} catch (backupErr) {
 				const backupMsg = updateApplyErrorMessage(backupErr);
@@ -1551,47 +1613,74 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			log(`${t("updateBackupCreated")}: ${backupRecord.fromVersion} -> ${backupRecord.toVersion}`);
 			await loadUpdateBackupList();
 			setStatus(t("updateSaving"));
-			const saved = await API.savePage({
-				id: state.current.id,
-				title: state.current.title,
-				description: state.current.description,
-				html: remoteHtml
-			}, { source: "update-apply" });
-			state.current = {
-				id: saved.id || saved.data?.id || state.current.id,
-				title: saved.title || saved.data?.title || state.current.title,
-				description: saved.description || saved.data?.description || state.current.description,
+			let saved;
+			try {
+				saved = await API.savePage({
+					id: targetPageId,
+					title: targetBeforeUpdate.title,
+					description: targetBeforeUpdate.description,
+					html: remoteHtml
+				}, { source: "update-apply" });
+			} catch (saveErr) {
+				const saveMsg = updateApplyErrorMessage(saveErr);
+				setStatus(t("updateApplyFailed"));
+				log(`${t("updateApplyFailed")}: ${saveMsg}`);
+				await offerOpenAppPageFallback("updateOpenAppPageReasonSaveFailed");
+				state.update.status = previousStatus;
+				return;
+			}
+			const updatedTargetPage = normalizeUpdateTargetPage(targetPageId, {
+				id: saved.id || saved.data?.id || targetPageId,
+				title: saved.title || saved.data?.title || targetBeforeUpdate.title,
+				description: saved.description || saved.data?.description || targetBeforeUpdate.description,
 				html: saved.html || saved.data?.html || remoteHtml
-			};
-			await savePageContentCacheSafe(state.current, { source: "update-apply" });
-			cachePagesForSidebar([state.current]);
-			clearSearchCaches();
-			localStorage.setItem(LS.lastPageId, state.current.id);
+			});
 			const now = Date.now();
-			await savePageMeta(state.current.id, {
-				title: state.current.title,
-				description: state.current.description,
-				lastOpenedAt: now,
+			await savePageContentCacheSafe(updatedTargetPage, {
+				pageId: targetPageId,
+				source: "update-apply-target-save",
+				cachedAt: now,
+				verifiedAt: now
+			});
+			cachePagesForSidebar([updatedTargetPage]);
+			await savePageMeta(targetPageId, {
+				title: updatedTargetPage.title,
+				description: updatedTargetPage.description,
 				lastSavedAt: now
 			});
-			await saveHistory("update-app");
-			setCurrentBaseline();
-			markCurrentPageRemoteVerified({
-				openedFromCache: false,
-				remoteStatus: "verified"
-			});
-			renderCurrent();
-			syncPreviewMode({
-				immediate: true,
-				forceRealReload: true
-			});
+			clearSearchCaches();
+			if (applyingCurrentPage) {
+				state.current = { ...updatedTargetPage };
+				localStorage.setItem(LS.lastPageId, state.current.id);
+				await savePageMeta(state.current.id, {
+					title: state.current.title,
+					description: state.current.description,
+					lastOpenedAt: now,
+					lastSavedAt: now
+				});
+				await saveHistory("update-app");
+				setCurrentBaseline();
+				markCurrentPageRemoteVerified({
+					openedFromCache: false,
+					remoteStatus: "verified"
+				});
+				renderCurrent();
+				syncPreviewMode({
+					immediate: true,
+					forceRealReload: true
+				});
+			} else {
+				log(`${t("updateAppliedToAppPageLog")}: ${updatedTargetPage.id}`);
+				setStatus(t("updateAppliedOtherPage"));
+			}
 			refreshSidebarFromLocalCache({ reset: true });
 			state.update.remoteVersion = validation.remoteVersion;
 			state.update.status = "latest";
-			setStatus(`${t("updateApplied")} ${t("updateAppliedReloadHint")}`);
+			if (applyingCurrentPage) setStatus(`${t("updateApplied")} ${t("updateAppliedReloadHint")}`);
 			log(`${t("updateApplied")}: ${validation.localVersion} -> ${validation.remoteVersion}`);
 			renderUpdateAppPanel();
 			checkRemoteUpdateInfo();
+			await confirmReloadAfterUpdate();
 		} catch (err) {
 			const msg = updateApplyErrorMessage(err);
 			setStatus(t("updateApplyFailed"));
@@ -1994,7 +2083,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		if (els.updateApplyBtn) {
 			const showApply = canShowApplyUpdateButton();
 			els.updateApplyBtn.classList.toggle("hidden", !showApply);
-			const disableReason = !showApply ? "" : state.update.checking ? t("updateApplyUnavailableWhileChecking") : state.update.applying ? t("updateApplying") : state.update.rollbacking ? t("updateRollbackRestoring") : !state.isAdmin ? t("updateAdminRequired") : !isCurrentAppPageForUpdate() ? t("updateAppPageRequired") : "";
+			const disableReason = !showApply ? "" : state.update.checking ? t("updateApplyUnavailableWhileChecking") : state.update.applying ? t("updateApplying") : state.update.rollbacking ? t("updateRollbackRestoring") : !state.isAdmin ? t("updateAdminRequired") : !canResolveAppPageForUpdate() ? t("updateAppPageUnavailable") : "";
 			const disabled = !!disableReason || !canApplyUpdateNow();
 			els.updateApplyBtn.disabled = disabled;
 			els.updateApplyBtn.textContent = state.update.applying ? t("updateApplying") : t("updateApply");
@@ -3658,15 +3747,18 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			state.externalSync.lastSkipReason = "";
 			state.externalSync.lastSkipLoggedAt = 0;
 			logExternalSyncDebug(manual ? t("externalSyncManualCheckCompletedLog") : t("externalSyncCheckCompletedLog"));
+			syncSaveAvailabilityState();
 			return true;
 		} catch (err) {
 			state.externalSync.lastErrorAt = Date.now();
 			state.externalSync.lastErrorMessage = String(err?.message || err || "");
 			state.externalSync.status = "error";
 			log(`${t("externalSyncCheckErrorLog")}: ${state.externalSync.lastErrorMessage}`);
+			syncSaveAvailabilityState();
 			return false;
 		} finally {
 			state.externalSync.checking = false;
+			syncSaveAvailabilityState();
 		}
 	}
 	async function runExternalSyncPollingCycle(options = {}) {
@@ -3751,6 +3843,20 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		els.externalSyncCheckNowBtn.textContent = label;
 		els.externalSyncCheckNowBtn.title = label;
 	}
+	function shouldShowExternalSyncCheckNowButton() {
+		if (state.blank || !state.current.id || !state.externalSync.enabled) return false;
+		const currentPageId = String(state.current.id || "");
+		const cachedPageId = String(state.cachedPageOpen.pageId || "");
+		const cachedStatus = String(state.cachedPageOpen.remoteStatus || "idle");
+		if (!!state.cachedPageOpen.openedFromCache && cachedPageId === currentPageId && (cachedStatus === "failed" || cachedStatus === "conflict")) return true;
+		return state.externalSync.pageId === currentPageId && (state.externalSync.status === "error" || !!state.externalSync.lastErrorMessage);
+	}
+	function syncExternalSyncCheckNowVisibility() {
+		if (!els.externalSyncCheckNowBtn) return;
+		const shouldShow = shouldShowExternalSyncCheckNowButton();
+		els.externalSyncCheckNowBtn.classList.toggle("hidden", !shouldShow);
+		if (!shouldShow) els.externalSyncCheckNowBtn.disabled = false;
+	}
 	function syncSaveAvailabilityState(options = {}) {
 		if (!els.saveBtn) return true;
 		const blockedReason = saveBlockedReasonForCurrentPage();
@@ -3762,6 +3868,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		else if (!state.isAdmin) els.saveBtn.title = t("readOnly");
 		else els.saveBtn.title = t("save");
 		syncCachedOpenCheckNowButtonLabel();
+		syncExternalSyncCheckNowVisibility();
 		if (options.announce && blockedReason) {
 			const statusKey = saveBlockedStatusKey(blockedReason);
 			if (statusKey) setStatus(t(statusKey));
@@ -3882,7 +3989,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		localStorage.setItem(LS.lastPageId, state.current.id);
 		syncPreviewMode({ immediate: true });
 		markCurrentPageRemoteVerified({ openedFromCache: false });
-		setStatus(t("pageLoaded"));
+		setStatus("");
 		log(`${t("pageLoaded")}: ${state.current.title || state.current.id}`);
 		maybePromptDraftRecoveryForCurrentPage(promptToken);
 	}
@@ -3894,7 +4001,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 			state.cachedPageOpen.saveBlockedReason = "pending";
 			state.cachedPageOpen.lastErrorMessage = "";
 			syncSaveAvailabilityState();
-			setStatus(t("cachedOpenLoadedFromCacheChecking"));
+			log(t("cachedOpenLoadedFromCacheChecking"));
 		}
 		try {
 			const remoteRaw = await API.loadPage(pageId, { source });
@@ -3933,7 +4040,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 				});
 				syncSaveAvailabilityState();
 				syncPreviewMode({ immediate: true });
-				setStatus(t("cachedOpenVerifiedStatus"));
+				log(t("cachedOpenVerifiedStatus"));
 				return true;
 			}
 			log(userEdited ? "Remote differs from cache; local edit detected → mandatory conflict comparison" : "Remote differs from cache; no local edit → mandatory conflict comparison");
@@ -4012,7 +4119,8 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		state.cachedPageOpen.verifiedAt = Number(cacheRecord.verifiedAt || 0);
 		syncSaveAvailabilityState();
 		syncPreviewMode({ immediate: true });
-		setStatus(t("cachedOpenLoadedFromCacheChecking"));
+		setStatus("");
+		log(t("cachedOpenLoadedFromCacheChecking"));
 		maybePromptDraftRecoveryForCurrentPage(promptToken);
 		scheduleCachedPageRemoteVerification(pageId, requestId, {
 			promptToken,
@@ -4031,7 +4139,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		const status = String(state.cachedPageOpen.remoteStatus || "");
 		if (!pageId || !samePage || !state.cachedPageOpen.openedFromCache) return false;
 		if (status === "checking") {
-			setStatus(t("cachedOpenLoadedFromCacheChecking"));
+			log(t("cachedOpenLoadedFromCacheChecking"));
 			return false;
 		}
 		if (!canRetryCurrentPageRemoteVerification()) return false;
@@ -4044,7 +4152,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		state.cachedPageOpen.saveBlockedReason = "pending";
 		state.cachedPageOpen.lastErrorMessage = "";
 		syncSaveAvailabilityState();
-		setStatus(t("cachedOpenLoadedFromCacheChecking"));
+		log(t("cachedOpenLoadedFromCacheChecking"));
 		return startCachedPageRemoteVerification(pageId, requestId, {
 			promptToken: state.drafts.promptToken,
 			source: "load-page-cache-verify-manual"
@@ -4560,7 +4668,6 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 		els.historyBtn.disabled = !state.current.id;
 		if (els.openViewMenuBtn) els.openViewMenuBtn.disabled = !state.current.id;
 		els.deleteBtn.disabled = !state.current.id || !state.isAdmin;
-		if (els.externalSyncCheckNowBtn) els.externalSyncCheckNowBtn.classList.toggle("hidden", !state.current.id || !state.externalSync.enabled);
 		updateSidebarActiveState();
 		updateRecoveryReopenButton();
 		syncSaveAvailabilityState();
